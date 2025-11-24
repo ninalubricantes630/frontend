@@ -28,11 +28,8 @@ export const useServicios = () => {
       setError(null)
 
       try {
-
         if (activeRequestRef.current?.cancel) {
-          try {
-            activeRequestRef.current.cancel()
-          } catch (e) {}
+          activeRequestRef.current.cancel()
         }
 
         const params = {
@@ -57,10 +54,7 @@ export const useServicios = () => {
           total: paginationData.total || 0,
           limit: paginationData.limit || actualLimit,
         })
-
-      
       } catch (err) {
-        console.error("[v0] Error en loadServicios:", err)
         const { userMessage } = errorHandler.handleApiError(err, "cargar servicios")
         setError(userMessage)
         setServicios([])

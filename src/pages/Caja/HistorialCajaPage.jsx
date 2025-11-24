@@ -118,13 +118,12 @@ export default function HistorialCajaPage() {
           setSesiones(sesionesData)
           setPagination(paginationData)
         } else {
-          console.error("[v0] Estructura de respuesta inesperada:", response)
+          console.error("Estructura de respuesta inesperada:", response)
           setSesiones([])
           setPagination({ page: 1, limit: 10, total: 0, totalPages: 0 })
         }
       } catch (err) {
-        console.error("[v0] Error al cargar sesiones:", err)
-        console.error("[v0] Error completo:", {
+        console.error("Error completo:", {
           message: err.message,
           response: err.response,
           data: err.response?.data,

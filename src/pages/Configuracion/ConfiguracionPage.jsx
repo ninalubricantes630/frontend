@@ -31,7 +31,6 @@ import {
   LocationOn,
   Description,
   Lock,
-  Cancel,
   CreditCard,
 } from "@mui/icons-material"
 import { useAuth } from "../../contexts/AuthContext"
@@ -94,19 +93,15 @@ const ConfiguracionPage = () => {
   const cargarConfiguracion = async () => {
     try {
       setInitialLoading(true)
-      console.log("[v0] Loading configuration...")
-
       const config = await configuracionService.getConfiguracion()
-      console.log("[v0] Configuration loaded:", config)
 
       if (config) {
         Object.keys(config).forEach((key) => {
-          console.log(`[v0] Setting field ${key} = ${config[key]}`)
           setValue(key, config[key])
         })
       }
     } catch (error) {
-      console.error("[v0] Error loading configuration:", error)
+      console.error("Error loading configuration:", error)
       setSnackbar({
         open: true,
         message: "Error al cargar la configuración",
@@ -472,7 +467,7 @@ const ConfiguracionPage = () => {
                     pt: 3,
                     borderTop: "1px solid #e5e7eb",
                   }}
-                >          
+                >
                   <Button
                     type="submit"
                     variant="contained"

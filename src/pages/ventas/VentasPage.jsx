@@ -381,7 +381,7 @@ export default function VentasPage() {
         showNotification(result.error || "Error al procesar la venta", "error")
       }
     } catch (error) {
-      console.error("[v0] Error al procesar venta:", error)
+      console.error("Error al procesar venta:", error)
       showNotification(error.message || "Error al procesar la venta", "error")
     }
   }

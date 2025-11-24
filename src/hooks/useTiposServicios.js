@@ -40,7 +40,7 @@ export const useTiposServicios = () => {
           limit: response.data?.pagination?.limit || actualLimit,
         })
       } catch (err) {
-        console.error("[v0] Error al cargar tipos de servicios:", err)
+        console.error("Error al cargar tipos de servicios:", err)
         setError(err?.message ?? "Error al cargar tipos de servicios")
         setTiposServicios([])
       } finally {

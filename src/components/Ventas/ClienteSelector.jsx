@@ -85,7 +85,7 @@ export default function ClienteSelector({ open, onClose, onSelect }) {
       setClientes(clientesData)
       setFilteredClientes(clientesData)
     } catch (error) {
-      console.error("[v0] Error al cargar clientes:", error)
+      console.error("Error al cargar clientes:", error)
     } finally {
       setLoading(false)
     }

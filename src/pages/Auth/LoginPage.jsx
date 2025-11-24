@@ -56,22 +56,15 @@ function LoginPage() {
     e.preventDefault()
     e.stopPropagation()
 
-    console.log("[v0] LoginPage.handleSubmit - formulario enviado")
-
     if (!validateForm()) {
-      console.log("[v0] LoginPage.handleSubmit - validación falló")
       return
     }
 
-    console.log("[v0] LoginPage.handleSubmit - validación exitosa, llamando a login")
     try {
       clearError()
       await login(formData)
-      console.log("[v0] LoginPage.handleSubmit - login exitoso")
-      // Success - AuthContext will handle the redirect via App.jsx
     } catch (error) {
-      console.log("[v0] LoginPage.handleSubmit - login falló con error:", error.message)
-      // Error is already handled by AuthContext and displayed via the error state
+      // Error is handled by AuthContext
     }
   }
 

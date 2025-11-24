@@ -9,14 +9,11 @@ const serviciosService = {
 
   // Obtener servicio por ID
   getServicioById: async (id) => {
-    console.log("[v0] API call to /servicios/" + id)
     try {
       const response = await api.get(`/servicios/${id}`)
-      console.log("[v0] API response status:", response.status)
-      console.log("[v0] API response data:", response.data)
-      return response.data
+      return response
     } catch (error) {
-      console.error("[v0] API error:", error)
+      console.error("Error al obtener servicio:", error)
       throw error
     }
   },

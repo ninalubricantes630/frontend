@@ -27,7 +27,7 @@ export const useTarjetas = () => {
         totalPages: response.data?.pagination?.totalPages || 0,
       })
     } catch (error) {
-      console.error("[v0] Error al cargar tarjetas:", error)
+      console.error("Error al cargar tarjetas:", error)
       throw error
     } finally {
       setLoading(false)
@@ -48,7 +48,7 @@ export const useTarjetas = () => {
         await tarjetasService.create(data)
         await loadTarjetas({ page: pagination.page, limit: pagination.limit })
       } catch (error) {
-        console.error("[v0] Error al crear tarjeta:", error)
+        console.error("Error al crear tarjeta:", error)
         throw error
       } finally {
         setLoading(false)
@@ -64,7 +64,7 @@ export const useTarjetas = () => {
         await tarjetasService.update(id, data)
         await loadTarjetas({ page: pagination.page, limit: pagination.limit })
       } catch (error) {
-        console.error("[v0] Error al actualizar tarjeta:", error)
+        console.error("[Error al actualizar tarjeta:", error)
         throw error
       } finally {
         setLoading(false)
@@ -80,7 +80,7 @@ export const useTarjetas = () => {
         await tarjetasService.delete(id)
         await loadTarjetas({ page: pagination.page, limit: pagination.limit })
       } catch (error) {
-        console.error("[v0] Error al eliminar tarjeta:", error)
+        console.error("[Error al eliminar tarjeta:", error)
         throw error
       } finally {
         setLoading(false)

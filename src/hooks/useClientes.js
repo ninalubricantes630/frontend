@@ -52,7 +52,7 @@ export const useClientes = () => {
           totalPages: paginationData.totalPages || 0,
         })
       } catch (err) {
-        console.error("[v0] Error in loadClientes:", err)
+        console.error("Error in loadClientes:", err)
         const { userMessage } = errorHandler.handleApiError(err, "cargar clientes")
         setError(userMessage)
         setClientes([])

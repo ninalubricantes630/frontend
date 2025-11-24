@@ -30,7 +30,7 @@ export const useEmpleados = () => {
         totalPages: response.data?.pagination?.totalPages || 0,
       })
     } catch (error) {
-      console.error("[v0] Error loading empleados:", error)
+      console.error("Error loading empleados:", error)
       setError(error.message || "Error al cargar empleados")
     } finally {
       setLoading(false)

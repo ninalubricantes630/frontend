@@ -102,7 +102,6 @@ export default function CajaPage() {
 
     try {
       const response = await cajaService.getDetalleIngresos(sesionActiva.id)
-      console.log("[v0] Frontend - CajaPage received detalle ingresos:", response)
       setDetalleIngresos(response)
     } catch (error) {
       console.error("Error al cargar detalle de ingresos:", error)
@@ -123,13 +122,6 @@ export default function CajaPage() {
     .reduce((sum, m) => sum + Number.parseFloat(m.monto), 0)
 
   const montoActual = sesionActiva ? Number.parseFloat(sesionActiva.monto_inicial) + totalIngresos - totalEgresos : 0
-
-  console.log("[v0] Frontend - CajaPage calculations:", {
-    totalIngresos,
-    totalEgresos,
-    montoActual,
-    detalleIngresos,
-  })
 
   if (loading) {
     return (

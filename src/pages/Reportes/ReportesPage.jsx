@@ -270,23 +270,19 @@ const ReportesPage = () => {
 
   const loadSpecificService = async (servicioId, shouldAutoOpen = false) => {
     try {
-      console.log("[v0] Loading service with ID:", servicioId)
       const response = await serviciosService.getServicioById(servicioId)
-      console.log("[v0] Service response received:", response)
 
       if (response && Object.keys(response).length > 0) {
-        console.log("[v0] Setting service detail:", response)
         setServicioDetalle(response)
         if (shouldAutoOpen) {
-          console.log("[v0] Opening modal")
           setDetalleModalOpen(true)
         }
       } else {
-        console.error("[v0] Response is empty or undefined")
+        console.error("Response is empty or undefined")
         showSnackbar("Error: No se recibieron datos del servicio", "error")
       }
     } catch (error) {
-      console.error("[v0] Error al cargar servicio específico:", error)
+      console.error("Error al cargar servicio específico:", error)
       showSnackbar("Error al cargar el servicio específico", "error")
     }
   }

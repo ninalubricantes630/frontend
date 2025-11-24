@@ -37,10 +37,8 @@ const DashboardPage = () => {
           search: term,
           searchCriteria: "patente",
         })
-        console.log("[v0] Vehicle search response:", response)
         const vehiculosArray = response?.vehiculos || response?.data?.vehiculos || []
         results = Array.isArray(vehiculosArray) ? vehiculosArray : []
-        console.log("[v0] Processed vehiculos results:", results)
       }
 
       setSearchResults(results)

@@ -52,7 +52,7 @@ export const useVehiculos = () => {
           limit: paginationData.limit || limit,
         })
       } catch (err) {
-        console.error("[v0] Error al cargar vehículos:", err)
+        console.error("Error al cargar vehículos:", err)
         const { userMessage } = errorHandler.handleApiError(err, "cargar vehículos")
         setError(userMessage)
         setVehiculos([])

@@ -36,7 +36,6 @@ const ChangePasswordModal = ({ open, onClose }) => {
     e.preventDefault()
     e.stopPropagation()
 
-    console.log("[v0] ChangePasswordModal - iniciando cambio de contraseña")
     setError("")
     setSuccess(false) // Reset success state al inicio
 
@@ -60,7 +59,6 @@ const ChangePasswordModal = ({ open, onClose }) => {
 
     try {
       setLoading(true)
-      console.log("[v0] ChangePasswordModal - enviando petición de cambio de contraseña")
 
       const response = await changePassword({
         currentPassword: formData.currentPassword,
@@ -75,7 +73,6 @@ const ChangePasswordModal = ({ open, onClose }) => {
         handleClose()
       }, 2000)
     } catch (error) {
-      console.log("[v0] ChangePasswordModal - error al cambiar contraseña:", error.message)
       setSuccess(false)
 
       let errorMessage = "Error al cambiar la contraseña"

@@ -89,31 +89,25 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = async (credentials) => {
-    console.log("[v0] AuthContext.login - iniciando login")
     try {
       dispatch({ type: "LOGIN_START" })
-      console.log("[v0] AuthContext.login - dispatch LOGIN_START")
 
       const response = await authService.login(credentials)
-      console.log("[v0] AuthContext.login - respuesta de authService recibida")
 
       let userData = response.user
       if (!userData.sucursales || userData.sucursales.length === 0) {
         try {
           userData = await authService.getCurrentUser()
         } catch (error) {
-          console.error("Error obteniendo datos completos del usuario:", error)
+          // Silent fail - user data will load on next request
         }
       }
 
-      console.log("[v0] AuthContext.login - dispatch LOGIN_SUCCESS")
       dispatch({ type: "LOGIN_SUCCESS", payload: userData })
       return response
     } catch (error) {
-      console.log("[v0] AuthContext.login - error capturado:", error.message)
       const errorMessage = error.message || "Error de conexión"
       dispatch({ type: "LOGIN_ERROR", payload: errorMessage })
-      // Re-throw the error so it can be caught in the component
       throw error
     }
   }

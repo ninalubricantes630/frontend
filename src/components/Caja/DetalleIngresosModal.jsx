@@ -20,9 +20,6 @@ import {
 } from "@mui/icons-material"
 
 export default function DetalleIngresosModal({ open, onClose, detalleIngresos, loading = false }) {
-  console.log("[v0] Frontend - DetalleIngresosModal received:", detalleIngresos)
-  console.log("[v0] Frontend - DetalleIngresosModal loading:", loading)
-
   const formatCurrency = (value) => {
     return new Intl.NumberFormat("es-AR", {
       minimumFractionDigits: 2,
@@ -49,9 +46,6 @@ export default function DetalleIngresosModal({ open, onClose, detalleIngresos, l
 
   const totalGeneral = detalleIngresos?.total_general || 0
   const desglose = detalleIngresos?.desglose || []
-
-  console.log("[v0] Frontend - Total general:", totalGeneral)
-  console.log("[v0] Frontend - Desglose:", desglose)
 
   const hasData = !loading && desglose && desglose.length > 0
 

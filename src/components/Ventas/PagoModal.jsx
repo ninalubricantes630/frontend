@@ -134,7 +134,7 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
       const data = await tarjetasService.getTarjetasParaVenta()
       setTarjetas(data || [])
     } catch (err) {
-      console.error("[v0] Error loading credit cards:", err)
+      console.error("Error loading credit cards:", err)
       setError("No se pudieron cargar las tarjetas disponibles")
     } finally {
       setLoadingTarjetas(false)
@@ -147,7 +147,7 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
       setCuotas(data || [])
       setCuotasSeleccionadas(null)
     } catch (err) {
-      console.error("[v0] Error loading installments:", err)
+      console.error("Error loading installments:", err)
       setError("No se pudieron cargar las cuotas disponibles")
     }
   }

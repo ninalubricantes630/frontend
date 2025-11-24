@@ -52,10 +52,9 @@ export default function CerrarCajaModal({ open, onClose, onCerrarCaja, sesionAct
     setLoadingDetalle(true)
     try {
       const response = await cajaService.getDetalleIngresos(sesionActual.id)
-      console.log("[v0] Frontend - CerrarCajaModal received detalle:", response)
       setDetalleIngresos(response)
     } catch (error) {
-      console.error("[v0] Error al cargar detalle:", error)
+      console.error("Error al cargar detalle:", error)
     } finally {
       setLoadingDetalle(false)
     }
@@ -64,10 +63,9 @@ export default function CerrarCajaModal({ open, onClose, onCerrarCaja, sesionAct
   const cargarMovimientos = async () => {
     try {
       const response = await cajaService.getMovimientos(sesionActual.id)
-      console.log("[v0] Frontend - CerrarCajaModal received movimientos:", response)
       setMovimientos(response.movimientos || [])
     } catch (error) {
-      console.error("[v0] Error al cargar movimientos:", error)
+      console.error("Error al cargar movimientos:", error)
       setMovimientos([])
     }
   }
@@ -126,14 +124,6 @@ export default function CerrarCajaModal({ open, onClose, onCerrarCaja, sesionAct
   const hayFaltante = diferencia < 0
 
   const desglose = detalleIngresos?.desglose || []
-
-  console.log("[v0] Frontend - CerrarCajaModal calculations:", {
-    montoInicial,
-    totalIngresos,
-    totalEgresos,
-    saldoEsperado,
-    desglose,
-  })
 
   const getMetodoPagoConfig = (metodo) => {
     switch (metodo) {
