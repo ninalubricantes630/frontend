@@ -17,14 +17,14 @@ import StockPage from "./pages/Stock/StockPage"
 import ConfiguracionPage from "./pages/Configuracion/ConfiguracionPage"
 import TiposServiciosPage from "./pages/Configuracion/TiposServiciosPage"
 import ReportesPage from "./pages/Reportes/ReportesPage"
-import VentasPage from "./pages/Ventas/VentasPage"
+import VentasPage from "./pages/ventas/VentasPage"
 import ReportesVentasPage from "./pages/Reportes/ReportesVentasPage"
 import CajaPage from "./pages/Caja/CajaPage"
 import HistorialCajaPage from "./pages/Caja/HistorialCajaPage"
 import LoadingSpinner from "./components/Common/LoadingSpinner"
 import ToastContainer from "./components/Common/ToastContainer"
 import GestionTarjetasPage from "./pages/Configuracion/GestionTarjetasPage"
-
+ 
 function App() {
   const { isAuthenticated, loading } = useAuth()
 
