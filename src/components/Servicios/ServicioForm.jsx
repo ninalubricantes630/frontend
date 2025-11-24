@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "../../components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
+import { Card, CardContent } from "../../components/ui/card"
 import { Input } from "../../components/ui/input"
 import { Label } from "../../components/ui/label"
 import { Textarea } from "../../components/ui/textarea"
@@ -31,6 +31,9 @@ import { useClientes } from "../../hooks/useClientes"
 import { useVehiculos } from "../../hooks/useVehiculos"
 import { useTiposServicios } from "../../hooks/useTiposServicios"
 import { useServicios } from "../../hooks/useServicios"
+import ConfirmacionServicio from "./ConfirmacionServicio"
+import DescuentoModalServicio from "./DescuentoModalServicio"
+import InteresModalServicio from "./InteresModalServicio"
 
 const steps = [
   { id: 0, title: "Cliente", icon: User },
@@ -48,6 +51,8 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
     observaciones: "",
     precioReferencia: 0,
     items: [],
+    descuento: null,
+    interes: null,
   })
 
   const { clientes, loadClientes } = useClientes()
@@ -64,8 +69,14 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
     descripcion: "",
     observaciones: "",
     notas: "",
+    id: null,
+    total: 0,
   })
   const [showShortcuts, setShowShortcuts] = useState(false)
+  const [selectedSucursal, setSelectedSucursal] = useState(null)
+  const [empleadosActivos, setEmpleadosActivos] = useState([])
+  const [showDescuentoModal, setShowDescuentoModal] = useState(false)
+  const [showInteresModal, setShowInteresModal] = useState(false)
 
   useEffect(() => {
     if (!open) return
@@ -113,6 +124,8 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
           observaciones: servicio.observaciones || "",
           precioReferencia: servicio.precio_referencia || 0,
           items: servicio.items || [],
+          descuento: servicio.descuento || null,
+          interes: servicio.interes || null,
         })
         setActiveStep(3)
       } else {
@@ -124,6 +137,8 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
           observaciones: "",
           precioReferencia: 0,
           items: [],
+          descuento: null,
+          interes: null,
         })
         setSelectedCliente(null)
         setSelectedVehiculo(null)
@@ -164,32 +179,38 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
     }))
   }
 
-  const handleAddItem = () => {
-    if (currentItem.tipoServicioId && currentItem.descripcion) {
-      const tipoServicio = tiposServicios?.find((ts) => ts.id === currentItem.tipoServicioId)
-      const newItem = {
-        ...currentItem,
-        tipoServicioNombre: tipoServicio?.nombre || "",
-        id: Date.now(),
-      }
+  const handleAddItem = (itemDelModal) => {
+    // Si viene del modal (precio manual), usar ese item directamente
+    // Si viene de la edición interna, construir desde currentItem
+    const itemAGuardar = itemDelModal || {
+      ...currentItem,
+      tipoServicioId: currentItem.tipoServicioId,
+      descripcion: currentItem.descripcion,
+      observaciones: currentItem.observaciones,
+      notas: currentItem.notas,
+      id: currentItem.id || Date.now(),
+    }
 
-      setFormData((prev) => ({
-        ...prev,
-        items: [...prev.items, newItem],
-      }))
 
+    // Actualizar formData con el item
+    setFormData((prev) => ({
+      ...prev,
+      items: itemDelModal ? [...prev.items, itemAGuardar] : [...prev.items, itemAGuardar],
+    }))
+
+    // Resetear currentItem solo si viene del modal
+    if (itemDelModal) {
       setCurrentItem({
         tipoServicioId: null,
         descripcion: "",
         observaciones: "",
         notas: "",
-      })
-      setShowItemDialog(false)
-      toast({
-        title: "Servicio agregado",
-        description: "El servicio se agregó correctamente a la lista.",
+        id: null,
+        total: 0,
       })
     }
+
+    setShowItemDialog(false)
   }
 
   const handleRemoveItem = (itemId) => {
@@ -199,30 +220,92 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
     }))
   }
 
+  const handleEditDescuento = (remove = false) => {
+    if (remove) {
+      setFormData((prev) => ({ ...prev, descuento: null }))
+    } else {
+      setShowDescuentoModal(true)
+    }
+  }
+
+  const handleEditInteres = (remove = false) => {
+    if (remove) {
+      setFormData((prev) => ({ ...prev, interes: null }))
+    } else {
+      setShowInteresModal(true)
+    }
+  }
+
+  const handleDescuentoConfirm = (descuentoData) => {
+    setFormData((prev) => ({
+      ...prev,
+      descuento: descuentoData.montoDescuento > 0 ? descuentoData : null,
+    }))
+    setShowDescuentoModal(false)
+  }
+
+  const handleInteresConfirm = (interesData) => {
+    setFormData((prev) => ({
+      ...prev,
+      interes: interesData.montoInteres > 0 ? interesData : null,
+    }))
+    setShowInteresModal(false)
+  }
+
   const handleSubmit = async () => {
-    try {
-      const submitData = {
-        cliente_id: formData.clienteId,
-        vehiculo_id: formData.vehiculoId,
-        descripcion: formData.descripcion,
-        observaciones: formData.observaciones,
-        precio_referencia: formData.precioReferencia,
-        items: formData.items.map((item) => ({
-          tipo_servicio_id: item.tipoServicioId,
-          descripcion: item.descripcion,
-          observaciones: item.observaciones,
-          notas: item.notas,
-        })),
+    if (!selectedCliente || !selectedVehiculo || formData.items.length === 0) {
+      toast({
+        title: "Validación",
+        description: "Completa todos los campos requeridos",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const itemsConTotal = formData.items.map((item) => {
+      let itemTotal = 0
+
+      if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
+        itemTotal = item.productos.reduce((sum, prod) => sum + (prod.precio_unitario * prod.cantidad || 0), 0)
+      } else {
+        itemTotal = Number.parseFloat(item.total) || 0
       }
 
+      return {
+        ...item,
+        total: itemTotal,
+      }
+    })
+
+    const subtotal = itemsConTotal.reduce((sum, item) => sum + (item.total || 0), 0)
+    const descuentoMonto = formData.descuento?.montoDescuento || 0
+    const interesMonto = formData.interes?.montoInteres || 0
+    const totalFinal = subtotal - descuentoMonto + interesMonto
+
+    const payload = {
+      cliente_id: formData.clienteId,
+      vehiculo_id: formData.vehiculoId,
+      sucursal_id: 1,
+      empleados: formData.empleados || [],
+      observaciones: formData.observaciones,
+      items: itemsConTotal,
+      subtotal: subtotal,
+      descuento: descuentoMonto,
+      tipo_interes_sistema: formData.interes?.tipoInteres || null,
+      valor_interes_sistema: formData.interes?.valorInteres || 0,
+      interes_sistema: interesMonto,
+      total_con_interes: totalFinal,
+    }
+
+    try {
       if (servicio) {
-        await updateServicio(servicio.id, submitData)
+        await updateServicio(servicio.id, payload)
         toast({
           title: "¡Servicio actualizado!",
           description: "El servicio ha sido actualizado correctamente.",
         })
       } else {
-        await createServicio(submitData)
+        await createServicio(payload)
         toast({
           title: "¡Servicio creado exitosamente!",
           description: "El servicio ha sido registrado en el sistema.",
@@ -417,106 +500,25 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
 
       case 3:
         return (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="p-2 rounded-lg bg-[#d84315]/10">
-                <FileText className="h-5 w-5 text-[#d84315]" />
-              </div>
-              <div>
-                <h3 className="font-semibold text-[#171717]">Detalles y Confirmación</h3>
-                <p className="text-sm text-muted-foreground">Completa los detalles finales</p>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div>
-                <Label htmlFor="descripcion" className="text-sm">
-                  Descripción del Servicio *
-                </Label>
-                <Textarea
-                  id="descripcion"
-                  placeholder="Describe el servicio a realizar..."
-                  value={formData.descripcion}
-                  onChange={(e) => setFormData((prev) => ({ ...prev, descripcion: e.target.value }))}
-                  className="mt-1"
-                  rows={2}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="observaciones" className="text-sm">
-                    Observaciones
-                  </Label>
-                  <Textarea
-                    id="observaciones"
-                    placeholder="Observaciones adicionales..."
-                    value={formData.observaciones}
-                    onChange={(e) => setFormData((prev) => ({ ...prev, observaciones: e.target.value }))}
-                    className="mt-1"
-                    rows={2}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="precio" className="text-sm">
-                    Precio de Referencia
-                  </Label>
-                  <div className="relative mt-1">
-                    <span className="absolute left-3 top-3 text-muted-foreground">$</span>
-                    <Input
-                      id="precio"
-                      type="number"
-                      placeholder="0"
-                      value={formData.precioReferencia}
-                      onChange={(e) => setFormData((prev) => ({ ...prev, precioReferencia: Number(e.target.value) }))}
-                      className="pl-8"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <Card className="bg-gradient-to-r from-[#d84315]/5 to-[#d84315]/10 border-[#d84315]/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-[#d84315] text-sm">Resumen del Servicio</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <p className="text-xs">
-                        <span className="font-medium text-[#171717]">Cliente:</span> {selectedCliente?.nombre}{" "}
-                        {selectedCliente?.apellido}
-                      </p>
-                      <p className="text-xs">
-                        <span className="font-medium text-[#171717]">DNI:</span>{" "}
-                        {selectedCliente?.dni || "No especificado"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs">
-                        <span className="font-medium text-[#171717]">Vehículo:</span> {selectedVehiculo?.patente}
-                      </p>
-                      <p className="text-xs">
-                        <span className="font-medium text-[#171717]">Modelo:</span> {selectedVehiculo?.marca}{" "}
-                        {selectedVehiculo?.modelo}
-                      </p>
-                    </div>
-                  </div>
-                  <Separator />
-                  <div>
-                    <p className="text-xs">
-                      <span className="font-medium text-[#171717]">Servicios:</span> {formData.items.length} item(s)
-                    </p>
-                    {formData.precioReferencia > 0 && (
-                      <p className="text-xs font-medium text-[#d84315]">
-                        Precio de Referencia: ${formData.precioReferencia.toLocaleString()}
-                      </p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+          <>
+            <ConfirmacionServicio
+              formData={formData}
+              selectedCliente={selectedCliente}
+              selectedVehiculo={selectedVehiculo}
+              selectedSucursal={selectedSucursal}
+              calcularTotal={() => {
+                const subtotal = formData.items.reduce((sum, item) => sum + (item.total || 0), 0)
+                const descuentoMonto = formData.descuento?.montoDescuento || 0
+                const interesMonto = formData.interes?.montoInteres || 0
+                return subtotal - descuentoMonto + interesMonto
+              }}
+              empleadosActivos={empleadosActivos}
+              descuento={formData.descuento}
+              interes={formData.interes}
+              onEditDescuento={handleEditDescuento}
+              onEditInteres={handleEditInteres}
+            />
+          </>
         )
 
       default:
@@ -693,7 +695,7 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
               Cancelar
             </Button>
             <Button
-              onClick={handleAddItem}
+              onClick={() => handleAddItem(currentItem)}
               disabled={!currentItem.tipoServicioId || !currentItem.descripcion.trim()}
               className="bg-[#d84315] hover:bg-[#d84315]/90"
               size="sm"
@@ -737,6 +739,22 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <DescuentoModalServicio
+        open={showDescuentoModal}
+        onClose={() => setShowDescuentoModal(false)}
+        subtotal={formData.items.reduce((sum, item) => sum + (item.total || 0), 0)}
+        onConfirm={handleDescuentoConfirm}
+        hayInteres={formData.interes && formData.interes.montoInteres > 0}
+      />
+
+      <InteresModalServicio
+        open={showInteresModal}
+        onClose={() => setShowInteresModal(false)}
+        subtotal={formData.items.reduce((sum, item) => sum + (item.total || 0), 0)}
+        onConfirm={handleInteresConfirm}
+        hayDescuento={formData.descuento && formData.descuento.montoDescuento > 0}
+      />
     </>
   )
 }

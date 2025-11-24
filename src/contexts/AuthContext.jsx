@@ -89,26 +89,40 @@ export function AuthProvider({ children }) {
   }, [])
 
   const login = async (credentials) => {
+    console.log("[v0] AuthContext.login - iniciando login")
     try {
       dispatch({ type: "LOGIN_START" })
-      const response = await authService.login(credentials)
+      console.log("[v0] AuthContext.login - dispatch LOGIN_START")
 
-      dispatch({ type: "LOGIN_SUCCESS", payload: response.user })
+      const response = await authService.login(credentials)
+      console.log("[v0] AuthContext.login - respuesta de authService recibida")
+
+      let userData = response.user
+      if (!userData.sucursales || userData.sucursales.length === 0) {
+        try {
+          userData = await authService.getCurrentUser()
+        } catch (error) {
+          console.error("Error obteniendo datos completos del usuario:", error)
+        }
+      }
+
+      console.log("[v0] AuthContext.login - dispatch LOGIN_SUCCESS")
+      dispatch({ type: "LOGIN_SUCCESS", payload: userData })
       return response
     } catch (error) {
-      dispatch({ type: "LOGIN_ERROR", payload: error.message })
+      console.log("[v0] AuthContext.login - error capturado:", error.message)
+      const errorMessage = error.message || "Error de conexión"
+      dispatch({ type: "LOGIN_ERROR", payload: errorMessage })
+      // Re-throw the error so it can be caught in the component
       throw error
     }
   }
 
   const changePassword = async (passwordData) => {
     try {
-      dispatch({ type: "SET_LOADING", payload: true })
-      await authService.changePassword(passwordData)
-      dispatch({ type: "SET_LOADING", payload: false })
-      return { success: true, message: "Contraseña cambiada exitosamente" }
+      const response = await authService.changePassword(passwordData)
+      return response
     } catch (error) {
-      dispatch({ type: "SET_LOADING", payload: false })
       throw error
     }
   }

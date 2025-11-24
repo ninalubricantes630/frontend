@@ -12,7 +12,6 @@ import {
   InputAdornment,
   IconButton,
   Alert,
-  Avatar,
   Container,
   Paper,
   CircularProgress,
@@ -55,14 +54,24 @@ function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    e.stopPropagation()
 
-    if (!validateForm()) return
+    console.log("[v0] LoginPage.handleSubmit - formulario enviado")
 
+    if (!validateForm()) {
+      console.log("[v0] LoginPage.handleSubmit - validación falló")
+      return
+    }
+
+    console.log("[v0] LoginPage.handleSubmit - validación exitosa, llamando a login")
     try {
       clearError()
       await login(formData)
-    } catch {
-      // Error manejado por el context
+      console.log("[v0] LoginPage.handleSubmit - login exitoso")
+      // Success - AuthContext will handle the redirect via App.jsx
+    } catch (error) {
+      console.log("[v0] LoginPage.handleSubmit - login falló con error:", error.message)
+      // Error is already handled by AuthContext and displayed via the error state
     }
   }
 
@@ -71,6 +80,12 @@ function LoginPage() {
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }))
     }
+  }
+
+  const getErrorSeverity = () => {
+    if (error?.includes("desactivada")) return "warning"
+    if (error?.includes("no existe")) return "info"
+    return "error"
   }
 
   return (
@@ -101,13 +116,13 @@ function LoginPage() {
             variant="h3"
             sx={{
               fontWeight: "bold",
-              color: "#d84315",
+              color: "#dc2626",
               mb: 0.5,
               textShadow: "0 2px 4px rgba(0,0,0,0.1)",
               fontSize: { xs: "2rem", sm: "3rem" },
             }}
           >
-            Milo
+            Nina
           </Typography>
           <Typography
             variant="h5"
@@ -135,13 +150,12 @@ function LoginPage() {
           <Card sx={{ boxShadow: "none" }}>
             <Box
               sx={{
-                background: "linear-gradient(135deg, #d84315 0%, #bf360c 100%)",
+                background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
                 color: "white",
                 py: { xs: 2, sm: 2 },
                 textAlign: "center",
               }}
             >
-            
               <Typography variant="h5" fontWeight="bold" sx={{ fontSize: { xs: "1.3rem", sm: "1.5rem" } }}>
                 Iniciar Sesión
               </Typography>
@@ -158,9 +172,9 @@ function LoginPage() {
             </Box>
 
             <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
-              <Box component="form" onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit} noValidate>
                 {error && (
-                  <Alert severity="error" onClose={clearError} sx={{ mb: 2, borderRadius: 2 }}>
+                  <Alert severity={getErrorSeverity()} onClose={clearError} sx={{ mb: 2, borderRadius: 2 }}>
                     {error}
                   </Alert>
                 )}
@@ -224,10 +238,10 @@ function LoginPage() {
                     textTransform: "none",
                     fontSize: { xs: "1rem", sm: "1.1rem" },
                     fontWeight: "bold",
-                    background: "linear-gradient(135deg, #d84315 0%, #bf360c 100%)",
-                    boxShadow: "0 4px 15px rgba(216, 67, 21, 0.3)",
+                    background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
+                    boxShadow: "0 4px 15px rgba(220, 38, 38, 0.3)",
                     "&:hover": {
-                      boxShadow: "0 6px 20px rgba(216, 67, 21, 0.4)",
+                      boxShadow: "0 6px 20px rgba(220, 38, 38, 0.4)",
                       transform: "translateY(-1px)",
                     },
                     transition: "all 0.3s ease",
@@ -236,7 +250,7 @@ function LoginPage() {
                 >
                   {loading ? "Iniciando sesión..." : "Iniciar Sesión"}
                 </Button>
-              </Box>
+              </form>
             </CardContent>
           </Card>
         </Paper>
@@ -246,7 +260,7 @@ function LoginPage() {
             Sistema de Gestión v1.0
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: "0.75rem", sm: "0.875rem" } }}>
-            © 2025 Milo Lubricantes
+            © 2025 Nina Lubricantes
           </Typography>
         </Box>
       </Container>

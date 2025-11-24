@@ -8,17 +8,29 @@ export const useEmpleados = () => {
   const [empleadosActivos, setEmpleadosActivos] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [totalPages, setTotalPages] = useState(0)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  })
 
   const loadEmpleados = useCallback(async (params = {}) => {
     try {
       setLoading(true)
       setError(null)
       const response = await empleadosService.getAll(params)
+
+
       setEmpleados(response.data?.empleados || [])
-      setTotalPages(response.data?.pagination?.totalPages || 0)
+      setPagination({
+        page: response.data?.pagination?.page || 1,
+        limit: response.data?.pagination?.limit || 10,
+        total: response.data?.pagination?.total || 0,
+        totalPages: response.data?.pagination?.totalPages || 0,
+      })
     } catch (error) {
-      console.error("Error loading empleados:", error)
+      console.error("[v0] Error loading empleados:", error)
       setError(error.message || "Error al cargar empleados")
     } finally {
       setLoading(false)
@@ -79,6 +91,13 @@ export const useEmpleados = () => {
     }
   }, [])
 
+  const handlePageChange = useCallback(
+    (page, limit) => {
+      loadEmpleados({ page, limit })
+    },
+    [loadEmpleados],
+  )
+
   useEffect(() => {
     loadEmpleados()
     loadEmpleadosActivos()
@@ -89,8 +108,9 @@ export const useEmpleados = () => {
     empleadosActivos,
     loading,
     error,
-    totalPages,
+    pagination,
     loadEmpleados,
+    handlePageChange,
     loadEmpleadosActivos,
     loadEmpleadosBySucursal,
     createEmpleado,

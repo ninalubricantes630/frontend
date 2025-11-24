@@ -5,18 +5,19 @@ import * as yup from "yup"
 import { useState, useEffect } from "react"
 import {
   Dialog,
+  DialogTitle,
   DialogContent,
-  Typography,
+  DialogActions,
   TextField,
   Button,
   Box,
+  Typography,
   Grid,
-  Avatar,
   IconButton,
   Autocomplete,
   CircularProgress,
 } from "@mui/material"
-import { Close, DirectionsCar, Person } from "@mui/icons-material"
+import { Close as CloseIcon, DirectionsCar, Person as PersonIcon, Build as BuildIcon } from "@mui/icons-material"
 import { NumericFormat } from "react-number-format"
 import { clientesService } from "../../services/clientesService"
 import logger from "../../utils/logger"
@@ -51,7 +52,6 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
     formState: { errors },
     reset,
     setValue,
-    watch,
     control,
   } = useForm({
     resolver: yupResolver(vehiculoSchema),
@@ -75,10 +75,19 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
         logger.debug("Respuesta del servicio de clientes", result)
 
         let clientesData = []
+
+        // Maneja diferentes estructuras de respuesta
         if (Array.isArray(result)) {
           clientesData = result
-        } else if (result && result.data && Array.isArray(result.data)) {
-          clientesData = result.data
+        } else if (result && result.data) {
+          // Si result.data es un array, úsalo directamente
+          if (Array.isArray(result.data)) {
+            clientesData = result.data
+          }
+          // Si result.data tiene una propiedad data (estructura anidada), úsala
+          else if (result.data.data && Array.isArray(result.data.data)) {
+            clientesData = result.data.data
+          }
         }
 
         const clientesActivos = clientesData.filter((c) => c.activo)
@@ -158,328 +167,409 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
     <Dialog
       open={open}
       onClose={handleClose}
-      maxWidth="md"
+      maxWidth="lg"
       fullWidth
       PaperProps={{
         sx: {
           borderRadius: 2,
-          height: "90vh",
-          display: "flex",
-          flexDirection: "column",
+          height: "auto",
+          maxHeight: "90vh",
         },
       }}
     >
-      <Box
+      <DialogTitle
         sx={{
-          bgcolor: "#d84315",
-          color: "white",
-          p: 3,
+          backgroundColor: "#fff",
+          borderBottom: "1px solid #e5e7eb",
+          p: 2.5,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          flexShrink: 0,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar sx={{ bgcolor: "rgba(255,255,255,0.2)" }}>
-            <DirectionsCar />
-          </Avatar>
-          <Box>
-            <Typography variant="h5" component="h2" sx={{ fontWeight: "bold", mb: 0.5 }}>
-              {isEditing ? "Editar Vehículo" : "Nuevo Vehículo"}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.9)" }}>
-              {isEditing
-                ? "Modifica la información del vehículo existente"
-                : "Completa los datos para registrar un nuevo vehículo"}
-            </Typography>
-          </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 8,
+              height: 32,
+              backgroundColor: "#dc2626",
+              borderRadius: 1,
+            }}
+          />
+          <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: "#171717" }}>
+            {isEditing ? "Editar Vehículo" : "Nuevo Vehículo"}
+          </Typography>
         </Box>
         <IconButton
           onClick={handleClose}
+          size="small"
           sx={{
-            color: "white",
-            bgcolor: "rgba(255,255,255,0.1)",
-            "&:hover": { bgcolor: "rgba(255,255,255,0.2)" },
+            color: "#6b7280",
+            "&:hover": {
+              backgroundColor: "#f3f4f6",
+            },
           }}
         >
-          <Close />
+          <CloseIcon fontSize="small" />
         </IconButton>
-      </Box>
+      </DialogTitle>
 
-      <DialogContent sx={{ flex: 1, overflow: "auto", p: 0 }}>
-        <Box
-          component="form"
-          onSubmit={handleSubmit(handleFormSubmit)}
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            height: "100%",
-          }}
-        >
-          <Box
-            sx={{
-              flex: 1,
-              overflowY: "auto",
-              p: 3,
-              pb: 0,
-            }}
-          >
-            <Box
-              sx={{
-                bgcolor: "grey.50",
-                border: "1px solid",
-                borderColor: "grey.200",
-                borderRadius: 2,
-                p: 3,
-                mb: 3,
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                <Avatar sx={{ bgcolor: "#d84315" }}>
-                  <Person />
-                </Avatar>
-                <Typography variant="h6" sx={{ fontWeight: "semibold", color: "grey.900" }}>
-                  Cliente
-                </Typography>
-              </Box>
-
-              <Autocomplete
-                options={clientes}
-                getOptionLabel={(option) => `${option.nombre} ${option.apellido} - ${option.dni}`}
-                value={selectedCliente}
-                onChange={handleClienteChange}
-                loading={loadingClientes}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Cliente *"
-                    placeholder="Buscar cliente..."
-                    error={!!errors.clienteId}
-                    helperText={errors.clienteId?.message}
-                    InputProps={{
-                      ...params.InputProps,
-                      endAdornment: (
-                        <>
-                          {loadingClientes ? <CircularProgress color="inherit" size={20} /> : null}
-                          {params.InputProps.endAdornment}
-                        </>
-                      ),
-                    }}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        "&:hover fieldset": { borderColor: "#d84315" },
-                        "&.Mui-focused fieldset": { borderColor: "#d84315" },
-                      },
-                      "& .MuiInputLabel-root.Mui-focused": { color: "#d84315" },
-                    }}
-                  />
-                )}
-                renderOption={(props, option) => (
-                  <Box component="li" {...props}>
-                    <Box>
-                      <Typography variant="body1" sx={{ fontWeight: "medium" }}>
-                        {option.nombre} {option.apellido}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        DNI: {option.dni} | Tel: {option.telefono}
-                      </Typography>
-                    </Box>
-                  </Box>
-                )}
-                noOptionsText="No se encontraron clientes"
-              />
-            </Box>
-
-            <Box
-              sx={{
-                bgcolor: "grey.50",
-                border: "1px solid",
-                borderColor: "grey.200",
-                borderRadius: 2,
-                p: 3,
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                <Avatar sx={{ bgcolor: "#1976d2" }}>
-                  <DirectionsCar />
-                </Avatar>
-                <Typography variant="h6" sx={{ fontWeight: "semibold", color: "grey.900" }}>
-                  Datos del Vehículo
-                </Typography>
-              </Box>
-
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    {...register("patente")}
-                    label="Patente *"
-                    placeholder="ABC123"
-                    fullWidth
-                    error={!!errors.patente}
-                    helperText={errors.patente?.message}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        "&:hover fieldset": { borderColor: "#d84315" },
-                        "&.Mui-focused fieldset": { borderColor: "#d84315" },
-                      },
-                      "& .MuiInputLabel-root.Mui-focused": { color: "#d84315" },
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    {...register("marca")}
-                    label="Marca *"
-                    placeholder="Toyota"
-                    fullWidth
-                    error={!!errors.marca}
-                    helperText={errors.marca?.message}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        "&:hover fieldset": { borderColor: "#d84315" },
-                        "&.Mui-focused fieldset": { borderColor: "#d84315" },
-                      },
-                      "& .MuiInputLabel-root.Mui-focused": { color: "#d84315" },
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    {...register("modelo")}
-                    label="Modelo *"
-                    placeholder="Corolla"
-                    fullWidth
-                    error={!!errors.modelo}
-                    helperText={errors.modelo?.message}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        "&:hover fieldset": { borderColor: "#d84315" },
-                        "&.Mui-focused fieldset": { borderColor: "#d84315" },
-                      },
-                      "& .MuiInputLabel-root.Mui-focused": { color: "#d84315" },
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <TextField
-                    {...register("año")}
-                    label="Año *"
-                    type="number"
-                    placeholder="2020"
-                    fullWidth
-                    error={!!errors.año}
-                    helperText={errors.año?.message}
-                    sx={{
-                      "& .MuiOutlinedInput-root": {
-                        "&:hover fieldset": { borderColor: "#d84315" },
-                        "&.Mui-focused fieldset": { borderColor: "#d84315" },
-                      },
-                      "& .MuiInputLabel-root.Mui-focused": { color: "#d84315" },
-                    }}
-                  />
-                </Grid>
-
-                <Grid item xs={12} md={6}>
-                  <Controller
-                    name="kilometraje"
-                    control={control}
-                    render={({ field: { onChange, value, ...field } }) => (
-                      <NumericFormat
-                        {...field}
-                        value={value}
-                        onValueChange={(values) => {
-                          onChange(values.floatValue || 0)
+      <DialogContent sx={{ pt: 4, px: 3, pb: 3, backgroundColor: "#fafafa" }}>
+        <Box component="form" mt={2} onSubmit={handleSubmit(handleFormSubmit)}>
+          <Grid container spacing={3}>
+            {/* Columna Izquierda */}
+            <Grid item xs={12} md={6}>
+              {/* Cliente */}
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <PersonIcon sx={{ fontSize: 18, color: "#dc2626" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Cliente
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <Autocomplete
+                    options={clientes}
+                    getOptionLabel={(option) => `${option.nombre} ${option.apellido} - ${option.dni}`}
+                    value={selectedCliente}
+                    onChange={handleClienteChange}
+                    loading={loadingClientes}
+                    size="small"
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Cliente *"
+                        placeholder="Buscar cliente..."
+                        error={!!errors.clienteId}
+                        helperText={errors.clienteId?.message}
+                        InputProps={{
+                          ...params.InputProps,
+                          endAdornment: (
+                            <>
+                              {loadingClientes ? <CircularProgress color="inherit" size={20} /> : null}
+                              {params.InputProps.endAdornment}
+                            </>
+                          ),
                         }}
-                        customInput={TextField}
-                        thousandSeparator="."
-                        decimalSeparator=","
-                        suffix=" km"
-                        allowNegative={false}
-                        label="Kilometraje *"
-                        placeholder="50.000 km"
-                        fullWidth
-                        error={!!errors.kilometraje}
-                        helperText={errors.kilometraje?.message}
                         sx={{
                           "& .MuiOutlinedInput-root": {
-                            "&:hover fieldset": { borderColor: "#d84315" },
-                            "&.Mui-focused fieldset": { borderColor: "#d84315" },
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#dc2626",
+                            },
                           },
-                          "& .MuiInputLabel-root.Mui-focused": { color: "#d84315" },
+                          "& .MuiInputLabel-root.Mui-focused": {
+                            color: "#dc2626",
+                          },
                         }}
                       />
                     )}
+                    renderOption={(props, option) => (
+                      <Box component="li" {...props}>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: "medium" }}>
+                            {option.nombre} {option.apellido}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            DNI: {option.dni} | Tel: {option.telefono}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    )}
+                    noOptionsText="No se encontraron clientes"
                   />
-                </Grid>
+                </Box>
+              </Box>
 
-                <Grid item xs={12}>
+              {/* Datos del Vehículo - Parte 1 */}
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <DirectionsCar sx={{ fontSize: 18, color: "#1976d2" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Identificación
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        {...register("patente")}
+                        label="Patente *"
+                        placeholder="ABC123"
+                        fullWidth
+                        size="small"
+                        error={!!errors.patente}
+                        helperText={errors.patente?.message}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#dc2626",
+                            },
+                          },
+                          "& .MuiInputLabel-root.Mui-focused": {
+                            color: "#dc2626",
+                          },
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <TextField
+                        {...register("marca")}
+                        label="Marca *"
+                        placeholder="Toyota"
+                        fullWidth
+                        size="small"
+                        error={!!errors.marca}
+                        helperText={errors.marca?.message}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#dc2626",
+                            },
+                          },
+                          "& .MuiInputLabel-root.Mui-focused": {
+                            color: "#dc2626",
+                          },
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <TextField
+                        {...register("modelo")}
+                        label="Modelo *"
+                        placeholder="Corolla"
+                        fullWidth
+                        size="small"
+                        error={!!errors.modelo}
+                        helperText={errors.modelo?.message}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#dc2626",
+                            },
+                          },
+                          "& .MuiInputLabel-root.Mui-focused": {
+                            color: "#dc2626",
+                          },
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Box>
+            </Grid>
+
+            {/* Columna Derecha */}
+            <Grid item xs={12} md={6}>
+              {/* Datos Técnicos */}
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <BuildIcon sx={{ fontSize: 18, color: "#4caf50" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Datos Técnicos
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        {...register("año")}
+                        label="Año *"
+                        type="number"
+                        placeholder="2020"
+                        fullWidth
+                        size="small"
+                        error={!!errors.año}
+                        helperText={errors.año?.message}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#dc2626",
+                            },
+                          },
+                          "& .MuiInputLabel-root.Mui-focused": {
+                            color: "#dc2626",
+                          },
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <Controller
+                        name="kilometraje"
+                        control={control}
+                        render={({ field: { onChange, value, ...field } }) => (
+                          <NumericFormat
+                            {...field}
+                            value={value}
+                            onValueChange={(values) => {
+                              onChange(values.floatValue || 0)
+                            }}
+                            customInput={TextField}
+                            thousandSeparator="."
+                            decimalSeparator=","
+                            suffix=" km"
+                            allowNegative={false}
+                            label="Kilometraje *"
+                            placeholder="50.000 km"
+                            fullWidth
+                            size="small"
+                            error={!!errors.kilometraje}
+                            helperText={errors.kilometraje?.message}
+                            sx={{
+                              "& .MuiOutlinedInput-root": {
+                                borderRadius: 1.5,
+                                backgroundColor: "#fafafa",
+                                "&.Mui-focused fieldset": {
+                                  borderColor: "#dc2626",
+                                },
+                              },
+                              "& .MuiInputLabel-root.Mui-focused": {
+                                color: "#dc2626",
+                              },
+                            }}
+                          />
+                        )}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Box>
+
+              {/* Observaciones */}
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Observaciones
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
                   <TextField
                     {...register("observaciones")}
                     label="Observaciones"
                     placeholder="Observaciones adicionales sobre el vehículo..."
                     multiline
-                    rows={3}
+                    rows={6}
                     fullWidth
+                    size="small"
                     error={!!errors.observaciones}
                     helperText={errors.observaciones?.message}
                     sx={{
                       "& .MuiOutlinedInput-root": {
-                        "&:hover fieldset": { borderColor: "#d84315" },
-                        "&.Mui-focused fieldset": { borderColor: "#d84315" },
+                        borderRadius: 1.5,
+                        backgroundColor: "#fafafa",
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#dc2626",
+                        },
                       },
-                      "& .MuiInputLabel-root.Mui-focused": { color: "#d84315" },
+                      "& .MuiInputLabel-root.Mui-focused": {
+                        color: "#dc2626",
+                      },
                     }}
                   />
-                </Grid>
-              </Grid>
-            </Box>
-          </Box>
-
-          <Box
-            sx={{
-              borderTop: "1px solid",
-              borderColor: "grey.200",
-              bgcolor: "grey.50",
-              p: 3,
-              display: "flex",
-              justifyContent: "flex-end",
-              gap: 2,
-              flexShrink: 0,
-            }}
-          >
-            <Button
-              onClick={handleClose}
-              variant="outlined"
-              sx={{
-                borderColor: "grey.300",
-                color: "grey.700",
-                "&:hover": {
-                  borderColor: "grey.400",
-                  bgcolor: "grey.50",
-                },
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={loading}
-              sx={{
-                bgcolor: "#d84315",
-                "&:hover": { bgcolor: "#bf360c" },
-                "&:disabled": { opacity: 0.5 },
-              }}
-            >
-              {loading ? "Guardando..." : isEditing ? "Actualizar Vehículo" : "Crear Vehículo"}
-            </Button>
-          </Box>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
         </Box>
       </DialogContent>
+
+      <DialogActions
+        sx={{
+          p: 2.5,
+          backgroundColor: "#fff",
+          borderTop: "1px solid #e5e7eb",
+          gap: 1.5,
+        }}
+      >
+        <Button
+          onClick={handleClose}
+          variant="outlined"
+          size="medium"
+          sx={{
+            borderColor: "#d1d5db",
+            color: "#6b7280",
+            borderRadius: 1.5,
+            px: 3,
+            py: 1,
+            fontWeight: 500,
+            textTransform: "none",
+            fontSize: "0.875rem",
+            "&:hover": {
+              backgroundColor: "#f9fafb",
+              borderColor: "#9ca3af",
+            },
+          }}
+        >
+          Cancelar
+        </Button>
+        <Button
+          type="submit"
+          onClick={handleSubmit(handleFormSubmit)}
+          variant="contained"
+          size="medium"
+          disabled={loading}
+          sx={{
+            backgroundColor: "#dc2626",
+            borderRadius: 1.5,
+            px: 3,
+            py: 1,
+            fontWeight: 500,
+            textTransform: "none",
+            fontSize: "0.875rem",
+            boxShadow: "0 1px 3px rgba(220, 38, 38, 0.3)",
+            "&:hover": {
+              backgroundColor: "#b91c1c",
+              boxShadow: "0 2px 6px rgba(220, 38, 38, 0.4)",
+            },
+            "&:disabled": {
+              opacity: 0.6,
+              backgroundColor: "#dc2626",
+            },
+          }}
+        >
+          {loading ? "Guardando..." : isEditing ? "Actualizar" : "Crear Vehículo"}
+        </Button>
+      </DialogActions>
     </Dialog>
   )
 }

@@ -35,7 +35,17 @@ export class StandardizedErrorHandler {
   // Get user-friendly error messages
   getUserFriendlyMessage(error, operation = "operación") {
     const status = error.response?.status
-    const serverMessage = error.response?.data?.error?.message || error.response?.data?.message
+    const errorData = error.response?.data?.error
+
+    if (
+      errorData?.validationErrors &&
+      Array.isArray(errorData.validationErrors) &&
+      errorData.validationErrors.length > 0
+    ) {
+      return errorData.validationErrors[0]
+    }
+
+    const serverMessage = errorData?.message || error.response?.data?.message
 
     switch (status) {
       case 400:

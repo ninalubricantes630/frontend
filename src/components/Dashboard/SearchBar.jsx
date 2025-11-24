@@ -1,7 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { Box, Typography, TextField, Button, ToggleButton, ToggleButtonGroup, InputAdornment, Grid } from "@mui/material"
+import {
+  Box,
+  Typography,
+  TextField,
+  Button,
+  ToggleButton,
+  ToggleButtonGroup,
+  InputAdornment,
+  Grid,
+} from "@mui/material"
 import { Search, Car, User } from "lucide-react"
 
 const SearchBar = ({ onSearch, searchMode, onToggleMode }) => {
@@ -19,19 +28,20 @@ const SearchBar = ({ onSearch, searchMode, onToggleMode }) => {
   }
 
   return (
-    <Box sx={{ maxWidth: "800px", mx: "auto" }}>
+    <Box sx={{ maxWidth: "900px", mx: "auto" }}>
       <Typography
-        variant="h4"
+        variant="h5"
         sx={{
           fontWeight: "bold",
           color: "#171717",
-          mb: 1,
-          textAlign: "center"
+          mb: 2,
+          textAlign: "center",
         }}
       >
         Buscar por
       </Typography>
-      <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 2.5 }}>
         <ToggleButtonGroup
           value={searchMode}
           exclusive
@@ -40,17 +50,22 @@ const SearchBar = ({ onSearch, searchMode, onToggleMode }) => {
             "& .MuiToggleButton-root": {
               borderRadius: 2,
               px: 3,
-              py: 1,
-              border: "1px solid #e0e0e0",
+              py: 0.75,
+              border: "1px solid",
+              borderColor: "grey.300",
+              textTransform: "none",
+              fontWeight: "medium",
+              fontSize: "0.875rem",
               "&.Mui-selected": {
-                backgroundColor: "#d84315",
+                backgroundColor: "#dc2626",
                 color: "white",
+                borderColor: "#dc2626",
                 "&:hover": {
-                  backgroundColor: "#bf360c",
+                  backgroundColor: "#b91c1c",
                 },
               },
               "&:hover": {
-                backgroundColor: "#f5f5f5",
+                backgroundColor: "grey.50",
               },
             },
           }}
@@ -63,15 +78,15 @@ const SearchBar = ({ onSearch, searchMode, onToggleMode }) => {
             <User style={{ marginRight: "8px", fontSize: "1rem" }} />
             Por Cliente
           </ToggleButton>
-
         </ToggleButtonGroup>
       </Box>
 
       <Box component="form" onSubmit={handleSearch}>
-        <Grid container spacing={2} alignItems="center">
+        <Grid container spacing={1.5} alignItems="center">
           <Grid item xs={12} sm={9}>
             <TextField
               fullWidth
+              size="small"
               variant="outlined"
               placeholder={searchMode === "cliente" ? "Buscar por nombre..." : "Buscar por patente..."}
               value={searchTerm}
@@ -79,18 +94,19 @@ const SearchBar = ({ onSearch, searchMode, onToggleMode }) => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <Search style={{ color: "#666", fontSize: "1.2rem" }} />
+                    <Search style={{ color: "#666", fontSize: "1.1rem" }} />
                   </InputAdornment>
                 ),
               }}
               sx={{
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 2,
+                  bgcolor: "grey.50",
                   "&:hover fieldset": {
-                    borderColor: "#d84315",
+                    borderColor: "#dc2626",
                   },
                   "&.Mui-focused fieldset": {
-                    borderColor: "#d84315",
+                    borderColor: "#dc2626",
                   },
                 },
               }}
@@ -103,13 +119,14 @@ const SearchBar = ({ onSearch, searchMode, onToggleMode }) => {
               fullWidth
               startIcon={<Search />}
               sx={{
-                backgroundColor: "#d84315",
+                backgroundColor: "#dc2626",
                 color: "white",
-                py: 1.5,
+                py: 0.75,
                 borderRadius: 2,
                 fontWeight: "medium",
+                textTransform: "none",
                 "&:hover": {
-                  backgroundColor: "#bf360c",
+                  backgroundColor: "#b91c1c",
                 },
               }}
             >

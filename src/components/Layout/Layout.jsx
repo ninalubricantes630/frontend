@@ -40,7 +40,7 @@ function Layout() {
             flexGrow: 1,
             overflow: "auto",
             bgcolor: "#f8f9fa",
-            p: { xs: 2, sm: 3, lg: 4 },
+            p: { xs: 2, sm: 3, lg: 2 },
           }}
         >
           <Box sx={{ maxWidth: "1400px", mx: "auto" }}>

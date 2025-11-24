@@ -1,18 +1,20 @@
 import api from "./api"
 
 export const vehiculosService = {
-  // Obtener todos los vehículos con paginación y filtros
-  getAll: async (page = 1, limit = 10, search = "", searchCriteria = "patente") => {
-    const params = new URLSearchParams({
+  // Actualizar getAll para usar params objeto como en otros servicios
+  getAll: async (params = {}) => {
+    const { page = 1, limit = 10, search = "", searchCriteria = "patente" } = params
+
+    const queryParams = new URLSearchParams({
       page: page.toString(),
       limit: limit.toString(),
     })
 
-    if (search) params.append("search", search)
-    if (searchCriteria) params.append("searchCriteria", searchCriteria)
+    if (search) queryParams.append("search", search)
+    if (searchCriteria) queryParams.append("searchCriteria", searchCriteria)
 
-    const response = await api.get(`/vehiculos?${params}`)
-    return response.data
+    const response = await api.get(`/vehiculos?${queryParams}`)
+    return response
   },
 
   // Obtener vehículo por ID

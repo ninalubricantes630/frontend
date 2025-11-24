@@ -1,9 +1,34 @@
 "use client"
-import { useForm } from "react-hook-form"
+import { useForm, Controller } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
-import { useEffect } from "react"
-import { X, User, Mail, Shield } from "lucide-react"
+import { useEffect, useState } from "react"
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
+  Button,
+  Box,
+  Typography,
+  Grid,
+  IconButton,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Chip,
+  FormHelperText,
+} from "@mui/material"
+import {
+  Close as CloseIcon,
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Business as BusinessIcon,
+  Shield as ShieldIcon,
+} from "@mui/icons-material"
+import { useSucursales } from "../../hooks/useSucursales"
 
 const usuarioSchema = yup.object({
   nombre: yup
@@ -16,19 +41,36 @@ const usuarioSchema = yup.object({
     is: false,
     then: (schema) =>
       schema.required("La contraseña es obligatoria").min(6, "La contraseña debe tener al menos 6 caracteres"),
-    otherwise: (schema) => schema.min(6, "La contraseña debe tener al menos 6 caracteres"),
+    otherwise: (schema) =>
+      schema
+        .nullable()
+        .transform((value) => value || null)
+        .typeError("La contraseña debe tener al menos 6 caracteres")
+        .test("min-length", "La contraseña debe tener al menos 6 caracteres", (value) => {
+          // Allow null/empty values when editing
+          if (value === null || value === "") return true
+          return value.length >= 6
+        }),
   }),
   rol: yup.string().required("El rol es obligatorio").oneOf(["ADMIN", "EMPLEADO"], "Rol inválido"),
+  sucursales: yup
+    .array()
+    .min(1, "Debe seleccionar al menos una sucursal")
+    .required("Debe seleccionar al menos una sucursal"),
 })
 
 const UsuarioForm = ({ open, onClose, onSubmit, usuario = null, loading = false }) => {
   const isEditing = Boolean(usuario)
+  const { sucursalesActivas, loadSucursalesActivas } = useSucursales()
+  const [selectedSucursales, setSelectedSucursales] = useState([])
 
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
     reset,
+    setValue,
   } = useForm({
     resolver: yupResolver(usuarioSchema),
     context: { isEditing },
@@ -37,42 +79,73 @@ const UsuarioForm = ({ open, onClose, onSubmit, usuario = null, loading = false 
       email: usuario?.email || "",
       password: "",
       rol: usuario?.rol || "EMPLEADO",
+      sucursales: usuario?.sucursales || [],
     },
   })
 
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden"
-    } else {
-      document.body.style.overflow = "unset"
-    }
-    return () => {
-      document.body.style.overflow = "unset"
-    }
-  }, [open])
+    loadSucursalesActivas()
+  }, [])
 
   useEffect(() => {
     if (usuario) {
+      if (usuario.sucursales) {
+        const sucursalesIds = usuario.sucursales.map((s) => s.id)
+        setSelectedSucursales(sucursalesIds)
+        setValue(
+          "sucursales",
+          usuario.sucursales.map((s) => ({
+            sucursal_id: s.id,
+            es_principal: s.es_principal,
+          })),
+        )
+      } else {
+        setSelectedSucursales([])
+        setValue("sucursales", [])
+      }
+
       reset({
-        nombre: usuario.nombre || "",
-        email: usuario.email || "",
+        nombre: usuario?.nombre || "",
+        email: usuario?.email || "",
         password: "",
-        rol: usuario.rol || "EMPLEADO",
+        rol: usuario?.rol || "EMPLEADO",
+        sucursales:
+          usuario?.sucursales?.map((s) => ({
+            sucursal_id: s.id,
+            es_principal: s.es_principal,
+          })) || [],
       })
     } else {
+      setSelectedSucursales([])
       reset({
         nombre: "",
         email: "",
         password: "",
         rol: "EMPLEADO",
+        sucursales: [],
       })
     }
-  }, [usuario, reset])
+  }, [usuario, reset, setValue])
+
+  const handleSucursalesChange = (event) => {
+    const value = event.target.value
+    setSelectedSucursales(value)
+
+    const sucursalesData = value.map((id, index) => ({
+      sucursal_id: id,
+      es_principal: index === 0,
+    }))
+
+    setValue("sucursales", sucursalesData, { shouldValidate: true })
+  }
 
   const handleFormSubmit = (data) => {
-    // Si estamos editando y no se proporcionó contraseña, no la incluimos
     if (isEditing && !data.password) {
       delete data.password
+    }
+
+    if (data.sucursales.length > 0 && !data.sucursales.some((s) => s.es_principal)) {
+      data.sucursales[0].es_principal = true
     }
 
     onSubmit(data)
@@ -80,156 +153,361 @@ const UsuarioForm = ({ open, onClose, onSubmit, usuario = null, loading = false 
 
   const handleClose = () => {
     reset()
+    setSelectedSucursales([])
     onClose()
   }
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Escape") {
-      handleClose()
-    }
-  }
-
-  if (!open) return null
-
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm"
-      onClick={handleClose}
-      onKeyDown={handleKeyDown}
-      tabIndex={-1}
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth="lg"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: 2,
+          height: "auto",
+          maxHeight: "90vh",
+        },
+      }}
     >
-      <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
-        onClick={(e) => e.stopPropagation()}
+      <DialogTitle
+        sx={{
+          backgroundColor: "#fff",
+          borderBottom: "1px solid #e5e7eb",
+          p: 2.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
       >
-        <div className="bg-[#d84315] text-white p-6 rounded-t-xl flex items-center justify-between flex-shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="p-2 rounded-lg bg-white bg-opacity-20 flex items-center justify-center">
-              <User className="w-6 h-6" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-white mb-1">{isEditing ? "Editar Usuario" : "Nuevo Usuario"}</h2>
-              <p className="text-sm opacity-90">
-                {isEditing
-                  ? "Modifica la información del usuario existente"
-                  : "Completa los datos para registrar un nuevo usuario"}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleClose}
-            className="p-2 rounded-lg bg-white bg-opacity-10 hover:bg-opacity-20 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
+            sx={{
+              width: 8,
+              height: 32,
+              backgroundColor: "#dc2626",
+              borderRadius: 1,
+            }}
+          />
+          <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: "#171717" }}>
+            {isEditing ? "Editar Usuario" : "Nuevo Usuario"}
+          </Typography>
+        </Box>
+        <IconButton
+          onClick={handleClose}
+          size="small"
+          sx={{
+            color: "#6b7280",
+            "&:hover": {
+              backgroundColor: "#f3f4f6",
+            },
+          }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </DialogTitle>
 
-        <form onSubmit={handleSubmit(handleFormSubmit)} className="flex flex-col flex-1 min-h-0">
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-[#d84315] scrollbar-track-gray-100">
-            <div className="p-6 border border-gray-200 rounded-lg bg-gray-50">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 rounded-lg bg-orange-100 text-[#d84315]">
-                  <User className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">Información Personal</h3>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Nombre *</label>
-                <input
-                  {...register("nombre")}
-                  type="text"
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#d84315] focus:border-[#d84315] transition-colors ${
-                    errors.nombre ? "border-red-500" : "border-gray-300"
-                  }`}
-                  placeholder="Ingresa el nombre completo"
-                />
-                {errors.nombre && <p className="mt-1 text-sm text-red-600">{errors.nombre.message}</p>}
-              </div>
-            </div>
-
-            <div className="p-6 border border-gray-200 rounded-lg bg-gray-50">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 rounded-lg bg-blue-100 text-blue-600">
-                  <Mail className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">Credenciales de Acceso</h3>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Email *</label>
-                  <input
-                    {...register("email")}
-                    type="email"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#d84315] focus:border-[#d84315] transition-colors ${
-                      errors.email ? "border-red-500" : "border-gray-300"
-                    }`}
-                    placeholder="usuario@ejemplo.com"
-                  />
-                  {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Contraseña {isEditing ? "(dejar vacío para mantener actual)" : "*"}
-                  </label>
-                  <input
-                    {...register("password")}
-                    type="password"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#d84315] focus:border-[#d84315] transition-colors ${
-                      errors.password ? "border-red-500" : "border-gray-300"
-                    }`}
-                    placeholder={isEditing ? "Nueva contraseña (opcional)" : "Contraseña"}
-                  />
-                  {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
-                </div>
-              </div>
-            </div>
-
-            <div className="p-6 border border-gray-200 rounded-lg bg-gray-50">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-2 rounded-lg bg-purple-100 text-purple-600">
-                  <Shield className="w-5 h-5" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">Permisos</h3>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Rol *</label>
-                <select
-                  {...register("rol")}
-                  className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-[#d84315] focus:border-[#d84315] transition-colors ${
-                    errors.rol ? "border-red-500" : "border-gray-300"
-                  }`}
+      <DialogContent sx={{ pt: 4, px: 3, pb: 3, backgroundColor: "#fafafa" }}>
+        <Box component="form" mt={2} onSubmit={handleSubmit(handleFormSubmit)}>
+          <Grid container spacing={3}>
+            {/* Columna Izquierda */}
+            <Grid item xs={12} md={6}>
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <PersonIcon sx={{ fontSize: 18, color: "#dc2626" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Información Personal
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
                 >
-                  <option value="EMPLEADO">Empleado</option>
-                  <option value="ADMIN">Administrador</option>
-                </select>
-                {errors.rol && <p className="mt-1 text-sm text-red-600">{errors.rol.message}</p>}
-              </div>
-            </div>
-          </div>
+                  <TextField
+                    {...register("nombre")}
+                    label="Nombre *"
+                    fullWidth
+                    size="small"
+                    error={!!errors.nombre}
+                    helperText={errors.nombre?.message}
+                    placeholder="Ingresa el nombre completo"
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 1.5,
+                        backgroundColor: "#fafafa",
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#dc2626",
+                        },
+                      },
+                      "& .MuiInputLabel-root.Mui-focused": {
+                        color: "#dc2626",
+                      },
+                    }}
+                  />
+                </Box>
+              </Box>
 
-          <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 flex-shrink-0">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors font-medium"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-6 py-3 bg-[#d84315] text-white rounded-lg hover:bg-[#c13711] disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium shadow-lg"
-            >
-              {loading ? "Guardando..." : isEditing ? "Actualizar Usuario" : "Crear Usuario"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <EmailIcon sx={{ fontSize: 18, color: "#1976d2" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Credenciales de Acceso
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                      <TextField
+                        {...register("email")}
+                        label="Email *"
+                        type="email"
+                        fullWidth
+                        size="small"
+                        error={!!errors.email}
+                        helperText={errors.email?.message}
+                        placeholder="usuario@ejemplo.com"
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#dc2626",
+                            },
+                          },
+                          "& .MuiInputLabel-root.Mui-focused": {
+                            color: "#dc2626",
+                          },
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <TextField
+                        {...register("password")}
+                        label={isEditing ? "Contraseña (dejar vacío para mantener)" : "Contraseña *"}
+                        type="password"
+                        fullWidth
+                        size="small"
+                        error={!!errors.password}
+                        helperText={errors.password?.message}
+                        placeholder={isEditing ? "Nueva contraseña (opcional)" : "Contraseña"}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#dc2626",
+                            },
+                          },
+                          "& .MuiInputLabel-root.Mui-focused": {
+                            color: "#dc2626",
+                          },
+                        }}
+                      />
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Box>
+
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <ShieldIcon sx={{ fontSize: 18, color: "#9c27b0" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Permisos
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <Controller
+                    name="rol"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControl fullWidth size="small" error={!!errors.rol}>
+                        <InputLabel>Rol *</InputLabel>
+                        <Select
+                          {...field}
+                          label="Rol *"
+                          sx={{
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
+                            "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                              borderColor: "#dc2626",
+                            },
+                          }}
+                        >
+                          <MenuItem value="EMPLEADO">Empleado</MenuItem>
+                          <MenuItem value="ADMIN">Administrador</MenuItem>
+                        </Select>
+                        {errors.rol && <FormHelperText>{errors.rol.message}</FormHelperText>}
+                      </FormControl>
+                    )}
+                  />
+                </Box>
+              </Box>
+            </Grid>
+
+            {/* Columna Derecha */}
+            <Grid item xs={12} md={6}>
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <BusinessIcon sx={{ fontSize: 18, color: "#4caf50" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Sucursales Asignadas
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <FormControl fullWidth size="small" error={!!errors.sucursales}>
+                    <InputLabel>Sucursales *</InputLabel>
+                    <Select
+                      multiple
+                      value={selectedSucursales}
+                      onChange={handleSucursalesChange}
+                      label="Sucursales *"
+                      renderValue={(selected) => (
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                          {selected.map((value) => {
+                            const sucursal = sucursalesActivas.find((s) => s.id === value)
+                            return (
+                              <Chip
+                                key={value}
+                                label={sucursal?.nombre || value}
+                                size="small"
+                                sx={{
+                                  backgroundColor: "#dc2626",
+                                  color: "#fff",
+                                  "& .MuiChip-deleteIcon": {
+                                    color: "#fff",
+                                  },
+                                }}
+                              />
+                            )
+                          })}
+                        </Box>
+                      )}
+                      sx={{
+                        borderRadius: 1.5,
+                        backgroundColor: "#fafafa",
+                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#dc2626",
+                        },
+                      }}
+                    >
+                      {sucursalesActivas.map((sucursal) => (
+                        <MenuItem key={sucursal.id} value={sucursal.id}>
+                          <Typography variant="body2">{sucursal.nombre}</Typography>
+                          {sucursal.ubicacion && (
+                            <Typography variant="caption" sx={{ color: "#6b7280", ml: 1 }}>
+                              {sucursal.ubicacion}
+                            </Typography>
+                          )}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {errors.sucursales && <FormHelperText>{errors.sucursales.message}</FormHelperText>}
+                  </FormControl>
+
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 1.5,
+                      backgroundColor: "#f9fafb",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="body2" sx={{ color: "#6b7280", fontSize: "0.8125rem" }}>
+                      Selecciona las sucursales a las que el usuario tendrá acceso. La primera seleccionada será la
+                      principal.
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+        </Box>
+      </DialogContent>
+
+      <DialogActions
+        sx={{
+          p: 2.5,
+          backgroundColor: "#fff",
+          borderTop: "1px solid #e5e7eb",
+          gap: 1.5,
+        }}
+      >
+        <Button
+          onClick={handleClose}
+          variant="outlined"
+          size="medium"
+          sx={{
+            borderColor: "#d1d5db",
+            color: "#6b7280",
+            borderRadius: 1.5,
+            px: 3,
+            py: 1,
+            fontWeight: 500,
+            textTransform: "none",
+            fontSize: "0.875rem",
+            "&:hover": {
+              backgroundColor: "#f9fafb",
+              borderColor: "#9ca3af",
+            },
+          }}
+        >
+          Cancelar
+        </Button>
+        <Button
+          onClick={handleSubmit(handleFormSubmit)}
+          variant="contained"
+          size="medium"
+          disabled={loading}
+          sx={{
+            backgroundColor: "#dc2626",
+            borderRadius: 1.5,
+            px: 3,
+            py: 1,
+            fontWeight: 500,
+            textTransform: "none",
+            fontSize: "0.875rem",
+            boxShadow: "0 1px 3px rgba(220, 38, 38, 0.3)",
+            "&:hover": {
+              backgroundColor: "#b91c1c",
+              boxShadow: "0 2px 6px rgba(220, 38, 38, 0.4)",
+            },
+            "&:disabled": {
+              opacity: 0.6,
+              backgroundColor: "#dc2626",
+            },
+          }}
+        >
+          {loading ? "Guardando..." : isEditing ? "Actualizar Usuario" : "Crear Usuario"}
+        </Button>
+      </DialogActions>
+    </Dialog>
   )
 }
 

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback } from "react"
 import tiposServiciosService from "../services/tiposServiciosService"
 import { useToast } from "./useToast"
 import { useErrorHandler } from "./useErrorHandler"
@@ -10,7 +10,7 @@ export const useTiposServicios = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [pagination, setPagination] = useState({
-    currentPage: 1,
+    page: 1,
     totalPages: 1,
     total: 0,
     limit: 50,
@@ -19,82 +19,28 @@ export const useTiposServicios = () => {
   const { showToast } = useToast()
   const { handleError } = useErrorHandler()
 
-  // referencia para evitar llamadas simultáneas
-  const activeRequestRef = useRef(null)
-
-  const normalizeResult = (result, requestedPage, requestedLimit) => {
-    let data = []
-    let currentPage = requestedPage ?? 1
-    let totalPages = 1
-    let total = 0
-    const limit = requestedLimit ?? pagination.limit
-
-    if (Array.isArray(result)) {
-      data = result
-      total = result.length
-      totalPages = Math.max(1, Math.ceil(total / limit))
-    } else if (result && Array.isArray(result.data)) {
-      data = result.data
-      currentPage = result.currentPage ?? result.page ?? currentPage
-      totalPages =
-        result.totalPages ??
-        result.total_pages ??
-        result.pagination?.totalPages ??
-        Math.max(1, Math.ceil((result.total ?? data.length) / limit))
-      total = result.total ?? result.totalItems ?? result.pagination?.total ?? data.length
-    } else if (result && (Array.isArray(result.items) || Array.isArray(result.tiposServicios))) {
-      data = result.items ?? result.tiposServicios
-      currentPage = result.page ?? result.currentPage ?? currentPage
-      total = result.total ?? data.length
-      totalPages = result.totalPages ?? Math.max(1, Math.ceil(total / limit))
-    } else {
-      // fallback: intentar extraer cualquier array
-      const maybeArray = result?.data ?? result?.items ?? result?.tiposServicios
-      if (Array.isArray(maybeArray)) {
-        data = maybeArray
-        total = data.length
-        totalPages = Math.max(1, Math.ceil(total / limit))
-      } else {
-        data = []
-        total = 0
-        totalPages = 1
-      }
-    }
-
-    return { data, currentPage, totalPages, total, limit }
-  }
-
   const loadTiposServicios = useCallback(
-    async (page = 1, search = "", limit = null) => {
+    async (page = 1, limit = null) => {
       const actualLimit = limit || pagination.limit
       setLoading(true)
       setError(null)
 
       try {
-        // cancelar petición anterior si aplica
-        if (activeRequestRef.current?.cancel) {
-          try {
-            activeRequestRef.current.cancel()
-          } catch (e) {}
-        }
-
-        const result = await tiposServiciosService.getTiposServicios({
+        const response = await tiposServiciosService.getTiposServicios({
           page,
           limit: actualLimit,
-          search,
         })
 
-        const normalized = normalizeResult(result, page, actualLimit)
 
-        setTiposServicios(normalized.data)
+        setTiposServicios(response.data?.tiposServicios || [])
         setPagination({
-          currentPage: normalized.currentPage,
-          totalPages: normalized.totalPages,
-          total: normalized.total,
-          limit: normalized.limit,
+          page: response.data?.pagination?.page || page,
+          totalPages: response.data?.pagination?.totalPages || 1,
+          total: response.data?.pagination?.total || 0,
+          limit: response.data?.pagination?.limit || actualLimit,
         })
       } catch (err) {
-        console.error("❌ Error al cargar tipos de servicios:", err)
+        console.error("[v0] Error al cargar tipos de servicios:", err)
         setError(err?.message ?? "Error al cargar tipos de servicios")
         setTiposServicios([])
       } finally {
@@ -104,13 +50,20 @@ export const useTiposServicios = () => {
     [pagination.limit],
   )
 
+  const handlePageChange = useCallback(
+    (page, limit) => {
+      loadTiposServicios(page, limit)
+    },
+    [loadTiposServicios],
+  )
+
   const createTipoServicio = async (tipoServicioData) => {
     setLoading(true)
     setError(null)
 
     try {
       const newTipoServicio = await tiposServiciosService.createTipoServicio(tipoServicioData)
-      await loadTiposServicios(pagination.currentPage || 1, "", pagination.limit) // Recargar lista
+      await loadTiposServicios(pagination.page, pagination.limit)
       showToast("Tipo de servicio creado exitosamente", "success")
       return newTipoServicio
     } catch (err) {
@@ -128,7 +81,7 @@ export const useTiposServicios = () => {
 
     try {
       const updatedTipoServicio = await tiposServiciosService.updateTipoServicio(id, tipoServicioData)
-      await loadTiposServicios(pagination.currentPage || 1, "", pagination.limit) // Recargar lista
+      await loadTiposServicios(pagination.page, pagination.limit)
       showToast("Tipo de servicio actualizado exitosamente", "success")
       return updatedTipoServicio
     } catch (err) {
@@ -146,7 +99,7 @@ export const useTiposServicios = () => {
 
     try {
       await tiposServiciosService.deleteTipoServicio(id)
-      await loadTiposServicios(pagination.currentPage || 1, "", pagination.limit) // Recargar lista
+      await loadTiposServicios(pagination.page, pagination.limit)
       showToast("Tipo de servicio eliminado exitosamente", "success")
     } catch (err) {
       setError(err.message)
@@ -160,7 +113,7 @@ export const useTiposServicios = () => {
   useEffect(() => {
     loadTiposServicios()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // carga inicial
+  }, [])
 
   return {
     tiposServicios,
@@ -168,9 +121,9 @@ export const useTiposServicios = () => {
     error,
     pagination,
     loadTiposServicios,
+    handlePageChange,
     createTipoServicio,
     updateTipoServicio,
     deleteTipoServicio,
-    setPagination,
   }
 }

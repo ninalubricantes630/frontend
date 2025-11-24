@@ -1,17 +1,18 @@
 import api from "./api.js"
 
 export const clientesService = {
-  // Obtener todos los clientes con paginación y filtros
-  getClientes: async (page = 1, limit = 10, search = "", searchBy = "") => {
-    const params = new URLSearchParams({
+  getClientes: async (params = {}) => {
+    const { page = 1, limit = 10, search = "", searchBy = "" } = params
+
+    const queryParams = new URLSearchParams({
       page,
       limit,
       ...(search && { search }),
       ...(searchBy && { searchBy }),
     })
 
-    const response = await api.get(`/clientes?${params}`)
-    return response.data
+    const response = await api.get(`/clientes?${queryParams}`)
+    return response
   },
 
   // Obtener cliente por ID
@@ -50,14 +51,7 @@ export const clientesService = {
   },
 
   getAll: async (page = 1, limit = 10, search = "") => {
-    const params = new URLSearchParams({
-      page,
-      limit,
-      ...(search && { search }),
-    })
-
-    const response = await api.get(`/clientes?${params}`)
-    return response.data
+    return clientesService.getClientes({ page, limit, search })
   },
 }
 

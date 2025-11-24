@@ -1,70 +1,76 @@
 "use client"
 
-import { useState } from "react"
 import {
   Dialog,
   DialogContent,
-  DialogTitle,
+  DialogActions,
   Typography,
   Box,
-  Card,
-  CardContent,
-  Tabs,
-  Tab,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
   Chip,
-  Grid,
   IconButton,
-  Paper,
-  Alert,
+  Grid,
+  Divider,
+  Button,
+  Avatar,
 } from "@mui/material"
 import {
   Close as CloseIcon,
   Build as BuildIcon,
-  Person as PersonIcon,
-  DirectionsCar as CarIcon,
-  Inventory as PackageIcon,
-  Description as FileTextIcon,
-  CalendarToday as CalendarIcon,
-  AttachMoney as DollarSignIcon,
-  CreditCard as CreditCardIcon,
-  Phone as PhoneIcon,
-  LocationOn as MapPinIcon,
-  Speed as SpeedIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as XCircleIcon,
-  AccessTime as ClockIcon,
-  Tag as HashIcon,
-  Business as BusinessIcon,
   Group as GroupIcon,
+  CreditCard as CreditCardIcon,
+  Percent as PercentIcon,
 } from "@mui/icons-material"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
+import { formatQuantity } from "../../utils/formatters"
 
 const ServicioDetalleModal = ({ open, onClose, servicio }) => {
-  const [activeTab, setActiveTab] = useState(0)
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "No disponible"
-    return new Date(dateString).toLocaleDateString("es-AR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
+  if (!servicio) return null
 
   const formatCurrency = (amount) => {
-    if (!amount) return "$0"
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
       currency: "ARS",
-    }).format(amount)
+    }).format(amount || 0)
   }
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue)
+  const formatDate = (date) => {
+    if (!date) return "-"
+    try {
+      return format(new Date(date), "dd/MM/yyyy HH:mm", { locale: es })
+    } catch (error) {
+      return "-"
+    }
   }
 
-  if (!servicio) return null
+  const getTipoPagoColor = (tipo) => {
+    const colors = {
+      EFECTIVO: "success",
+      TARJETA_CREDITO: "info",
+      TRANSFERENCIA: "primary",
+      CUENTA_CORRIENTE: "warning",
+    }
+    return colors[tipo] || "default"
+  }
+
+  const getEstadoColor = (estado) => {
+    return estado === "COMPLETADA" ? "success" : "error"
+  }
+
+  const getUnidadLabel = (unidadMedida) => {
+    return unidadMedida === "litro" ? "L" : "u"
+  }
+
+  const interesDelSistema = servicio.interes_sistema_monto || 0
+  const descuentoAplicado = servicio.descuento || 0
+  const interesDeTarjeta = servicio.interes_tarjeta_monto || 0
+  const interesTarjetaPorcentaje = servicio.interes_tarjeta_porcentaje || 0
 
   return (
     <Dialog
@@ -76,550 +82,728 @@ const ServicioDetalleModal = ({ open, onClose, servicio }) => {
         sx: {
           borderRadius: 2,
           maxHeight: "90vh",
+          display: "flex",
+          flexDirection: "column",
         },
       }}
     >
       {/* Header */}
-      <DialogTitle
+      <Box
         sx={{
-          bgcolor: "#d84315",
-          color: "white",
-          p: 3,
+          backgroundColor: "#fff",
+          borderBottom: "1px solid #e5e7eb",
+          p: 2.5,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
+          flexShrink: 0,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           <Box
             sx={{
-              p: 1,
-              bgcolor: "rgba(255, 255, 255, 0.2)",
+              width: 8,
+              height: 40,
+              backgroundColor: "#dc2626",
               borderRadius: 1,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
             }}
-          >
-            <BuildIcon />
-          </Box>
+          />
           <Box>
-            <Typography variant="h5" component="h2" sx={{ fontWeight: "bold", mb: 0.5 }}>
-              {servicio.numero}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.9)" }}>
-              {servicio.items?.length > 0
-                ? `${servicio.items.length} tipo${servicio.items.length > 1 ? "s" : ""} de servicio realizados`
-                : "Detalles completos del servicio"}
+            <Typography variant="h6" fontWeight={600} sx={{ color: "#171717" }}>
+              Servicio #{servicio.numero}
             </Typography>
           </Box>
         </Box>
         <IconButton
           onClick={onClose}
+          size="small"
           sx={{
-            color: "white",
+            color: "#6b7280",
             "&:hover": {
-              bgcolor: "rgba(255, 255, 255, 0.2)",
+              backgroundColor: "#f3f4f6",
             },
           }}
         >
-          <CloseIcon />
+          <CloseIcon fontSize="small" />
         </IconButton>
-      </DialogTitle>
-
-      {/* Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          variant="fullWidth"
-          sx={{
-            "& .MuiTab-root": {
-              minHeight: 56,
-              "&.Mui-selected": {
-                color: "#d84315",
-              },
-            },
-            "& .MuiTabs-indicator": {
-              backgroundColor: "#d84315",
-            },
-          }}
-        >
-          <Tab icon={<BuildIcon />} label="Servicio" iconPosition="start" sx={{ gap: 1 }} />
-          <Tab icon={<PersonIcon />} label="Cliente" iconPosition="start" sx={{ gap: 1 }} />
-          <Tab icon={<CarIcon />} label="Vehículo" iconPosition="start" sx={{ gap: 1 }} />
-        </Tabs>
       </Box>
 
-      {/* Content */}
-      <DialogContent sx={{ p: 3 }}>
-        {/* Servicio Tab */}
-        {activeTab === 0 && (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            {/* General Information Card */}
-            <Card elevation={2}>
-              <Box sx={{ bgcolor: "#f5f5f5", p: 2, borderBottom: 1, borderColor: "divider" }}>
-                <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1, color: "#171717" }}>
-                  <BuildIcon sx={{ color: "#d84315" }} />
-                  Información General del Servicio
-                </Typography>
-              </Box>
-              <CardContent sx={{ p: 3 }}>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} lg={3}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                      <HashIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Número de Servicio
-                      </Typography>
-                    </Box>
-                    <Typography variant="h6" sx={{ fontFamily: "monospace", color: "#d84315", fontWeight: "bold" }}>
-                      {servicio.numero}
+      <DialogContent
+        sx={{
+          p: 0,
+          flex: 1,
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Box
+          sx={{
+            p: 3,
+            flex: 1,
+            overflowY: "auto",
+            overflowX: "hidden",
+            backgroundColor: "#fafafa",
+          }}
+        >
+          <Grid container spacing={2}>
+            {/* Información General */}
+            <Grid item xs={12} md={6}>
+              <Box
+                sx={{
+                  backgroundColor: "#fff",
+                  borderRadius: 1.5,
+                  p: 2,
+                  border: "1px solid #e5e7eb",
+                }}
+              >
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="textSecondary"
+                      sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                    >
+                      Fecha
                     </Typography>
-                  </Grid>
-                  <Grid item xs={12} lg={3}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                      <PackageIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Tipos de Servicio
-                      </Typography>
-                    </Box>
-                    <Typography variant="h6" sx={{ color: "#d84315", fontWeight: "bold" }}>
-                      {servicio.items?.length || 0} servicio{(servicio.items?.length || 0) !== 1 ? "s" : ""}
+                    <Typography variant="body2" fontWeight={500} sx={{ color: "#171717", fontSize: "0.875rem" }}>
+                      {formatDate(servicio.fecha_pago || servicio.created_at)}
                     </Typography>
-                  </Grid>
-                  <Grid item xs={12} lg={3}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                      <DollarSignIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Precio de Referencia
+                  </Box>
+                  {servicio.usuario_nombre && (
+                    <Box>
+                      <Typography
+                        variant="caption"
+                        color="textSecondary"
+                        sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                      >
+                        Registrado por
                       </Typography>
-                    </Box>
-                    <Typography variant="h6" sx={{ color: "green", fontWeight: "bold" }}>
-                      {formatCurrency(servicio.precio_referencia)}
-                    </Typography>
-                  </Grid>
-                  <Grid item xs={12} lg={3}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                      <CalendarIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Fecha de Creación
-                      </Typography>
-                    </Box>
-                    <Typography variant="body1" sx={{ color: "#171717", fontWeight: "medium" }}>
-                      {formatDate(servicio.created_at)}
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-
-            <Card elevation={2}>
-              <Box sx={{ bgcolor: "#f5f5f5", p: 2, borderBottom: 1, borderColor: "divider" }}>
-                <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1, color: "#171717" }}>
-                  <BusinessIcon sx={{ color: "#d84315" }} />
-                  Sucursal y Personal
-                </Typography>
-              </Box>
-              <CardContent sx={{ p: 3 }}>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} md={6}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                      <BusinessIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Sucursal
-                      </Typography>
-                    </Box>
-                    <Typography variant="h6" sx={{ color: "#171717", fontWeight: "bold" }}>
-                      {servicio.sucursal_nombre || "No especificada"}
-                    </Typography>
-                    {servicio.sucursal_ubicacion && (
-                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                        {servicio.sucursal_ubicacion}
-                      </Typography>
-                    )}
-                  </Grid>
-                  <Grid item xs={12} md={6}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                      <GroupIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Personal Asignado
-                      </Typography>
-                    </Box>
-                    {servicio.empleados && servicio.empleados.length > 0 ? (
-                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-                        {servicio.empleados.map((empleado, index) => (
-                          <Chip
-                            key={index}
-                            icon={<PersonIcon />}
-                            label={`${empleado.nombre} ${empleado.apellido}`}
-                            variant="outlined"
-                            sx={{
-                              color: "#d84315",
-                              borderColor: "#d84315",
-                              "& .MuiChip-icon": { color: "#d84315" },
-                            }}
-                          />
-                        ))}
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mt: 0.5 }}>
+                        <Avatar sx={{ width: 24, height: 24, bgcolor: "#dc2626", fontSize: "0.75rem" }}>
+                          {servicio.usuario_nombre.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Typography variant="body2" fontWeight={500} sx={{ color: "#171717", fontSize: "0.875rem" }}>
+                          {servicio.usuario_nombre}
+                        </Typography>
                       </Box>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>
-                        Sin personal asignado
-                      </Typography>
-                    )}
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
-
-            {/* Services Performed */}
-            {servicio.items && servicio.items.length > 0 && (
-              <Card elevation={2}>
-                <Box sx={{ bgcolor: "#f5f5f5", p: 2, borderBottom: 1, borderColor: "divider" }}>
-                  <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                    <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1, color: "#171717" }}>
-                      <PackageIcon sx={{ color: "#d84315" }} />
-                      Servicios Realizados
+                    </Box>
+                  )}
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="textSecondary"
+                      sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                    >
+                      Cliente
                     </Typography>
-                    <Chip
-                      label={`${servicio.items.length} tipo${servicio.items.length > 1 ? "s" : ""}`}
-                      sx={{ bgcolor: "#d84315", color: "white" }}
-                    />
+                    <Typography variant="body2" fontWeight={500} sx={{ color: "#171717", fontSize: "0.875rem" }}>
+                      {servicio.cliente_nombre && servicio.cliente_apellido
+                        ? `${servicio.cliente_nombre} ${servicio.cliente_apellido}`
+                        : "Cliente no encontrado"}
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="textSecondary"
+                      sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                    >
+                      Vehículo
+                    </Typography>
+                    <Typography variant="body2" fontWeight={500} sx={{ color: "#171717", fontSize: "0.875rem" }}>
+                      {servicio.patente || "N/A"} - {servicio.marca} {servicio.modelo} ({servicio.año || "N/A"})
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="textSecondary"
+                      sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                    >
+                      Sucursal
+                    </Typography>
+                    <Typography variant="body2" fontWeight={500} sx={{ color: "#171717", fontSize: "0.875rem" }}>
+                      {servicio.sucursal_nombre || "N/A"}
+                    </Typography>
                   </Box>
                 </Box>
-                <CardContent sx={{ p: 3 }}>
-                  <Grid container spacing={3}>
-                    {servicio.items.map((item, index) => (
-                      <Grid item xs={12} xl={6} key={index}>
-                        <Paper
-                          elevation={1}
-                          sx={{
-                            p: 3,
-                            border: 2,
-                            borderColor: "rgba(216, 67, 21, 0.2)",
-                            borderRadius: 2,
-                            "&:hover": {
-                              boxShadow: 3,
-                              borderColor: "rgba(216, 67, 21, 0.4)",
-                            },
-                            transition: "all 0.2s",
-                          }}
-                        >
-                          {/* Service Type Header */}
-                          <Box sx={{ pb: 2, borderBottom: 1, borderColor: "divider", mb: 2 }}>
-                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                              <Box>
-                                <Typography variant="h6" sx={{ color: "#171717", fontWeight: "bold", mb: 0.5 }}>
-                                  {item.tipo_servicio_nombre || `Servicio ${index + 1}`}
-                                </Typography>
-                                {item.tipo_servicio_descripcion && (
-                                  <Typography variant="body2" color="text.secondary">
-                                    {item.tipo_servicio_descripcion}
-                                  </Typography>
-                                )}
-                              </Box>
-                              <Chip
-                                icon={<PackageIcon />}
-                                label={`${item.productos?.length || 0} productos`}
-                                variant="outlined"
-                                sx={{ color: "#d84315", borderColor: "#d84315" }}
-                                size="small"
-                              />
-                            </Box>
-                          </Box>
+              </Box>
+            </Grid>
 
-                          {/* Products Used */}
-                          {item.productos && item.productos.length > 0 ? (
-                            <Box sx={{ mb: 2 }}>
-                              <Typography
-                                variant="subtitle2"
-                                sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, color: "#171717" }}
-                              >
-                                <PackageIcon sx={{ fontSize: 16, color: "#d84315" }} />
-                                Productos Utilizados
-                              </Typography>
-                              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                                {item.productos.map((producto, prodIndex) => (
-                                  <Paper
-                                    key={prodIndex}
-                                    sx={{
-                                      p: 1.5,
-                                      bgcolor: "#f5f5f5",
-                                      display: "flex",
-                                      alignItems: "center",
-                                      justifyContent: "space-between",
-                                    }}
-                                  >
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                                      <Box
-                                        sx={{
-                                          p: 0.5,
-                                          bgcolor: "white",
-                                          borderRadius: "50%",
-                                          border: 1,
-                                          borderColor: "divider",
-                                          display: "flex",
-                                          alignItems: "center",
-                                          justifyContent: "center",
-                                        }}
-                                      >
-                                        <PackageIcon sx={{ fontSize: 12, color: "#d84315" }} />
-                                      </Box>
-                                      <Typography variant="body2" sx={{ fontWeight: "medium", color: "#171717" }}>
-                                        {producto.nombre}
-                                      </Typography>
-                                    </Box>
-                                    {producto.es_nuestro ? (
-                                      <Chip
-                                        icon={<CheckCircleIcon />}
-                                        label="Nuestro"
-                                        size="small"
-                                        sx={{ bgcolor: "#e8f5e8", color: "#2e7d32" }}
-                                      />
-                                    ) : (
-                                      <Chip
-                                        icon={<XCircleIcon />}
-                                        label="Del Cliente"
-                                        size="small"
-                                        sx={{ bgcolor: "#e3f2fd", color: "#1976d2" }}
-                                      />
-                                    )}
-                                  </Paper>
-                                ))}
-                              </Box>
-                            </Box>
-                          ) : (
-                            <Paper
-                              sx={{
-                                p: 3,
-                                textAlign: "center",
-                                bgcolor: "#f5f5f5",
-                                border: 2,
-                                borderStyle: "dashed",
-                                borderColor: "divider",
-                                mb: 2,
-                              }}
-                            >
-                              <PackageIcon sx={{ fontSize: 32, color: "text.disabled", mb: 1 }} />
-                              <Typography
-                                variant="body2"
-                                sx={{ fontWeight: "medium", color: "text.secondary", mb: 0.5 }}
-                              >
-                                No se utilizaron productos específicos
-                              </Typography>
-                              <Typography variant="caption" color="text.disabled">
-                                Este servicio no requirió productos adicionales
-                              </Typography>
-                            </Paper>
-                          )}
-
-                          {/* Observations and Notes */}
-                          <Box>
-                            {item.observaciones && (
-                              <Box sx={{ mb: 1.5 }}>
-                                <Typography
-                                  variant="subtitle2"
-                                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, color: "#171717" }}
-                                >
-                                  <FileTextIcon sx={{ fontSize: 16, color: "#d84315" }} />
-                                  Observaciones
-                                </Typography>
-                                <Alert severity="info" sx={{ "& .MuiAlert-message": { fontSize: "0.875rem" } }}>
-                                  {item.observaciones}
-                                </Alert>
-                              </Box>
-                            )}
-                            {item.notas && (
-                              <Box sx={{ mb: 1.5 }}>
-                                <Typography
-                                  variant="subtitle2"
-                                  sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1, color: "#171717" }}
-                                >
-                                  <ClockIcon sx={{ fontSize: 16, color: "#d84315" }} />
-                                  Notas Adicionales
-                                </Typography>
-                                <Alert severity="warning" sx={{ "& .MuiAlert-message": { fontSize: "0.875rem" } }}>
-                                  {item.notas}
-                                </Alert>
-                              </Box>
-                            )}
-                            {!item.observaciones && !item.notas && (
-                              <Paper
-                                sx={{
-                                  p: 2,
-                                  textAlign: "center",
-                                  bgcolor: "#f5f5f5",
-                                  border: 1,
-                                  borderColor: "divider",
-                                }}
-                              >
-                                <FileTextIcon sx={{ fontSize: 24, color: "text.disabled", mb: 0.5 }} />
-                                <Typography variant="caption" color="text.disabled">
-                                  No hay observaciones o notas adicionales
-                                </Typography>
-                              </Paper>
-                            )}
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* General Observations */}
-            {servicio.observaciones && (
-              <Card elevation={2}>
-                <Box sx={{ bgcolor: "#f5f5f5", p: 2, borderBottom: 1, borderColor: "divider" }}>
-                  <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1, color: "#171717" }}>
-                    <FileTextIcon sx={{ color: "#d84315" }} />
-                    Observaciones Generales del Servicio
-                  </Typography>
+            {/* Estado y Pago */}
+            <Grid item xs={12} md={6}>
+              <Box
+                sx={{
+                  backgroundColor: "#fff",
+                  borderRadius: 1.5,
+                  p: 2,
+                  border: "1px solid #e5e7eb",
+                }}
+              >
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="textSecondary"
+                      sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                    >
+                      Estado
+                    </Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      <Chip
+                        label={servicio.estado || "COMPLETADA"}
+                        size="small"
+                        color={getEstadoColor(servicio.estado || "COMPLETADA")}
+                      />
+                    </Box>
+                  </Box>
+                  <Box>
+                    <Typography
+                      variant="caption"
+                      color="textSecondary"
+                      sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                    >
+                      Tipo de Pago
+                    </Typography>
+                    <Box sx={{ mt: 0.5 }}>
+                      <Chip
+                        label={servicio.tipo_pago || "N/A"}
+                        size="small"
+                        color={getTipoPagoColor(servicio.tipo_pago)}
+                      />
+                    </Box>
+                  </Box>
                 </Box>
-                <CardContent sx={{ p: 3 }}>
-                  <Alert
-                    severity="warning"
+              </Box>
+            </Grid>
+
+            {servicio.tipo_pago === "TARJETA_CREDITO" &&
+              (servicio.tarjeta_nombre || servicio.numero_cuotas || interesTarjetaPorcentaje > 0) && (
+                <Grid item xs={12}>
+                  <Box
                     sx={{
-                      bgcolor: "linear-gradient(to right, #fff3e0, #ffebee)",
-                      borderLeft: 4,
-                      borderLeftColor: "#d84315",
-                      "& .MuiAlert-message": { fontSize: "1rem", lineHeight: 1.6 },
+                      backgroundColor: "#eff6ff",
+                      borderRadius: 1.5,
+                      p: 2,
+                      border: "1px solid #bfdbfe",
                     }}
                   >
-                    {servicio.observaciones}
-                  </Alert>
-                </CardContent>
-              </Card>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                      <CreditCardIcon sx={{ fontSize: 18, color: "#1976d2" }} />
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#1976d2" }}>
+                        Información de Pago con Tarjeta
+                      </Typography>
+                    </Box>
+                    <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", alignItems: "flex-start" }}>
+                      {servicio.tarjeta_nombre && (
+                        <Box>
+                          <Typography
+                            variant="caption"
+                            color="textSecondary"
+                            sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                          >
+                            Tarjeta
+                          </Typography>
+                          <Typography variant="body2" fontWeight={500} sx={{ color: "#1976d2" }}>
+                            {servicio.tarjeta_nombre}
+                          </Typography>
+                        </Box>
+                      )}
+                      {servicio.numero_cuotas && (
+                        <Box>
+                          <Typography
+                            variant="caption"
+                            color="textSecondary"
+                            sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                          >
+                            Cuotas
+                          </Typography>
+                          <Typography variant="body2" fontWeight={500} sx={{ color: "#1976d2" }}>
+                            {servicio.numero_cuotas}x
+                          </Typography>
+                        </Box>
+                      )}
+                      {interesTarjetaPorcentaje > 0 && (
+                        <Box>
+                          <Typography
+                            variant="caption"
+                            color="textSecondary"
+                            sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                          >
+                            Interés aplicado
+                          </Typography>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                            <PercentIcon sx={{ fontSize: 14, color: "#1976d2" }} />
+                            <Typography variant="body2" fontWeight={500} sx={{ color: "#1976d2" }}>
+                              {interesTarjetaPorcentaje}%
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )}
+                      {interesDeTarjeta > 0 && (
+                        <Box>
+                          <Typography
+                            variant="caption"
+                            color="textSecondary"
+                            sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                          >
+                            Monto del interés
+                          </Typography>
+                          <Typography variant="body2" fontWeight={500} sx={{ color: "#1976d2" }}>
+                            {formatCurrency(interesDeTarjeta)}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                </Grid>
+              )}
+
+            {servicio.empleados && servicio.empleados.length > 0 && (
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    backgroundColor: "#f0fdf4",
+                    borderRadius: 1.5,
+                    p: 2,
+                    border: "1px solid #bbf7d0",
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
+                    <GroupIcon sx={{ fontSize: 18, color: "#16a34a" }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#16a34a" }}>
+                      Empleados Asignados
+                    </Typography>
+                  </Box>
+                  <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                    {servicio.empleados.map((empleado) => (
+                      <Box
+                        key={empleado.id}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          bgcolor: "#fff",
+                          px: 1.5,
+                          py: 1,
+                          borderRadius: 1,
+                          border: "1px solid #dcfce7",
+                        }}
+                      >
+                        <Avatar sx={{ width: 28, height: 28, bgcolor: "#16a34a", fontSize: "0.75rem" }}>
+                          {empleado.nombre?.charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box>
+                          <Typography variant="body2" sx={{ fontWeight: 500, fontSize: "0.813rem", color: "#166534" }}>
+                            {empleado.nombre} {empleado.apellido}
+                          </Typography>
+                          {empleado.cargo && (
+                            <Typography variant="caption" sx={{ fontSize: "0.7rem", color: "#4ade80" }}>
+                              {empleado.cargo}
+                            </Typography>
+                          )}
+                        </Box>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              </Grid>
             )}
 
-            {/* Show message if no service items */}
-            {(!servicio.items || servicio.items.length === 0) && (
-              <Card elevation={2}>
-                <CardContent sx={{ p: 6, textAlign: "center" }}>
-                  <BuildIcon sx={{ fontSize: 64, color: "text.disabled", mb: 2 }} />
-                  <Typography variant="h6" sx={{ color: "text.secondary", mb: 1 }}>
-                    No hay servicios registrados
-                  </Typography>
-                  <Typography variant="body2" color="text.disabled">
-                    Este servicio no tiene tipos de servicios asociados
-                  </Typography>
-                </CardContent>
-              </Card>
+            {servicio.estado === "CANCELADA" && (servicio.cancelado_por || servicio.fecha_cancelacion) && (
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    backgroundColor: "#fef2f2",
+                    borderRadius: 1.5,
+                    p: 2,
+                    border: "1px solid #fca5a5",
+                  }}
+                >
+                  <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "flex-start" }}>
+                    {servicio.cancelado_por && (
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="textSecondary"
+                          sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                        >
+                          Cancelado por
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500} sx={{ color: "#dc2626" }}>
+                          {servicio.cancelado_por}
+                        </Typography>
+                      </Box>
+                    )}
+                    {servicio.fecha_cancelacion && (
+                      <Box>
+                        <Typography
+                          variant="caption"
+                          color="textSecondary"
+                          sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                        >
+                          Fecha
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500} sx={{ color: "#dc2626" }}>
+                          {formatDate(servicio.fecha_cancelacion)}
+                        </Typography>
+                      </Box>
+                    )}
+                    {servicio.motivo_cancelacion && (
+                      <Box sx={{ flex: "1 1 100%" }}>
+                        <Typography
+                          variant="caption"
+                          color="textSecondary"
+                          sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
+                        >
+                          Motivo
+                        </Typography>
+                        <Typography variant="body2" fontWeight={500} sx={{ color: "#dc2626" }}>
+                          {servicio.motivo_cancelacion}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Grid>
             )}
+          </Grid>
+
+          {servicio.items && servicio.items.length > 0 && (
+            <Box sx={{ mt: 2.5 }}>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151", mb: 1 }}>
+                Tipos de Servicios Realizados
+              </Typography>
+
+              <Box
+                sx={{
+                  backgroundColor: "#fff",
+                  borderRadius: 1.5,
+                  border: "1px solid #e5e7eb",
+                  overflow: "hidden",
+                }}
+              >
+                {servicio.items.map((item, index) => (
+                  <Box key={index}>
+                    <Box
+                      sx={{
+                        p: 2.5,
+                        borderBottom: index < servicio.items.length - 1 ? "1px solid #e5e7eb" : "none",
+                        bgcolor: index % 2 === 0 ? "#fff" : "#fafafa",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <BuildIcon sx={{ fontSize: 18, color: "#dc2626" }} />
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a" }}>
+                              {item.tipo_servicio_nombre || `Servicio ${index + 1}`}
+                            </Typography>
+                            {item.tipo_servicio_descripcion && (
+                              <Typography variant="caption" sx={{ color: "#64748b" }}>
+                                {item.tipo_servicio_descripcion}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#dc2626" }}>
+                          {formatCurrency(item.subtotal)}
+                        </Typography>
+                      </Box>
+
+                      {item.descripcion && item.descripcion !== "Sin descripción" && (
+                        <Box sx={{ mb: 1.5, pl: 3.5 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "#6b7280", fontWeight: 600, display: "block", mb: 0.5 }}
+                          >
+                            Descripción:
+                          </Typography>
+                          <Typography variant="body2" sx={{ color: "#374151", fontSize: "0.813rem" }}>
+                            {item.descripcion}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {item.observaciones && (
+                        <Box
+                          sx={{
+                            mb: 1.5,
+                            pl: 3.5,
+                            bgcolor: "#fef3c7",
+                            p: 1.5,
+                            borderRadius: 1,
+                            border: "1px solid #fde68a",
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "#92400e", fontWeight: 600, display: "block", mb: 0.5 }}
+                          >
+                            Observaciones:
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "#78350f", fontSize: "0.813rem", whiteSpace: "pre-wrap" }}
+                          >
+                            {item.observaciones}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {item.notas && (
+                        <Box
+                          sx={{
+                            mb: 1.5,
+                            pl: 3.5,
+                            bgcolor: "#dbeafe",
+                            p: 1.5,
+                            borderRadius: 1,
+                            border: "1px solid #bfdbfe",
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "#1e40af", fontWeight: 600, display: "block", mb: 0.5 }}
+                          >
+                            Notas:
+                          </Typography>
+                          <Typography
+                            variant="body2"
+                            sx={{ color: "#1e3a8a", fontSize: "0.813rem", whiteSpace: "pre-wrap" }}
+                          >
+                            {item.notas}
+                          </Typography>
+                        </Box>
+                      )}
+
+                      {/* Productos del Servicio */}
+                      {item.productos && item.productos.length > 0 && (
+                        <Box sx={{ pl: 3.5 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "#6b7280", fontWeight: 600, display: "block", mb: 1 }}
+                          >
+                            Productos utilizados:
+                          </Typography>
+                          <TableContainer sx={{ border: "1px solid #e5e7eb", borderRadius: 1 }}>
+                            <Table size="small">
+                              <TableHead>
+                                <TableRow sx={{ bgcolor: "#f9fafb" }}>
+                                  <TableCell
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: "#374151",
+                                      fontSize: "0.75rem",
+                                      py: 1,
+                                    }}
+                                  >
+                                    Producto
+                                  </TableCell>
+                                  <TableCell
+                                    align="center"
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: "#374151",
+                                      fontSize: "0.75rem",
+                                      py: 1,
+                                    }}
+                                  >
+                                    Cantidad
+                                  </TableCell>
+                                  <TableCell
+                                    align="right"
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: "#374151",
+                                      fontSize: "0.75rem",
+                                      py: 1,
+                                    }}
+                                  >
+                                    Precio Unit.
+                                  </TableCell>
+                                  <TableCell
+                                    align="right"
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: "#374151",
+                                      fontSize: "0.75rem",
+                                      py: 1,
+                                    }}
+                                  >
+                                    Subtotal
+                                  </TableCell>
+                                </TableRow>
+                              </TableHead>
+                              <TableBody>
+                                {item.productos.map((prod, prodIndex) => (
+                                  <TableRow key={prodIndex} sx={{ "&:hover": { bgcolor: "#f9fafb" } }}>
+                                    <TableCell sx={{ py: 1 }}>
+                                      <Typography variant="body2" sx={{ fontSize: "0.813rem" }}>
+                                        {prod.producto_nombre || prod.nombre || "-"}
+                                      </Typography>
+                                    </TableCell>
+                                    <TableCell align="center" sx={{ py: 1 }}>
+                                      <Typography variant="body2" sx={{ fontSize: "0.813rem" }}>
+                                        {formatQuantity(prod.cantidad, prod.unidad_medida)}{" "}
+                                        {getUnidadLabel(prod.unidad_medida)}
+                                      </Typography>
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ py: 1 }}>
+                                      <Typography variant="body2" sx={{ fontSize: "0.813rem" }}>
+                                        {formatCurrency(prod.precio_unitario)}
+                                      </Typography>
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ py: 1 }}>
+                                      <Typography variant="body2" sx={{ fontWeight: 600, fontSize: "0.813rem" }}>
+                                        {formatCurrency(prod.subtotal)}
+                                      </Typography>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                              </TableBody>
+                            </Table>
+                          </TableContainer>
+                        </Box>
+                      )}
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          {/* Resumen de Costos */}
+          <Box
+            sx={{
+              mt: 2.5,
+              backgroundColor: "#fff",
+              borderRadius: 1.5,
+              p: 2,
+              border: "1px solid #e5e7eb",
+            }}
+          >
+            <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151", mb: 1.5 }}>
+              Resumen de Costos
+            </Typography>
+            <Box sx={{ minWidth: "100%", maxWidth: 320, ml: "auto" }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, gap: 1 }}>
+                <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#6b7280" }}>
+                  Subtotal:
+                </Typography>
+                <Typography variant="body2" fontWeight={500} sx={{ fontSize: "0.875rem" }}>
+                  {formatCurrency(servicio.subtotal)}
+                </Typography>
+              </Box>
+
+              {descuentoAplicado > 0 && (
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, gap: 1 }}>
+                  <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#16a34a" }}>
+                    Descuento:
+                  </Typography>
+                  <Typography variant="body2" fontWeight={500} sx={{ fontSize: "0.875rem", color: "#16a34a" }}>
+                    -{formatCurrency(descuentoAplicado)}
+                  </Typography>
+                </Box>
+              )}
+
+              {interesDelSistema > 0 && (
+                <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, gap: 1 }}>
+                  <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#f59e0b" }}>
+                    Interés:
+                  </Typography>
+                  <Typography variant="body2" fontWeight={500} sx={{ fontSize: "0.875rem", color: "#f59e0b" }}>
+                    +{formatCurrency(interesDelSistema)}
+                  </Typography>
+                </Box>
+              )}
+
+              <Divider sx={{ my: 1 }} />
+
+              <Box sx={{ display: "flex", justifyContent: "space-between", mb: interesDeTarjeta > 0 ? 1 : 0, gap: 1 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: "0.9375rem" }}>
+                  Sistema:
+                </Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#dc2626", fontSize: "0.9375rem" }}>
+                  {formatCurrency(servicio.total)}
+                </Typography>
+              </Box>
+
+              {interesDeTarjeta > 0 && (
+                <>
+                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1, gap: 1 }}>
+                    <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#1976d2" }}>
+                      Interés tarjeta:
+                    </Typography>
+                    <Typography variant="body2" fontWeight={500} sx={{ fontSize: "0.875rem", color: "#1976d2" }}>
+                      +{formatCurrency(interesDeTarjeta)}
+                    </Typography>
+                  </Box>
+
+                  <Divider sx={{ my: 1 }} />
+
+                  <Box sx={{ display: "flex", justifyContent: "space-between", gap: 1 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 700, fontSize: "1rem" }}>
+                      Caja:
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: "#1976d2", fontSize: "1rem" }}>
+                      {formatCurrency(servicio.total_con_interes_tarjeta || servicio.total)}
+                    </Typography>
+                  </Box>
+                </>
+              )}
+            </Box>
           </Box>
-        )}
 
-        {/* Cliente Tab */}
-        {activeTab === 1 && (
-          <Card elevation={2}>
-            <Box sx={{ bgcolor: "#f5f5f5", p: 2, borderBottom: 1, borderColor: "divider" }}>
-              <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1, color: "#171717" }}>
-                <PersonIcon sx={{ color: "#d84315" }} />
-                Información del Cliente
+          {/* Observaciones Generales */}
+          {servicio.observaciones && (
+            <Box
+              sx={{
+                mt: 2.5,
+                backgroundColor: "#fff",
+                borderRadius: 1.5,
+                p: 2,
+                border: "1px solid #e5e7eb",
+              }}
+            >
+              <Typography
+                variant="caption"
+                color="textSecondary"
+                sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase", mb: 1, display: "block" }}
+              >
+                Observaciones Generales
+              </Typography>
+              <Typography variant="body2" sx={{ fontSize: "0.875rem", color: "#374151", whiteSpace: "pre-wrap" }}>
+                {servicio.observaciones}
               </Typography>
             </Box>
-            <CardContent sx={{ p: 3 }}>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Nombre Completo
-                  </Typography>
-                  <Typography variant="h6" sx={{ color: "#171717", fontWeight: "bold" }}>
-                    {servicio.cliente_nombre && servicio.cliente_apellido
-                      ? `${servicio.cliente_nombre} ${servicio.cliente_apellido}`
-                      : "Cliente no encontrado"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                    <CreditCardIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    <Typography variant="body2" color="text.secondary">
-                      DNI
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" sx={{ fontFamily: "monospace", fontWeight: "medium", color: "#171717" }}>
-                    {servicio.cliente_dni || "No especificado"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                    <PhoneIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    <Typography variant="body2" color="text.secondary">
-                      Teléfono
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" sx={{ fontWeight: "medium", color: "#171717" }}>
-                    {servicio.cliente_telefono || "No especificado"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                    <MapPinIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    <Typography variant="body2" color="text.secondary">
-                      Dirección
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" sx={{ fontWeight: "medium", color: "#171717" }}>
-                    {servicio.cliente_direccion || "No especificada"}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Vehículo Tab */}
-        {activeTab === 2 && (
-          <Card elevation={2}>
-            <Box sx={{ bgcolor: "#f5f5f5", p: 2, borderBottom: 1, borderColor: "divider" }}>
-              <Typography variant="h6" sx={{ display: "flex", alignItems: "center", gap: 1, color: "#171717" }}>
-                <CarIcon sx={{ color: "#d84315" }} />
-                Información del Vehículo
-              </Typography>
-            </Box>
-            <CardContent sx={{ p: 3 }}>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Patente
-                  </Typography>
-                  <Typography variant="h6" sx={{ fontFamily: "monospace", color: "#d84315", fontWeight: "bold" }}>
-                    {servicio.patente || "No especificada"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Marca y Modelo
-                  </Typography>
-                  <Typography variant="h6" sx={{ color: "#171717", fontWeight: "bold" }}>
-                    {servicio.marca} {servicio.modelo}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Año
-                  </Typography>
-                  <Typography variant="body1" sx={{ fontWeight: "medium", color: "#171717" }}>
-                    {servicio.año || "No especificado"}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                    <SpeedIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                    <Typography variant="body2" color="text.secondary">
-                      Kilometraje
-                    </Typography>
-                  </Box>
-                  <Typography variant="body1" sx={{ fontWeight: "medium", color: "#171717" }}>
-                    {servicio.kilometraje ? `${servicio.kilometraje.toLocaleString()} km` : "No especificado"}
-                  </Typography>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        )}
+          )}
+        </Box>
       </DialogContent>
+
+      <DialogActions
+        sx={{
+          p: 2.5,
+          borderTop: "1px solid #e5e7eb",
+          backgroundColor: "#fafafa",
+          flexShrink: 0,
+          gap: 1,
+        }}
+      >
+        <Button
+          onClick={onClose}
+          variant="contained"
+          sx={{
+            bgcolor: "#dc2626",
+            borderRadius: 2,
+            px: 3,
+            "&:hover": { bgcolor: "#b91c1c" },
+          }}
+        >
+          Cerrar
+        </Button>
+      </DialogActions>
     </Dialog>
   )
 }

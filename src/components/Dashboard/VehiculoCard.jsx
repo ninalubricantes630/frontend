@@ -4,7 +4,6 @@ import {
   DirectionsCar as CarIcon,
   Person as PersonIcon,
   Event as EventIcon,
-  AttachMoney as MoneyIcon,
   Description as DescriptionIcon,
   Visibility as VisibilityIcon,
   Phone as PhoneIcon,
@@ -41,100 +40,108 @@ const VehiculoCard = ({ vehiculo }) => {
 
   return (
     <Card
-      elevation={2}
+      elevation={0}
       sx={{
         width: "100%",
         border: "1px solid",
         borderColor: "grey.200",
         borderRadius: 2,
         "&:hover": {
-          boxShadow: 4,
-          transition: "box-shadow 0.2s ease",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.08)",
+          borderColor: "#dc2626",
+          transition: "all 0.2s ease",
         },
         bgcolor: "white",
       }}
     >
-      <CardContent sx={{ p: 4 }}>
+      <CardContent sx={{ p: 2.5 }}>
         {/* Header del Vehículo */}
-        <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 4 }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", mb: 3 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
             <Box
               sx={{
-                p: 1.5,
-                background: "linear-gradient(135deg, #d84315 0%, #bf360c 100%)",
-                borderRadius: "50%",
+                p: 1,
+                bgcolor: "#dc2626",
+                borderRadius: 1.5,
               }}
             >
-              <CarIcon sx={{ color: "white", fontSize: 24 }} />
+              <CarIcon sx={{ color: "white", fontSize: 20 }} />
             </Box>
             <Box>
-              <Typography variant="h5" sx={{ fontWeight: "bold", color: "#171717", mb: 0.5 }}>
+              <Typography variant="h6" sx={{ fontWeight: "600", color: "#171717", mb: 0.25, fontSize: "1.25rem" }}>
                 {vehiculo.patente}
               </Typography>
-              <Typography variant="h6" color="text.secondary" sx={{ mb: 1 }}>
+              <Typography variant="body1" sx={{ color: "#6b7280", mb: 0.75, fontSize: "0.9375rem" }}>
                 {vehiculo.marca} {vehiculo.modelo} {vehiculo.año}
               </Typography>
               <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
                 {vehiculo.kilometraje && (
                   <Chip
-                    icon={<SpeedIcon />}
+                    icon={<SpeedIcon sx={{ fontSize: "0.875rem" }} />}
                     label={`${vehiculo.kilometraje.toLocaleString()} km`}
                     size="small"
                     sx={{
-                      bgcolor: "grey.100",
-                      color: "grey.800",
+                      bgcolor: "#f8fafc",
+                      color: "#475569",
                       fontSize: "0.75rem",
-                      fontWeight: "medium",
+                      fontWeight: "500",
+                      height: 24,
+                      border: "1px solid",
+                      borderColor: "grey.200",
                     }}
                   />
                 )}
                 {vehiculo.observaciones && (
                   <Chip
-                    icon={<InfoIcon />}
+                    icon={<InfoIcon sx={{ fontSize: "0.875rem" }} />}
                     label="Con observaciones"
                     size="small"
                     sx={{
-                      color: "warning.dark",
+                      bgcolor: "#fffbeb",
+                      color: "#92400e",
                       fontSize: "0.75rem",
-                      fontWeight: "medium",
+                      fontWeight: "500",
+                      height: 24,
+                      border: "1px solid #fcd34d",
                     }}
                   />
                 )}
               </Box>
             </Box>
           </Box>
+
           <Paper
-            elevation={1}
+            elevation={0}
             sx={{
-              p: 2,
-              bgcolor: "grey.50",
-              borderRadius: 2,
-              textAlign: "right",
-              minWidth: 200,
+              p: 1.5,
+              bgcolor: "#f8fafc",
+              borderRadius: 1.5,
+              border: "1px solid",
+              borderColor: "grey.200",
+              minWidth: 180,
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5, ml: 12 }}>
-              <PersonIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}>
+              <PersonIcon sx={{ fontSize: 14, color: "#6b7280" }} />
               <Typography
                 variant="caption"
-                color="text.secondary"
-                sx={{ textTransform: "uppercase", letterSpacing: 0.5}}
+                sx={{ color: "#6b7280", textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.6875rem" }}
               >
                 Propietario
               </Typography>
             </Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "#171717", mb: 1 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: "600", color: "#171717", mb: 0.5, fontSize: "0.875rem" }}>
               {vehiculo.cliente_nombre}
             </Typography>
             {vehiculo.cliente_dni && (
-              <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+              <Typography variant="caption" sx={{ display: "block", color: "#6b7280", mb: 0.25, fontSize: "0.75rem" }}>
                 DNI: {vehiculo.cliente_dni}
               </Typography>
             )}
             {vehiculo.cliente_telefono && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, justifyContent: "flex-end" }}>
-                <PhoneIcon sx={{ fontSize: 12, color: "text.secondary" }} />
-                <Typography variant="caption" color="text.secondary">
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <PhoneIcon sx={{ fontSize: 12, color: "#6b7280" }} />
+                <Typography variant="caption" sx={{ color: "#6b7280", fontSize: "0.75rem" }}>
                   {vehiculo.cliente_telefono}
                 </Typography>
               </Box>
@@ -144,87 +151,87 @@ const VehiculoCard = ({ vehiculo }) => {
 
         {vehiculo.observaciones && (
           <Paper
-            elevation={1}
+            elevation={0}
             sx={{
-              p: 2,
-              mb: 3,
-              border: "1px solid",
-              borderColor: "warning.main",
-              borderRadius: 2,
+              p: 1.5,
+              mb: 2.5,
+              border: "1px solid #fcd34d",
+              borderRadius: 1.5,
+              bgcolor: "#fffbeb",
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-              <InfoIcon sx={{ fontSize: 16, color: "warning.dark" }} />
-              <Typography variant="subtitle2" sx={{ fontWeight: "bold", color: "warning.dark" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.75, mb: 0.5 }}>
+              <InfoIcon sx={{ fontSize: 14, color: "#92400e" }} />
+              <Typography variant="subtitle2" sx={{ fontWeight: "600", color: "#92400e", fontSize: "0.8125rem" }}>
                 Observaciones del Vehículo
               </Typography>
             </Box>
-            <Typography variant="body2" color="warning.dark">
+            <Typography variant="body2" sx={{ color: "#92400e", fontSize: "0.8125rem" }}>
               {vehiculo.observaciones}
             </Typography>
           </Paper>
         )}
 
-        {/* Servicios del Vehículo */}
         <Paper
-          elevation={2}
+          elevation={0}
           sx={{
-            background: "linear-gradient(135deg, rgba(216, 67, 21, 0.05) 0%, rgba(216, 67, 21, 0.1) 100%)",
-            border: "1px solid rgba(216, 67, 21, 0.2)",
-            borderRadius: 2,
+            bgcolor: "#fef2f2",
+            border: "1px solid #fca5a5",
+            borderRadius: 1.5,
           }}
         >
-          <Box sx={{ p: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box sx={{ p: 2.5 }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 <Box
                   sx={{
-                    p: 1,
-                    bgcolor: "#d84315",
-                    borderRadius: "50%",
+                    p: 0.75,
+                    bgcolor: "#dc2626",
+                    borderRadius: 1.5,
                   }}
                 >
-                  <DescriptionIcon sx={{ color: "white", fontSize: 20 }} />
+                  <DescriptionIcon sx={{ color: "white", fontSize: 18 }} />
                 </Box>
-                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#d84315" }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: "600", color: "#dc2626", fontSize: "1rem" }}>
                   Historial de Servicios
                 </Typography>
               </Box>
               <Chip
                 label={`${vehiculo.servicios?.length || 0} servicio${(vehiculo.servicios?.length || 0) !== 1 ? "s" : ""}`}
                 sx={{
-                  bgcolor: "#d84315",
+                  bgcolor: "#dc2626",
                   color: "white",
-                  fontSize: "1rem",
-                  fontWeight: "medium",
-                  px: 2,
-                  py: 0.5,
+                  fontSize: "0.8125rem",
+                  fontWeight: "500",
+                  height: 26,
+                  px: 1.5,
                 }}
               />
             </Box>
 
             {vehiculo.servicios && vehiculo.servicios.length > 0 ? (
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {/* Mostrar hasta 3 servicios más recientes */}
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 {vehiculo.servicios.slice(0, 3).map((servicio, index) => {
                   return (
                     <Paper
                       key={index}
-                      elevation={1}
+                      elevation={0}
                       sx={{
                         p: 2,
                         bgcolor: "white",
-                        border: "1px solid rgba(216, 67, 21, 0.2)",
-                        borderRadius: 2,
+                        border: "1px solid #fecaca",
+                        borderRadius: 1.5,
                       }}
                     >
-                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
                         <Chip
                           label={servicio.numero}
                           sx={{
-                            bgcolor: "#d84315",
+                            bgcolor: "#dc2626",
                             color: "white",
-                            fontWeight: "medium",
+                            fontWeight: "500",
+                            fontSize: "0.8125rem",
+                            height: 26,
                           }}
                         />
                         {index === 0 && (
@@ -233,31 +240,35 @@ const VehiculoCard = ({ vehiculo }) => {
                             size="small"
                             variant="outlined"
                             sx={{
-                              color: "#d84315",
-                              borderColor: "#d84315",
-                              fontSize: "0.75rem",
-                              fontWeight: "medium",
+                              color: "#dc2626",
+                              borderColor: "#fca5a5",
+                              fontSize: "0.6875rem",
+                              fontWeight: "500",
                               textTransform: "uppercase",
                               letterSpacing: 0.5,
+                              height: 22,
                             }}
                           />
                         )}
                       </Box>
-                      <Typography variant="body1" sx={{ fontWeight: "medium", color: "#171717", mb: 2 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: "500", color: "#171717", mb: 1.5, fontSize: "0.875rem" }}
+                      >
                         {servicio.descripcion}
                       </Typography>
-                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 2 }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <EventIcon sx={{ fontSize: 16, color: "text.secondary" }} />
-                          <Typography variant="body2" color="text.secondary">
+                      <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 1.5 }}>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                          <EventIcon sx={{ fontSize: 14, color: "#6b7280" }} />
+                          <Typography variant="body2" sx={{ color: "#6b7280", fontSize: "0.8125rem" }}>
                             {formatDate(servicio.fecha_creacion)}
                           </Typography>
                         </Box>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Typography variant="h6" sx={{ fontWeight: "bold", color: "success.main" }}>
-                            {formatCurrency(servicio.total)}
-                          </Typography>
-                        </Box>
+                        <Typography variant="subtitle1" sx={{ fontWeight: "600", color: "#16a34a", fontSize: "1rem" }}>
+                          {formatCurrency(
+                            servicio.total_con_interes_tarjeta || servicio.total_con_interes || servicio.total || 0,
+                          )}
+                        </Typography>
                       </Box>
                       <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
                         <Button
@@ -266,15 +277,18 @@ const VehiculoCard = ({ vehiculo }) => {
                           size="small"
                           startIcon={<VisibilityIcon />}
                           sx={{
-                            color: "#d84315",
-                            borderColor: "#d84315",
+                            color: "#dc2626",
+                            borderColor: "#fca5a5",
                             "&:hover": {
-                              bgcolor: "rgba(216, 67, 21, 0.1)",
-                              borderColor: "#d84315",
+                              bgcolor: "#fef2f2",
+                              borderColor: "#dc2626",
                             },
-                            borderRadius: 2,
+                            borderRadius: 1.5,
                             textTransform: "none",
-                            fontWeight: "medium",
+                            fontWeight: "500",
+                            fontSize: "0.8125rem",
+                            py: 0.5,
+                            px: 2,
                           }}
                         >
                           Ver Detalle
@@ -285,17 +299,17 @@ const VehiculoCard = ({ vehiculo }) => {
                 })}
 
                 {vehiculo.servicios.length > 3 && (
-                  <Box sx={{ textAlign: "center", py: 1 }}>
-                    <Typography variant="body2" sx={{ color: "#d84315", fontWeight: "medium" }}>
+                  <Box sx={{ textAlign: "center", py: 0.75 }}>
+                    <Typography variant="body2" sx={{ color: "#dc2626", fontWeight: "500", fontSize: "0.8125rem" }}>
                       + {vehiculo.servicios.length - 3} servicio{vehiculo.servicios.length - 3 !== 1 ? "s" : ""} más
                     </Typography>
                   </Box>
                 )}
               </Box>
             ) : (
-              <Box sx={{ textAlign: "center", py: 4 }}>
-                <DescriptionIcon sx={{ fontSize: 48, color: "grey.400", mb: 2 }} />
-                <Typography variant="h6" color="text.secondary">
+              <Box sx={{ textAlign: "center", py: 3 }}>
+                <DescriptionIcon sx={{ fontSize: 40, color: "#d1d5db", mb: 1 }} />
+                <Typography variant="subtitle1" sx={{ color: "#9ca3af", fontSize: "0.9375rem" }}>
                   No hay servicios registrados para este vehículo
                 </Typography>
               </Box>
@@ -303,21 +317,20 @@ const VehiculoCard = ({ vehiculo }) => {
           </Box>
         </Paper>
 
-        {/* Botón Ver Todos los Servicios */}
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 2.5 }}>
           <Button
             onClick={handleVerTodosServicios}
             variant="contained"
-            size="large"
+            size="medium"
             sx={{
-              bgcolor: "#d84315",
-              "&:hover": { bgcolor: "#bf360c" },
-              borderRadius: 2,
+              bgcolor: "#dc2626",
+              "&:hover": { bgcolor: "#b91c1c" },
+              borderRadius: 1.5,
               textTransform: "none",
-              fontWeight: "bold",
-              px: 4,
-              py: 1.5,
-              fontSize: "1.1rem",
+              fontWeight: "600",
+              px: 3,
+              py: 1,
+              fontSize: "0.9375rem",
             }}
           >
             Ver Historial Completo del Vehículo

@@ -2,7 +2,7 @@
 import { useForm } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import {
   Dialog,
   DialogTitle,
@@ -13,16 +13,16 @@ import {
   Box,
   Typography,
   Grid,
-  Card,
-  CardContent,
   IconButton,
-  Avatar,
+  FormControlLabel,
+  Switch,
 } from "@mui/material"
 import {
   Close as CloseIcon,
   Person as PersonIcon,
   Phone as PhoneIcon,
   LocationOn as LocationOnIcon,
+  AccountBalance as AccountBalanceIcon,
 } from "@mui/icons-material"
 
 const clienteSchema = yup.object({
@@ -37,16 +37,25 @@ const clienteSchema = yup.object({
     .min(2, "El apellido debe tener al menos 2 caracteres")
     .max(50, "El apellido no puede exceder 50 caracteres"),
   telefono: yup.string().nullable(),
+  tiene_cuenta_corriente: yup.boolean(),
+  limite_credito: yup
+    .number()
+    .nullable()
+    .transform((value, originalValue) => (originalValue === "" ? null : value))
+    .min(0, "El límite de crédito no puede ser negativo"),
 })
 
 const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false }) => {
   const isEditing = Boolean(cliente)
+  const [tieneCuentaCorriente, setTieneCuentaCorriente] = useState(false)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    watch,
+    setValue,
   } = useForm({
     resolver: yupResolver(clienteSchema),
     defaultValues: {
@@ -55,8 +64,16 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
       dni: "",
       telefono: "",
       direccion: "",
+      tiene_cuenta_corriente: false,
+      limite_credito: 0,
     },
   })
+
+  const watchTieneCuenta = watch("tiene_cuenta_corriente")
+
+  useEffect(() => {
+    setTieneCuentaCorriente(watchTieneCuenta)
+  }, [watchTieneCuenta])
 
   useEffect(() => {
     if (open) {
@@ -66,7 +83,10 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
         dni: cliente?.dni || "",
         telefono: cliente?.telefono || "",
         direccion: cliente?.direccion || "",
+        tiene_cuenta_corriente: cliente?.tiene_cuenta_corriente || false,
+        limite_credito: cliente?.limite_credito || 0,
       })
+      setTieneCuentaCorriente(cliente?.tiene_cuenta_corriente || false)
     }
   }, [open, cliente, reset])
 
@@ -81,7 +101,10 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
       dni: "",
       telefono: "",
       direccion: "",
+      tiene_cuenta_corriente: false,
+      limite_credito: 0,
     })
+    setTieneCuentaCorriente(false)
     onClose()
   }
 
@@ -89,123 +112,118 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
     <Dialog
       open={open}
       onClose={handleClose}
-      maxWidth="md"
+      maxWidth="lg"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 3,
-          maxHeight: "85vh",
+          borderRadius: 2,
+          height: "auto",
+          maxHeight: "90vh",
         },
       }}
     >
       <DialogTitle
         sx={{
-          backgroundColor: "#d84315",
-          color: "white",
-          p: 3,
+          backgroundColor: "#fff",
+          borderBottom: "1px solid #e5e7eb",
+          p: 2.5,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <Avatar
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box
             sx={{
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
-              width: 48,
-              height: 48,
+              width: 8,
+              height: 32,
+              backgroundColor: "#dc2626",
+              borderRadius: 1,
             }}
-          >
-            <PersonIcon />
-          </Avatar>
-          <Box>
-            <Typography variant="h5" component="h2" sx={{ fontWeight: "bold", mb: 0.5 }}>
-              {isEditing ? "Editar Cliente" : "Nuevo Cliente"}
-            </Typography>
-            <Typography variant="body2" sx={{ opacity: 0.9 }}>
-              {isEditing
-                ? "Modifica la información del cliente existente"
-                : "Completa los datos para registrar un nuevo cliente"}
-            </Typography>
-          </Box>
+          />
+          <Typography variant="h6" component="h2" sx={{ fontWeight: 600, color: "#171717" }}>
+            {isEditing ? "Editar Cliente" : "Nuevo Cliente"}
+          </Typography>
         </Box>
         <IconButton
           onClick={handleClose}
+          size="small"
           sx={{
-            color: "white",
-            backgroundColor: "rgba(255, 255, 255, 0.1)",
+            color: "#6b7280",
             "&:hover": {
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
+              backgroundColor: "#f3f4f6",
             },
           }}
         >
-          <CloseIcon />
+          <CloseIcon fontSize="small" />
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: 3 }}>
-        <Box component="form" onSubmit={handleSubmit(handleFormSubmit)}>
+      <DialogContent sx={{ pt: 4, px: 3, pb: 3, backgroundColor: "#fafafa" }}>
+        <Box component="form" mt={2} onSubmit={handleSubmit(handleFormSubmit)}>
           <Grid container spacing={3}>
-            {/* Información Personal */}
-            <Grid item xs={12}>
-              <Card sx={{ elevation: 2, borderRadius: 2 }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                    <Avatar
-                      sx={{
-                        backgroundColor: "#fff3e0",
-                        color: "#d84315",
-                        width: 40,
-                        height: 40,
-                      }}
-                    >
-                      <PersonIcon />
-                    </Avatar>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: "#171717" }}>
-                      Información Personal
-                    </Typography>
-                  </Box>
-
+            {/* Columna Izquierda */}
+            <Grid item xs={12} md={6} >
+              {/* Información Personal */}
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <PersonIcon sx={{ fontSize: 18, color: "#dc2626" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Información Personal
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
                   <Grid container spacing={2}>
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12}>
                       <TextField
                         {...register("nombre")}
-                        label="Nombre *"
+                        label="Nombre"
                         fullWidth
+                        size="small"
                         error={!!errors.nombre}
                         helperText={errors.nombre?.message}
                         placeholder="Ingresa el nombre"
                         sx={{
                           "& .MuiOutlinedInput-root": {
-                            borderRadius: 2,
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
                             "&.Mui-focused fieldset": {
-                              borderColor: "#d84315",
+                              borderColor: "#dc2626",
                             },
                           },
                           "& .MuiInputLabel-root.Mui-focused": {
-                            color: "#d84315",
+                            color: "#dc2626",
                           },
                         }}
                       />
                     </Grid>
 
-                    <Grid item xs={12} md={6}>
+                    <Grid item xs={12}>
                       <TextField
                         {...register("apellido")}
-                        label="Apellido *"
+                        label="Apellido"
                         fullWidth
+                        size="small"
                         error={!!errors.apellido}
                         helperText={errors.apellido?.message}
                         placeholder="Ingresa el apellido"
                         sx={{
                           "& .MuiOutlinedInput-root": {
-                            borderRadius: 2,
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
                             "&.Mui-focused fieldset": {
-                              borderColor: "#d84315",
+                              borderColor: "#dc2626",
                             },
                           },
                           "& .MuiInputLabel-root.Mui-focused": {
-                            color: "#d84315",
+                            color: "#dc2626",
                           },
                         }}
                       />
@@ -216,114 +234,187 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
                         {...register("dni")}
                         label="DNI"
                         fullWidth
+                        size="small"
                         error={!!errors.dni}
                         helperText={errors.dni?.message}
                         placeholder="Ej: 12345678"
                         inputProps={{ maxLength: 8 }}
                         sx={{
                           "& .MuiOutlinedInput-root": {
-                            borderRadius: 2,
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
                             "&.Mui-focused fieldset": {
-                              borderColor: "#d84315",
+                              borderColor: "#dc2626",
                             },
                           },
                           "& .MuiInputLabel-root.Mui-focused": {
-                            color: "#d84315",
+                            color: "#dc2626",
                           },
                         }}
                       />
                     </Grid>
                   </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
+                </Box>
+              </Box>
 
-            {/* Información de Contacto */}
-            <Grid item xs={12}>
-              <Card sx={{ elevation: 2, borderRadius: 2 }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                    <Avatar
-                      sx={{
-                        backgroundColor: "#e3f2fd",
-                        color: "#1976d2",
-                        width: 40,
-                        height: 40,
-                      }}
-                    >
-                      <PhoneIcon />
-                    </Avatar>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: "#171717" }}>
-                      Información de Contacto
-                    </Typography>
-                  </Box>
-
+              {/* Información de Contacto */}
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <PhoneIcon sx={{ fontSize: 18, color: "#1976d2" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Contacto
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
                   <TextField
                     {...register("telefono")}
                     label="Teléfono"
                     fullWidth
+                    size="small"
                     error={!!errors.telefono}
                     helperText={errors.telefono?.message}
                     placeholder="Ej: 11-1234-5678"
                     sx={{
                       "& .MuiOutlinedInput-root": {
-                        borderRadius: 2,
+                        borderRadius: 1.5,
+                        backgroundColor: "#fafafa",
                         "&.Mui-focused fieldset": {
-                          borderColor: "#d84315",
+                          borderColor: "#dc2626",
                         },
                       },
                       "& .MuiInputLabel-root.Mui-focused": {
-                        color: "#d84315",
+                        color: "#dc2626",
                       },
                     }}
                   />
-                </CardContent>
-              </Card>
+                </Box>
+              </Box>
             </Grid>
 
-            {/* Dirección */}
-            <Grid item xs={12}>
-              <Card sx={{ elevation: 2, borderRadius: 2 }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 3 }}>
-                    <Avatar
-                      sx={{
-                        backgroundColor: "#e8f5e8",
-                        color: "#4caf50",
-                        width: 40,
-                        height: 40,
-                      }}
-                    >
-                      <LocationOnIcon />
-                    </Avatar>
-                    <Typography variant="h6" sx={{ fontWeight: 600, color: "#171717" }}>
-                      Dirección
-                    </Typography>
-                  </Box>
-
+            {/* Columna Derecha */}
+            <Grid item xs={12} md={6}>
+              {/* Dirección */}
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <LocationOnIcon sx={{ fontSize: 18, color: "#4caf50" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Dirección
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
                   <TextField
                     {...register("direccion")}
                     label="Dirección"
                     fullWidth
+                    size="small"
                     multiline
-                    rows={3}
+                    rows={4}
                     error={!!errors.direccion}
                     helperText={errors.direccion?.message}
                     placeholder="Calle, número, piso, departamento"
                     sx={{
                       "& .MuiOutlinedInput-root": {
-                        borderRadius: 2,
+                        borderRadius: 1.5,
+                        backgroundColor: "#fafafa",
                         "&.Mui-focused fieldset": {
-                          borderColor: "#d84315",
+                          borderColor: "#dc2626",
                         },
                       },
                       "& .MuiInputLabel-root.Mui-focused": {
-                        color: "#d84315",
+                        color: "#dc2626",
                       },
                     }}
                   />
-                </CardContent>
-              </Card>
+                </Box>
+              </Box>
+
+              {/* Cuenta Corriente */}
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <AccountBalanceIcon sx={{ fontSize: 18, color: "#ff9800" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Cuenta Corriente
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        {...register("tiene_cuenta_corriente")}
+                        checked={tieneCuentaCorriente}
+                        onChange={(e) => {
+                          setValue("tiene_cuenta_corriente", e.target.checked)
+                          setTieneCuentaCorriente(e.target.checked)
+                        }}
+                        size="small"
+                        sx={{
+                          "& .MuiSwitch-switchBase.Mui-checked": {
+                            color: "#dc2626",
+                          },
+                          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                            backgroundColor: "#dc2626",
+                          },
+                        }}
+                      />
+                    }
+                    label={
+                      <Typography variant="body2" fontWeight="medium" sx={{ color: "#374151" }}>
+                        Habilitar cuenta corriente
+                      </Typography>
+                    }
+                    sx={{ mb: tieneCuentaCorriente ? 2 : 0 }}
+                  />
+
+                  {tieneCuentaCorriente && (
+                    <Box>
+                      <TextField
+                        {...register("limite_credito")}
+                        label="Límite de Crédito"
+                        fullWidth
+                        size="small"
+                        type="number"
+                        error={!!errors.limite_credito}
+                        helperText={errors.limite_credito?.message || "Ingresa 0 para crédito ilimitado"}
+                        placeholder="0"
+                        inputProps={{ min: 0, step: "0.01" }}
+                        sx={{
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 1.5,
+                            backgroundColor: "#fafafa",
+                            "&.Mui-focused fieldset": {
+                              borderColor: "#dc2626",
+                            },
+                          },
+                          "& .MuiInputLabel-root.Mui-focused": {
+                            color: "#dc2626",
+                          },
+                        }}
+                      />
+                    </Box>
+                  )}
+                </Box>
+              </Box>
             </Grid>
           </Grid>
         </Box>
@@ -331,25 +422,28 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
 
       <DialogActions
         sx={{
-          p: 3,
-          backgroundColor: "#f5f5f5",
-          borderTop: "1px solid #e0e0e0",
-          gap: 2,
+          p: 2.5,
+          backgroundColor: "#fff",
+          borderTop: "1px solid #e5e7eb",
+          gap: 1.5,
         }}
       >
         <Button
           onClick={handleClose}
           variant="outlined"
+          size="medium"
           sx={{
-            borderColor: "#d0d0d0",
-            color: "#666",
-            borderRadius: 2,
+            borderColor: "#d1d5db",
+            color: "#6b7280",
+            borderRadius: 1.5,
             px: 3,
-            py: 1.5,
-            fontWeight: 600,
+            py: 1,
+            fontWeight: 500,
+            textTransform: "none",
+            fontSize: "0.875rem",
             "&:hover": {
-              backgroundColor: "#f5f5f5",
-              borderColor: "#bbb",
+              backgroundColor: "#f9fafb",
+              borderColor: "#9ca3af",
             },
           }}
         >
@@ -358,23 +452,28 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
         <Button
           onClick={handleSubmit(handleFormSubmit)}
           variant="contained"
+          size="medium"
           disabled={loading}
           sx={{
-            backgroundColor: "#d84315",
-            borderRadius: 2,
+            backgroundColor: "#dc2626",
+            borderRadius: 1.5,
             px: 3,
-            py: 1.5,
-            fontWeight: 600,
-            boxShadow: "0 4px 12px rgba(216, 67, 21, 0.3)",
+            py: 1,
+            fontWeight: 500,
+            textTransform: "none",
+            fontSize: "0.875rem",
+            boxShadow: "0 1px 3px rgba(220, 38, 38, 0.3)",
             "&:hover": {
-              backgroundColor: "#c13711",
+              backgroundColor: "#b91c1c",
+              boxShadow: "0 2px 6px rgba(220, 38, 38, 0.4)",
             },
             "&:disabled": {
-              opacity: 0.5,
+              opacity: 0.6,
+              backgroundColor: "#dc2626",
             },
           }}
         >
-          {loading ? "Guardando..." : isEditing ? "Actualizar Cliente" : "Crear Cliente"}
+          {loading ? "Guardando..." : isEditing ? "Actualizar" : "Crear Cliente"}
         </Button>
       </DialogActions>
     </Dialog>

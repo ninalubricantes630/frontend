@@ -3,12 +3,12 @@
 import { useState } from "react"
 import SearchBar from "../../components/Dashboard/SearchBar"
 import SearchResults from "../../components/Dashboard/SearchResults"
-import { Box, Card, CardContent } from "@mui/material"
+import { Box } from "@mui/material"
 import clientesService from "../../services/clientesService"
 import vehiculosService from "../../services/vehiculosService"
 
 const DashboardPage = () => {
-  const [searchMode, setSearchMode] = useState("patente") // 'cliente' o 'patente'
+  const [searchMode, setSearchMode] = useState("patente")
   const [searchTerm, setSearchTerm] = useState("")
   const [searchResults, setSearchResults] = useState([])
   const [loading, setLoading] = useState(false)
@@ -27,15 +27,20 @@ const DashboardPage = () => {
       let results = []
 
       if (searchMode === "cliente") {
-        const clientesData = await clientesService.getClientes(1, 10, term)
-        const clientesArray = clientesData?.data || clientesData || []
-        results = clientesArray.map((cliente) => ({
-          ...cliente,
-        }))
+        const response = await clientesService.getClientes({ page: 1, limit: 10, search: term })
+        const clientesArray = response?.data || []
+        results = Array.isArray(clientesArray) ? clientesArray : []
       } else {
-        const vehiculosData = await vehiculosService.getAll(1, 10, term, "")
-        const vehiculosArray = vehiculosData?.data || vehiculosData || []
-        results = vehiculosArray
+        const response = await vehiculosService.getAll({
+          page: 1,
+          limit: 10,
+          search: term,
+          searchCriteria: "patente",
+        })
+        console.log("[v0] Vehicle search response:", response)
+        const vehiculosArray = response?.vehiculos || response?.data?.vehiculos || []
+        results = Array.isArray(vehiculosArray) ? vehiculosArray : []
+        console.log("[v0] Processed vehiculos results:", results)
       }
 
       setSearchResults(results)
@@ -54,21 +59,15 @@ const DashboardPage = () => {
   }
 
   return (
-    <Box sx={{ p: 3, backgroundColor: "#f5f5f5", minHeight: "100vh" }}>
-      <Box sx={{ maxWidth: "1200px", mx: "auto" }}>
-      
+    <Box sx={{ p: 2, backgroundColor: "#f8fafc", minHeight: "100vh" }}>
+      <Box sx={{ maxWidth: "1400px", mx: "auto" }}>
+        <Box sx={{ mb: 2, p: 3, bgcolor: "white", borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
+          <SearchBar onSearch={handleSearch} searchMode={searchMode} onToggleMode={handleToggleMode} />
+        </Box>
 
-        <Card elevation={2} sx={{ mb: 3, borderRadius: 2 }}>
-          <CardContent sx={{ p: 4 }}>
-            <SearchBar onSearch={handleSearch} searchMode={searchMode} onToggleMode={handleToggleMode} />
-          </CardContent>
-        </Card>
-
-        <Card elevation={2} sx={{ borderRadius: 2 }}>
-          <CardContent sx={{ p: 4 }}>
-            <SearchResults results={searchResults} loading={loading} searchTerm={searchTerm} searchMode={searchMode} />
-          </CardContent>
-        </Card>
+        <Box sx={{ p: 3, bgcolor: "white", borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
+          <SearchResults results={searchResults} loading={loading} searchTerm={searchTerm} searchMode={searchMode} />
+        </Box>
       </Box>
     </Box>
   )

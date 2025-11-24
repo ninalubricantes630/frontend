@@ -10,10 +10,10 @@ export const useClientes = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
     total: 0,
     totalPages: 0,
-    currentPage: 1,
-    limit: 10,
   })
   const [currentFilters, setCurrentFilters] = useState({
     search: "",
@@ -28,27 +28,35 @@ export const useClientes = () => {
       setLoading(true)
       setError(null)
       setCurrentFilters({ search, searchBy })
-      try {
-        const response = await clientesService.getClientes(page, limit, search, searchBy)
 
-        if (!response) {
+
+      try {
+        const response = await clientesService.getClientes({ page, limit, search, searchBy })
+
+
+        if (!response || !response.data) {
           setClientes([])
+          setPagination({ page: 1, limit: 10, total: 0, totalPages: 0 })
           return
         }
 
-        const clientesData = response.data || response || []
+        const clientesData = response.data.data || []
+        const paginationData = response.data.pagination || {}
+
 
         setClientes(clientesData)
         setPagination({
-          total: response.total || 0,
-          totalPages: response.totalPages || 1,
-          currentPage: response.currentPage || page,
-          limit: Number(limit),
+          page: paginationData.currentPage || page,
+          limit: paginationData.limit || limit,
+          total: paginationData.total || 0,
+          totalPages: paginationData.totalPages || 0,
         })
       } catch (err) {
+        console.error("[v0] Error in loadClientes:", err)
         const { userMessage } = errorHandler.handleApiError(err, "cargar clientes")
         setError(userMessage)
         setClientes([])
+        setPagination({ page: 1, limit: 10, total: 0, totalPages: 0 })
       } finally {
         setLoading(false)
       }
@@ -61,7 +69,7 @@ export const useClientes = () => {
       const { search = "", limit = 10, page = 1, searchBy = "" } = params
 
       try {
-        const result = await clientesService.getClientes(page, limit, search, searchBy)
+        const result = await clientesService.getClientes({ page, limit, search, searchBy })
         return result
       } catch (err) {
         const { userMessage } = errorHandler.handleApiError(err, "buscar clientes")
@@ -80,7 +88,7 @@ export const useClientes = () => {
 
         errorHandler.handleSuccess("Cliente creado exitosamente", "crear cliente")
 
-        await loadClientes(pagination.currentPage, pagination.limit, currentFilters.search, currentFilters.searchBy)
+        await loadClientes(pagination.page, pagination.limit, currentFilters.search, currentFilters.searchBy)
 
         return { success: true, data: newCliente }
       } catch (err) {
@@ -91,7 +99,7 @@ export const useClientes = () => {
         setLoading(false)
       }
     },
-    [loadClientes, pagination.currentPage, pagination.limit, currentFilters, errorHandler],
+    [loadClientes, pagination.page, pagination.limit, currentFilters, errorHandler],
   )
 
   const updateCliente = useCallback(
@@ -128,7 +136,7 @@ export const useClientes = () => {
         return { success: true }
       } catch (err) {
         const { userMessage } = errorHandler.handleApiError(err, "eliminar cliente")
-  
+
         setError(userMessage)
         return { success: false, error: userMessage }
       } finally {
@@ -138,18 +146,17 @@ export const useClientes = () => {
     [errorHandler],
   )
 
-  const changePage = useCallback(
-    (newPage) => {
-      loadClientes(newPage, pagination.limit, currentFilters.search, currentFilters.searchBy)
+  const handlePageChange = useCallback(
+    (newPage, newLimit) => {
+      if (newLimit !== undefined && newLimit !== pagination.limit) {
+        // Si cambia el límite, volver a página 1
+        loadClientes(1, newLimit, currentFilters.search, currentFilters.searchBy)
+      } else {
+        // Solo cambió la página
+        loadClientes(newPage, pagination.limit, currentFilters.search, currentFilters.searchBy)
+      }
     },
     [loadClientes, pagination.limit, currentFilters],
-  )
-
-  const changeRowsPerPage = useCallback(
-    (newLimit) => {
-      loadClientes(1, newLimit, currentFilters.search, currentFilters.searchBy)
-    },
-    [loadClientes, currentFilters],
   )
 
   return {
@@ -162,7 +169,6 @@ export const useClientes = () => {
     createCliente,
     updateCliente,
     deleteCliente,
-    changePage,
-    changeRowsPerPage,
+    handlePageChange,
   }
 }

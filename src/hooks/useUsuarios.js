@@ -1,47 +1,64 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import usuariosService from "../services/usuariosService"
 
 export const useUsuarios = () => {
   const [usuarios, setUsuarios] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [totalPages, setTotalPages] = useState(0)
-  const [currentPage, setCurrentPage] = useState(1)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  })
 
-  // Cargar usuarios con filtros
   const loadUsuarios = useCallback(
-    async (filters = {}) => {
+    async (params = {}) => {
       try {
         setLoading(true)
         setError(null)
 
-        const params = {
-          page: currentPage,
-          limit: 10,
-          ...filters,
+        const fullParams = {
+          page: pagination.page,
+          limit: pagination.limit,
+          ...params,
         }
 
-        const response = await usuariosService.getUsuarios(params)
+        const response = await usuariosService.getUsuarios(fullParams)
+
+
         setUsuarios(response.data?.users || [])
-        setTotalPages(response.data?.pagination?.totalPages || 0)
+        setPagination({
+          page: response.data?.pagination?.page || fullParams.page,
+          limit: response.data?.pagination?.limit || fullParams.limit,
+          total: response.data?.pagination?.total || 0,
+          totalPages: response.data?.pagination?.totalPages || 0,
+        })
       } catch (err) {
         setError(err.message || "Error al cargar usuarios")
-        console.error("Error loading usuarios:", err)
+        console.error("[v0] Error loading usuarios:", err)
       } finally {
         setLoading(false)
       }
     },
-    [currentPage],
+    [pagination.page, pagination.limit],
   )
 
-  // Crear usuario
+  const handlePageChange = useCallback((page, limit) => {
+    setPagination((prev) => ({ ...prev, page, limit }))
+  }, [])
+
+  useEffect(() => {
+    loadUsuarios()
+  }, [pagination.page, pagination.limit])
+
   const createUsuario = async (userData) => {
     try {
       setLoading(true)
       const response = await usuariosService.createUsuario(userData)
-      await loadUsuarios() // Recargar lista
+      await loadUsuarios()
       return response
     } catch (err) {
       setError(err.message || "Error al crear usuario")
@@ -51,12 +68,11 @@ export const useUsuarios = () => {
     }
   }
 
-  // Actualizar usuario
   const updateUsuario = async (id, userData) => {
     try {
       setLoading(true)
       const response = await usuariosService.updateUsuario(id, userData)
-      await loadUsuarios() // Recargar lista
+      await loadUsuarios()
       return response
     } catch (err) {
       setError(err.message || "Error al actualizar usuario")
@@ -66,12 +82,11 @@ export const useUsuarios = () => {
     }
   }
 
-  // Eliminar usuario
   const deleteUsuario = async (id) => {
     try {
       setLoading(true)
       await usuariosService.deleteUsuario(id)
-      await loadUsuarios() // Recargar lista
+      await loadUsuarios()
     } catch (err) {
       setError(err.message || "Error al eliminar usuario")
       throw err
@@ -80,12 +95,6 @@ export const useUsuarios = () => {
     }
   }
 
-  // Cambiar página
-  const changePage = (page) => {
-    setCurrentPage(page)
-  }
-
-  // Limpiar error
   const clearError = () => {
     setError(null)
   }
@@ -94,13 +103,12 @@ export const useUsuarios = () => {
     usuarios,
     loading,
     error,
-    totalPages,
-    currentPage,
+    pagination,
     loadUsuarios,
+    handlePageChange,
     createUsuario,
     updateUsuario,
     deleteUsuario,
-    changePage,
     clearError,
   }
 }

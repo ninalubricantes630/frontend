@@ -1,9 +1,8 @@
 import axios from "axios"
 import secureStorage from "../utils/secureStorage"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.milolubricantes.site/api"
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4485/api"
 
-// Crear instancia de axios
 const api = axios.create({
   baseURL: API_BASE_URL,
   timeout: 10000,
@@ -12,7 +11,6 @@ const api = axios.create({
   },
 })
 
-// Interceptor para agregar token de autenticación
 api.interceptors.request.use(
   (config) => {
     const token = secureStorage.getToken()
@@ -28,21 +26,44 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    // El backend ahora siempre devuelve { success, data, message, pagination? }
     return response.data
   },
   (error) => {
-    // Manejo mejorado de errores con respuestas estandarizadas
+    // Only redirect to login if:
+    // 1. We got a 401
+    // 2. We're NOT on the login page already
+    // 3. We're NOT trying to login (the request is not to /auth/login)
     if (error.response?.status === 401) {
-      secureStorage.clearAll()
-      window.location.href = "/login"
-      return Promise.reject(new Error("Sesión expirada"))
+      const isLoginRequest = error.config?.url?.includes("/auth/login")
+      const isOnLoginPage = window.location.pathname === "/login"
+
+      if (!isLoginRequest && !isOnLoginPage) {
+        secureStorage.clearAll()
+        // Use history navigation instead of window.location to avoid page reload
+        if (window.history) {
+          window.history.pushState({}, "", "/login")
+          window.dispatchEvent(new PopStateEvent("popstate"))
+        }
+      }
     }
 
     const errorData = error.response?.data
     if (errorData && !errorData.success) {
-      // El ResponseHelper del backend estructura los errores como { success: false, error: { message, code } }
-      const errorMessage = errorData.error?.message || errorData.message || "Error del servidor"
+      let errorMessage = "Error del servidor"
+
+      // Si hay errores de validación específicos, usar el primer mensaje
+      if (errorData.error?.validationErrors && Array.isArray(errorData.error.validationErrors)) {
+        if (errorData.error.validationErrors.length > 0) {
+          errorMessage = errorData.error.validationErrors[0].message
+        }
+      } else if (errorData.error?.message) {
+        // Si no hay validationErrors, usar el mensaje de error general
+        errorMessage = errorData.error.message
+      } else if (errorData.message) {
+        // Fallback al mensaje directo
+        errorMessage = errorData.message
+      }
+
       return Promise.reject(new Error(errorMessage))
     }
 

@@ -75,9 +75,9 @@ function Header({ onMenuClick }) {
               mr: 2,
               display: { lg: "none" },
               color: "#666",
-              bgcolor: "rgba(216, 67, 21, 0.1)",
+              bgcolor: "rgba(220, 38, 38, 0.1)",
               "&:hover": {
-                bgcolor: "rgba(216, 67, 21, 0.2)",
+                bgcolor: "rgba(220, 38, 38, 0.2)",
               },
             }}
           >
@@ -122,9 +122,9 @@ function Header({ onMenuClick }) {
                   label={isAdmin() ? "Administrador" : "Empleado"}
                   size="small"
                   sx={{
-                    bgcolor: "rgba(216, 67, 21, 0.1)",
-                    color: "#d84315",
-                    border: "1px solid rgba(216, 67, 21, 0.3)",
+                    bgcolor: "rgba(220, 38, 38, 0.1)",
+                    color: "#dc2626",
+                    border: "1px solid rgba(220, 38, 38, 0.3)",
                     fontWeight: "medium",
                     fontSize: "0.75rem",
                   }}
@@ -135,7 +135,7 @@ function Header({ onMenuClick }) {
             <IconButton onClick={handleMenuOpen} sx={{ p: 0 }}>
               <Avatar
                 sx={{
-                  bgcolor: "#d84315",
+                  bgcolor: "#dc2626",
                   width: 48,
                   height: 48,
                   fontWeight: "bold",
@@ -157,17 +157,17 @@ function Header({ onMenuClick }) {
                   mt: 1.5,
                   minWidth: 280,
                   borderRadius: 2,
-                  border: "1px solid rgba(216, 67, 21, 0.2)",
+                  border: "1px solid rgba(220, 38, 38, 0.2)",
                 },
               }}
               transformOrigin={{ horizontal: "right", vertical: "top" }}
               anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
             >
-              <Paper sx={{ p: 3, bgcolor: "rgba(216, 67, 21, 0.05)" }}>
+              <Paper sx={{ p: 3, bgcolor: "rgba(220, 38, 38, 0.05)" }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                   <Avatar
                     sx={{
-                      bgcolor: "#d84315",
+                      bgcolor: "#dc2626",
                       width: 56,
                       height: 56,
                       fontWeight: "bold",
@@ -188,8 +188,8 @@ function Header({ onMenuClick }) {
                       size="small"
                       sx={{
                         bgcolor: "white",
-                        color: "#d84315",
-                        border: "1px solid rgba(216, 67, 21, 0.3)",
+                        color: "#dc2626",
+                        border: "1px solid rgba(220, 38, 38, 0.3)",
                         fontWeight: "medium",
                       }}
                     />
@@ -205,12 +205,12 @@ function Header({ onMenuClick }) {
                   py: 1.5,
                   px: 2,
                   "&:hover": {
-                    bgcolor: "rgba(216, 67, 21, 0.1)",
+                    bgcolor: "rgba(220, 38, 38, 0.1)",
                   },
                 }}
               >
                 <ListItemIcon>
-                  <PersonIcon sx={{ color: "#d84315" }} />
+                  <PersonIcon sx={{ color: "#dc2626" }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Mi Perfil"
@@ -226,12 +226,12 @@ function Header({ onMenuClick }) {
                   py: 1.5,
                   px: 2,
                   "&:hover": {
-                    bgcolor: "rgba(216, 67, 21, 0.1)",
+                    bgcolor: "rgba(220, 38, 38, 0.1)",
                   },
                 }}
               >
                 <ListItemIcon>
-                  <LockIcon sx={{ color: "#d84315" }} />
+                  <LockIcon sx={{ color: "#dc2626" }} />
                 </ListItemIcon>
                 <ListItemText
                   primary="Cambiar Contraseña"
@@ -247,12 +247,12 @@ function Header({ onMenuClick }) {
                     py: 1.5,
                     px: 2,
                     "&:hover": {
-                      bgcolor: "rgba(216, 67, 21, 0.1)",
+                      bgcolor: "rgba(220, 38, 38, 0.1)",
                     },
                   }}
                 >
                   <ListItemIcon>
-                    <SettingsIcon sx={{ color: "#d84315" }} />
+                    <SettingsIcon sx={{ color: "#dc2626" }} />
                   </ListItemIcon>
                   <ListItemText
                     primary="Configuración"

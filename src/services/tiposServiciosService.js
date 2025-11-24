@@ -4,7 +4,7 @@ const tiposServiciosService = {
   // Obtener todos los tipos de servicios
   getTiposServicios: async (params = {}) => {
     const response = await api.get("/tipos-servicios", { params })
-    return response.data
+    return response
   },
 
   // Obtener tipo de servicio por ID

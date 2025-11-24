@@ -33,6 +33,13 @@ import {
   Tune as TuneIcon,
   Business as BusinessIcon,
   PersonAdd as PersonAddIcon,
+  Inventory as InventoryIcon,
+  Category as CategoryIcon,
+  ShoppingCart as ShoppingCartIcon,
+  Receipt as ReceiptIcon,
+  AccountBalance as AccountBalanceIcon,
+  CreditCard as CreditCardIcon,
+  History as HistoryIcon, // Added History icon import
 } from "@mui/icons-material"
 
 const drawerWidth = 280
@@ -89,25 +96,42 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
   const location = useLocation()
   const { isAdmin } = useAuth()
   const [configOpen, setConfigOpen] = useState(false)
+  const [reportsOpen, setReportsOpen] = useState(false)
 
   const menuItems = [
     { text: "Dashboard", icon: DashboardIcon, path: "/dashboard" },
     { text: "Clientes", icon: PeopleIcon, path: "/clientes" },
     { text: "Vehículos", icon: CarIcon, path: "/vehiculos" },
     { text: "Servicios", icon: BuildIcon, path: "/servicios" },
-    { text: "Reportes", icon: BarChartIcon, path: "/reportes" },
+    { text: "Stock", icon: InventoryIcon, path: "/stock" },
+    { text: "Ventas", icon: ShoppingCartIcon, path: "/ventas" },
+    { text: "Caja", icon: AccountBalanceIcon, path: "/caja" },
   ]
 
-  const configItems = [
-    { text: "General", path: "/configuracion", icon: SettingsIcon },
-    { text: "Tipos de Servicios", path: "/configuracion/tipos-servicios", icon: TuneIcon },
-    { text: "Empleados", path: "/configuracion/empleados", icon: PersonAddIcon },
-    { text: "Sucursales", path: "/configuracion/sucursales", icon: BusinessIcon },
-    ...(isAdmin() ? [{ text: "Usuarios", path: "/configuracion/usuarios", icon: ManageAccountsIcon }] : []),
+  const reportItems = [
+    { text: "Reporte de Servicios", path: "/reportes", icon: BuildIcon },
+    { text: "Reporte de Ventas", path: "/reportes/ventas", icon: ReceiptIcon },
+    { text: "Historial de Caja", path: "/caja/historial", icon: HistoryIcon }, // Added Historial de Caja to reportItems
   ]
+
+  const configItems = isAdmin()
+    ? [
+        { text: "General", path: "/configuracion", icon: SettingsIcon },
+        { text: "Tipos de Servicios", path: "/configuracion/tipos-servicios", icon: TuneIcon },
+        { text: "Categorías", path: "/configuracion/categorias", icon: CategoryIcon },
+        { text: "Empleados", path: "/configuracion/empleados", icon: PersonAddIcon },
+        { text: "Sucursales", path: "/configuracion/sucursales", icon: BusinessIcon },
+        { text: "Tarjetas de Crédito", path: "/configuracion/tarjetas", icon: CreditCardIcon },
+        { text: "Usuarios", path: "/configuracion/usuarios", icon: ManageAccountsIcon },
+      ]
+    : []
 
   const isConfigPath = () => {
     return location.pathname.startsWith("/configuracion")
+  }
+
+  const isReportsPath = () => {
+    return location.pathname.startsWith("/reportes")
   }
 
   const isActivePath = (path) => {
@@ -119,7 +143,7 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
       <Paper
         elevation={0}
         sx={{
-          background: "linear-gradient(135deg, #d84315 0%, #c13711 100%)",
+          background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
           p: 2.5,
           display: "flex",
           alignItems: "center",
@@ -144,7 +168,7 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
           </Avatar>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: "bold", color: "white", fontSize: "1.1rem" }}>
-              Milo
+              Nina
             </Typography>
             <Typography variant="body2" sx={{ color: "rgba(255, 255, 255, 0.9)", mt: -0.5, fontSize: "0.8rem" }}>
               Lubricantes
@@ -159,7 +183,7 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
               color: "rgba(255, 255, 255, 0.8)",
               bgcolor: "rgba(255, 255, 255, 0.1)",
               "&:hover": {
-                bgcolor: "rgba(255, 255, 255, 0.2)",
+                bgcolor: "rgba(220, 38, 38, 0.2)",
               },
             }}
           >
@@ -181,10 +205,10 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
             borderRadius: "3px",
           },
           "&::-webkit-scrollbar-thumb": {
-            background: "rgba(216, 67, 21, 0.3)",
+            background: "rgba(220, 38, 38, 0.3)",
             borderRadius: "3px",
             "&:hover": {
-              background: "rgba(216, 67, 21, 0.5)",
+              background: "rgba(220, 38, 38, 0.5)",
             },
           },
         }}
@@ -202,16 +226,16 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
                     borderRadius: 2,
                     py: 1.2,
                     px: 1.5,
-                    bgcolor: isActive ? "#d84315" : "transparent",
+                    bgcolor: isActive ? "#dc2626" : "transparent",
                     color: isActive ? "white" : "#171717",
                     "&:hover": {
-                      bgcolor: isActive ? "#c13711" : "rgba(216, 67, 21, 0.1)",
+                      bgcolor: isActive ? "#b91c1c" : "rgba(220, 38, 38, 0.1)",
                     },
                     boxShadow: isActive ? 2 : 0,
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 36 }}>
-                    <Icon sx={{ color: isActive ? "white" : "#d84315", fontSize: 22 }} />
+                    <Icon sx={{ color: isActive ? "white" : "#dc2626", fontSize: 22 }} />
                   </ListItemIcon>
                   <ListItemText
                     primary={item.text}
@@ -229,40 +253,40 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
 
           <ListItem disablePadding sx={{ mb: 0.5 }}>
             <ListItemButton
-              onClick={() => setConfigOpen(!configOpen)}
+              onClick={() => setReportsOpen(!reportsOpen)}
               sx={{
                 borderRadius: 2,
                 py: 1.2,
                 px: 1.5,
-                bgcolor: isConfigPath() ? "#d84315" : "transparent",
-                color: isConfigPath() ? "white" : "#171717",
+                bgcolor: isReportsPath() ? "#dc2626" : "transparent",
+                color: isReportsPath() ? "white" : "#171717",
                 "&:hover": {
-                  bgcolor: isConfigPath() ? "#c13711" : "rgba(216, 67, 21, 0.1)",
+                  bgcolor: isReportsPath() ? "#b91c1c" : "rgba(220, 38, 38, 0.1)",
                 },
-                boxShadow: isConfigPath() ? 2 : 0,
+                boxShadow: isReportsPath() ? 2 : 0,
               }}
             >
               <ListItemIcon sx={{ minWidth: 36 }}>
-                <SettingsIcon sx={{ color: isConfigPath() ? "white" : "#d84315", fontSize: 22 }} />
+                <BarChartIcon sx={{ color: isReportsPath() ? "white" : "#dc2626", fontSize: 22 }} />
               </ListItemIcon>
               <ListItemText
-                primary="Configuración"
+                primary="Reportes"
                 primaryTypographyProps={{
-                  fontWeight: isConfigPath() ? "bold" : "medium",
+                  fontWeight: isReportsPath() ? "bold" : "medium",
                   fontSize: "0.9rem",
                 }}
               />
-              {configOpen ? (
-                <ExpandLess sx={{ color: isConfigPath() ? "white" : "#666", fontSize: 20 }} />
+              {reportsOpen ? (
+                <ExpandLess sx={{ color: isReportsPath() ? "white" : "#666", fontSize: 20 }} />
               ) : (
-                <ExpandMore sx={{ color: isConfigPath() ? "white" : "#666", fontSize: 20 }} />
+                <ExpandMore sx={{ color: isReportsPath() ? "white" : "#666", fontSize: 20 }} />
               )}
             </ListItemButton>
           </ListItem>
 
-          <Collapse in={configOpen} timeout="auto" unmountOnExit>
+          <Collapse in={reportsOpen} timeout="auto" unmountOnExit>
             <List component="div" disablePadding sx={{ pl: 1.5 }}>
-              {configItems.map((item) => {
+              {reportItems.map((item) => {
                 const Icon = item.icon
                 const isActive = isActivePath(item.path)
 
@@ -274,17 +298,17 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
                         borderRadius: 2,
                         py: 0.8,
                         px: 1.5,
-                        bgcolor: isActive ? "#d84315" : "transparent",
+                        bgcolor: isActive ? "#dc2626" : "transparent",
                         color: isActive ? "white" : "#666",
                         "&:hover": {
-                          bgcolor: isActive ? "#c13711" : "rgba(216, 67, 21, 0.1)",
+                          bgcolor: isActive ? "#b91c1c" : "rgba(220, 38, 38, 0.1)",
                           color: isActive ? "white" : "#171717",
                         },
                         boxShadow: isActive ? 1 : 0,
                       }}
                     >
                       <ListItemIcon sx={{ minWidth: 32 }}>
-                        <Icon sx={{ fontSize: 18, color: isActive ? "white" : "#d84315" }} />
+                        <Icon sx={{ fontSize: 18, color: isActive ? "white" : "#dc2626" }} />
                       </ListItemIcon>
                       <ListItemText
                         primary={item.text}
@@ -299,6 +323,85 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
               })}
             </List>
           </Collapse>
+
+          <Divider sx={{ my: 1.5 }} />
+
+          {isAdmin() && (
+            <>
+              <ListItem disablePadding sx={{ mb: 0.5 }}>
+                <ListItemButton
+                  onClick={() => setConfigOpen(!configOpen)}
+                  sx={{
+                    borderRadius: 2,
+                    py: 1.2,
+                    px: 1.5,
+                    bgcolor: isConfigPath() ? "#dc2626" : "transparent",
+                    color: isConfigPath() ? "white" : "#171717",
+                    "&:hover": {
+                      bgcolor: isConfigPath() ? "#b91c1c" : "rgba(220, 38, 38, 0.1)",
+                    },
+                    boxShadow: isConfigPath() ? 2 : 0,
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 36 }}>
+                    <SettingsIcon sx={{ color: isConfigPath() ? "white" : "#dc2626", fontSize: 22 }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary="Configuración"
+                    primaryTypographyProps={{
+                      fontWeight: isConfigPath() ? "bold" : "medium",
+                      fontSize: "0.9rem",
+                    }}
+                  />
+                  {configOpen ? (
+                    <ExpandLess sx={{ color: isConfigPath() ? "white" : "#666", fontSize: 20 }} />
+                  ) : (
+                    <ExpandMore sx={{ color: isConfigPath() ? "white" : "#666", fontSize: 20 }} />
+                  )}
+                </ListItemButton>
+              </ListItem>
+
+              <Collapse in={configOpen} timeout="auto" unmountOnExit>
+                <List component="div" disablePadding sx={{ pl: 1.5 }}>
+                  {configItems.map((item) => {
+                    const Icon = item.icon
+                    const isActive = isActivePath(item.path)
+
+                    return (
+                      <ListItem key={item.text} disablePadding sx={{ mb: 0.3 }}>
+                        <ListItemButton
+                          onClick={() => onNavigation(item.path)}
+                          sx={{
+                            borderRadius: 2,
+                            py: 0.8,
+                            px: 1.5,
+                            bgcolor: isActive ? "#dc2626" : "transparent",
+                            color: isActive ? "white" : "#666",
+                            "&:hover": {
+                              bgcolor: isActive ? "#b91c1c" : "rgba(220, 38, 38, 0.1)",
+                              color: isActive ? "white" : "#171717",
+                            },
+                            boxShadow: isActive ? 1 : 0,
+                          }}
+                        >
+                          <ListItemIcon sx={{ minWidth: 32 }}>
+                            <Icon sx={{ fontSize: 18, color: isActive ? "white" : "#dc2626" }} />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={item.text}
+                            primaryTypographyProps={{
+                              fontSize: "0.85rem",
+                              fontWeight: isActive ? "bold" : "medium",
+                            }}
+                          />
+                        </ListItemButton>
+                      </ListItem>
+                    )
+                  })}
+                </List>
+              </Collapse>
+            </>
+          )}
         </List>
       </Box>
 
@@ -306,8 +409,8 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
         elevation={0}
         sx={{
           p: 2,
-          bgcolor: "rgba(216, 67, 21, 0.05)",
-          borderTop: "1px solid rgba(216, 67, 21, 0.2)",
+          bgcolor: "rgba(220, 38, 38, 0.05)",
+          borderTop: "1px solid rgba(220, 38, 38, 0.2)",
           textAlign: "center",
           borderRadius: 0,
           position: "sticky",
@@ -320,8 +423,8 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
           size="small"
           sx={{
             bgcolor: "white",
-            color: "#d84315",
-            border: "1px solid rgba(216, 67, 21, 0.3)",
+            color: "#dc2626",
+            border: "1px solid rgba(220, 38, 38, 0.3)",
             fontWeight: "medium",
             mb: 0.5,
             fontSize: "0.7rem",
@@ -329,7 +432,7 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
           }}
         />
         <Typography variant="caption" sx={{ display: "block", color: "#666", fontSize: "0.7rem" }}>
-          © 2025 Milo Lubricantes
+          © 2025 Nina Lubricantes
         </Typography>
       </Paper>
     </Box>

@@ -12,7 +12,7 @@ export const useVehiculos = () => {
   const [pagination, setPagination] = useState({
     total: 0,
     totalPages: 0,
-    currentPage: 1,
+    page: 1,
     limit: 10,
   })
   const [currentFilters, setCurrentFilters] = useState({
@@ -24,31 +24,39 @@ export const useVehiculos = () => {
   const errorHandler = useStandardizedErrorHandler(showToast)
 
   const loadVehiculos = useCallback(
-    async (page = 1, limit = 10, search = "", searchCriteria = "patente") => {
+    async (params = {}) => {
+      const { page = 1, limit = 10, search = "", searchCriteria = "patente" } = params
+
       setLoading(true)
       setError(null)
       setCurrentFilters({ search, searchCriteria })
-      try {
-        const response = await vehiculosService.getAll(page, limit, search, searchCriteria)
 
-        if (!response) {
+      try {
+        const response = await vehiculosService.getAll({ page, limit, search, searchCriteria })
+
+        if (!response?.data) {
           setVehiculos([])
+          setPagination({ total: 0, totalPages: 0, page: 1, limit: 10 })
           return
         }
 
-        const vehiculosData = response.data || response || []
+        const vehiculosData = response.data.vehiculos || []
+        const paginationData = response.data.pagination || {}
+
 
         setVehiculos(vehiculosData)
         setPagination({
-          total: response.total || 0,
-          totalPages: response.totalPages || 1,
-          currentPage: response.currentPage || page,
-          limit: Number(limit),
+          total: paginationData.total || 0,
+          totalPages: paginationData.totalPages || 1,
+          page: paginationData.page || page,
+          limit: paginationData.limit || limit,
         })
       } catch (err) {
+        console.error("[v0] Error al cargar vehículos:", err)
         const { userMessage } = errorHandler.handleApiError(err, "cargar vehículos")
         setError(userMessage)
         setVehiculos([])
+        setPagination({ total: 0, totalPages: 0, page: 1, limit: 10 })
       } finally {
         setLoading(false)
       }
@@ -75,7 +83,7 @@ export const useVehiculos = () => {
         setPagination({
           total: vehiculosData.length,
           totalPages: 1,
-          currentPage: 1,
+          page: 1,
           limit: vehiculosData.length,
         })
       } catch (err) {
@@ -98,12 +106,12 @@ export const useVehiculos = () => {
 
         errorHandler.handleSuccess("Vehículo creado exitosamente", "crear vehículo")
 
-        await loadVehiculos(
-          pagination.currentPage,
-          pagination.limit,
-          currentFilters.search,
-          currentFilters.searchCriteria,
-        )
+        await loadVehiculos({
+          page: pagination.page,
+          limit: pagination.limit,
+          search: currentFilters.search,
+          searchCriteria: currentFilters.searchCriteria,
+        })
 
         return { success: true, data: newVehiculo }
       } catch (err) {
@@ -114,7 +122,7 @@ export const useVehiculos = () => {
         setLoading(false)
       }
     },
-    [loadVehiculos, pagination.currentPage, pagination.limit, currentFilters, errorHandler],
+    [loadVehiculos, pagination.page, pagination.limit, currentFilters, errorHandler],
   )
 
   const updateVehiculo = useCallback(
@@ -161,26 +169,26 @@ export const useVehiculos = () => {
     [errorHandler],
   )
 
-  const changePage = useCallback(
-    (newPage) => {
-      loadVehiculos(newPage, pagination.limit, currentFilters.search, currentFilters.searchCriteria)
+  const handlePageChange = useCallback(
+    (newPage, newLimit) => {
+      const limit = newLimit !== undefined ? newLimit : pagination.limit
+      const page = newLimit !== undefined ? 1 : newPage
+
+
+      loadVehiculos({
+        page,
+        limit,
+        search: currentFilters.search,
+        searchCriteria: currentFilters.searchCriteria,
+      })
     },
     [loadVehiculos, pagination.limit, currentFilters],
   )
 
-  const changeRowsPerPage = useCallback(
-    (newLimit) => {
-      loadVehiculos(1, newLimit, currentFilters.search, currentFilters.searchCriteria)
-    },
-    [loadVehiculos, currentFilters],
-  )
-
   const fetchVehiculos = useCallback(
     async (params = {}) => {
-      const { search = "", limit = 10, page = 1, searchCriteria = "patente" } = params
-
       try {
-        const result = await vehiculosService.getAll(page, limit, search, searchCriteria)
+        const result = await vehiculosService.getAll(params)
         return result
       } catch (err) {
         const { userMessage } = errorHandler.handleApiError(err, "buscar vehículos")
@@ -196,13 +204,12 @@ export const useVehiculos = () => {
     error,
     pagination,
     loadVehiculos,
-    loadVehiculosByCliente, // Exportando nueva función
+    loadVehiculosByCliente,
     fetchVehiculos,
     createVehiculo,
     updateVehiculo,
     deleteVehiculo,
-    changePage,
-    changeRowsPerPage,
+    handlePageChange, // Exportando handler unificado
   }
 }
 

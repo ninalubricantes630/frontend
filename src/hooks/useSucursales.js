@@ -8,17 +8,29 @@ export const useSucursales = () => {
   const [sucursalesActivas, setSucursalesActivas] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [totalPages, setTotalPages] = useState(0)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0,
+  })
 
   const loadSucursales = useCallback(async (params = {}) => {
     try {
       setLoading(true)
       setError(null)
       const response = await sucursalesService.getAll(params)
+
+
       setSucursales(response.data?.sucursales || [])
-      setTotalPages(response.data?.pagination?.totalPages || 0)
+      setPagination({
+        page: response.data?.pagination?.page || 1,
+        limit: response.data?.pagination?.limit || 10,
+        total: response.data?.pagination?.total || 0,
+        totalPages: response.data?.pagination?.totalPages || 0,
+      })
     } catch (error) {
-      console.error("Error loading sucursales:", error)
+      console.error("[v0] Error loading sucursales:", error)
       setError(error.message || "Error al cargar sucursales")
     } finally {
       setLoading(false)
@@ -70,6 +82,13 @@ export const useSucursales = () => {
     }
   }, [])
 
+  const handlePageChange = useCallback(
+    (page, limit) => {
+      loadSucursales({ page, limit })
+    },
+    [loadSucursales],
+  )
+
   useEffect(() => {
     loadSucursales()
     loadSucursalesActivas()
@@ -80,8 +99,9 @@ export const useSucursales = () => {
     sucursalesActivas,
     loading,
     error,
-    totalPages,
+    pagination,
     loadSucursales,
+    handlePageChange,
     loadSucursalesActivas,
     createSucursal,
     updateSucursal,

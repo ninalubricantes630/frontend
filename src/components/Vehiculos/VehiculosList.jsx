@@ -1,6 +1,4 @@
 "use client"
-
-import { useState } from "react"
 import {
   Table,
   TableBody,
@@ -8,46 +6,27 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   IconButton,
   Chip,
-  Typography,
   Box,
   TablePagination,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
 } from "@mui/material"
-import { Edit as EditIcon, Delete as DeleteIcon, DirectionsCar as CarIcon } from "@mui/icons-material"
+import {
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  DirectionsCar as CarIcon,
+  Speed as SpeedIcon,
+} from "@mui/icons-material"
 
-const VehiculosList = ({ vehiculos, loading, pagination, onEdit, onDelete, onPageChange, onRowsPerPageChange }) => {
-  const [deleteDialog, setDeleteDialog] = useState({ open: false, vehiculo: null })
-
-  const handleDeleteClick = (vehiculo) => {
-    setDeleteDialog({ open: true, vehiculo })
-  }
-
-  const handleDeleteConfirm = () => {
-    if (deleteDialog.vehiculo) {
-      onDelete(deleteDialog.vehiculo.id)
-    }
-    setDeleteDialog({ open: false, vehiculo: null })
-  }
-
-  const handleDeleteCancel = () => {
-    setDeleteDialog({ open: false, vehiculo: null })
-  }
-
+const VehiculosList = ({ vehiculos, loading, pagination, onEdit, onDelete, onPageChange }) => {
   const handleChangePage = (event, newPage) => {
     onPageChange(newPage + 1)
   }
 
   const handleChangeRowsPerPage = (event) => {
     const newRowsPerPage = Number.parseInt(event.target.value, 10)
-    onRowsPerPageChange(newRowsPerPage)
+    onPageChange(1, newRowsPerPage)
   }
 
   const formatKilometraje = (km) => {
@@ -56,8 +35,8 @@ const VehiculosList = ({ vehiculos, loading, pagination, onEdit, onDelete, onPag
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="200px">
-        <Typography>Cargando vehículos...</Typography>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+        <span className="text-gray-500 text-sm">Cargando...</span>
       </Box>
     )
   }
@@ -65,38 +44,118 @@ const VehiculosList = ({ vehiculos, loading, pagination, onEdit, onDelete, onPag
   if (!vehiculos || !Array.isArray(vehiculos) || vehiculos.length === 0) {
     return (
       <Box
-        display="flex"
-        flexDirection="column"
-        alignItems="center"
-        justifyContent="center"
-        minHeight="200px"
-        textAlign="center"
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100%",
+          p: 4,
+        }}
       >
-        <CarIcon sx={{ fontSize: 64, color: "grey.400", mb: 2 }} />
-        <Typography variant="h6" color="textSecondary">
-          No hay vehículos registrados
-        </Typography>
-        <Typography variant="body2" color="textSecondary">
-          Comienza agregando el primer vehículo
-        </Typography>
+        <CarIcon sx={{ fontSize: 64, color: "#cbd5e1", mb: 2 }} />
+        <span className="text-gray-500 mb-2 text-sm">No se encontraron vehículos</span>
+        <span className="text-xs text-gray-400">Utiliza "Nuevo Vehículo" para agregar registros</span>
       </Box>
     )
   }
 
   return (
-    <>
-      <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: 3 }}>
-        <Table>
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+      <TableContainer sx={{ flex: 1, overflow: "auto" }}>
+        <Table stickyHeader size="small">
           <TableHead>
-            <TableRow sx={{ bgcolor: "#d84315" }}>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Patente</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Cliente</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Marca/Modelo</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Año</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Color</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Kilometraje</TableCell>
-              <TableCell sx={{ fontWeight: "bold", color: "white" }}>Estado</TableCell>
-              <TableCell align="center" sx={{ fontWeight: "bold", color: "white" }}>
+            <TableRow>
+              <TableCell
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  py: 1.75,
+                  letterSpacing: "0.025em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Patente
+              </TableCell>
+              <TableCell
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  py: 1.75,
+                  letterSpacing: "0.025em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Cliente
+              </TableCell>
+              <TableCell
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  py: 1.75,
+                  letterSpacing: "0.025em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Marca/Modelo
+              </TableCell>
+              <TableCell
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  py: 1.75,
+                  letterSpacing: "0.025em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Año
+              </TableCell>
+              <TableCell
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  py: 1.75,
+                  letterSpacing: "0.025em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Kilometraje
+              </TableCell>
+              <TableCell
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  py: 1.75,
+                  letterSpacing: "0.025em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Estado
+              </TableCell>
+              <TableCell
+                align="right"
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  py: 1.75,
+                  letterSpacing: "0.025em",
+                  textTransform: "uppercase",
+                }}
+              >
                 Acciones
               </TableCell>
             </TableRow>
@@ -106,73 +165,77 @@ const VehiculosList = ({ vehiculos, loading, pagination, onEdit, onDelete, onPag
               <TableRow
                 key={vehiculo.id}
                 sx={{
-                  "&:hover": { bgcolor: "rgba(216, 67, 21, 0.08)" },
-                  opacity: vehiculo.activo ? 1 : 0.6,
+                  "&:hover": { bgcolor: "#f8fafc" },
+                  opacity: vehiculo.activo ? 1 : 0.5,
                 }}
               >
-                <TableCell>
-                  <Box display="flex" alignItems="center">
-                    <Typography variant="body2" fontWeight="bold" sx={{ color: "#171717" }}>
-                      {vehiculo.patente}
-                    </Typography>
+                <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
+                  <span className="font-medium text-sm text-slate-900">{vehiculo.patente}</span>
+                </TableCell>
+
+                <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
+                  <span className="text-xs text-slate-700">{vehiculo.cliente_nombre || "Cliente no encontrado"}</span>
+                </TableCell>
+
+                <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
+                  <span className="font-medium text-xs text-slate-900">
+                    {vehiculo.marca} {vehiculo.modelo}
+                  </span>
+                </TableCell>
+
+                <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
+                  <span className="text-xs text-slate-700">{vehiculo.año}</span>
+                </TableCell>
+
+                <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                    <SpeedIcon sx={{ fontSize: 14, color: "#64748b" }} />
+                    <span className="text-xs text-slate-700">{formatKilometraje(vehiculo.kilometraje)}</span>
                   </Box>
                 </TableCell>
-                <TableCell>
-                  <Typography variant="body2" sx={{ color: "#171717" }}>
-                    {vehiculo.cliente_nombre || "Cliente no encontrado"}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" fontWeight="medium" sx={{ color: "#171717" }}>
-                    {vehiculo.marca} {vehiculo.modelo}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" sx={{ color: "#171717" }}>
-                    {vehiculo.año}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" sx={{ color: "#171717" }}>
-                    {vehiculo.color}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" sx={{ color: "#171717" }}>
-                    {formatKilometraje(vehiculo.kilometraje)}
-                  </Typography>
-                </TableCell>
-                <TableCell>
+
+                <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                   <Chip
                     label={vehiculo.activo ? "Activo" : "Inactivo"}
-                    color={vehiculo.activo ? "success" : "error"}
                     size="small"
+                    sx={{
+                      bgcolor: vehiculo.activo ? "#dcfce7" : "#fee2e2",
+                      color: vehiculo.activo ? "#166534" : "#991b1b",
+                      fontWeight: 500,
+                      fontSize: "0.6875rem",
+                      height: 22,
+                      "& .MuiChip-label": { px: 1 },
+                    }}
                   />
                 </TableCell>
-                <TableCell align="center">
-                  <Box display="flex" gap={0.5} justifyContent="center">
+
+                <TableCell align="right" sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
+                  <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
                     <Tooltip title="Editar">
                       <IconButton
-                        size="small"
                         onClick={() => onEdit(vehiculo)}
+                        size="small"
                         sx={{
-                          color: "#d84315",
-                          "&:hover": { bgcolor: "rgba(216, 67, 21, 0.1)" },
+                          color: "#dc2626",
+                          p: 0.5,
+                          "&:hover": { bgcolor: "#fee2e2" },
                         }}
                       >
-                        <EditIcon fontSize="small" />
+                        <EditIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </Tooltip>
+
                     <Tooltip title="Eliminar">
                       <IconButton
+                        onClick={() => onDelete(vehiculo)}
                         size="small"
-                        onClick={() => handleDeleteClick(vehiculo)}
                         sx={{
-                          color: "#f44336",
-                          "&:hover": { bgcolor: "rgba(244, 67, 54, 0.1)" },
+                          color: "#d32f2f",
+                          p: 0.5,
+                          "&:hover": { bgcolor: "#ffebee" },
                         }}
                       >
-                        <DeleteIcon fontSize="small" />
+                        <DeleteIcon sx={{ fontSize: 16 }} />
                       </IconButton>
                     </Tooltip>
                   </Box>
@@ -181,69 +244,50 @@ const VehiculosList = ({ vehiculos, loading, pagination, onEdit, onDelete, onPag
             ))}
           </TableBody>
         </Table>
-
-        <TablePagination
-          component="div"
-          count={pagination.total}
-          page={pagination.currentPage - 1}
-          onPageChange={handleChangePage}
-          rowsPerPage={pagination.limit}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          rowsPerPageOptions={[5, 10, 25, 50]}
-          labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `más de ${to}`}`}
-          labelRowsPerPage="Filas por página:"
-          sx={{
-            borderTop: "1px solid #e0e0e0",
-            ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
-              fontSize: "0.875rem",
-              color: "#171717",
-            },
-            ".MuiTablePagination-select": {
-              color: "#171717",
-            },
-            ".MuiIconButton-root": {
-              color: "#171717",
-              "&:hover": {
-                bgcolor: "rgba(216, 67, 21, 0.1)",
-              },
-            },
-          }}
-        />
       </TableContainer>
 
-      <Dialog open={deleteDialog.open} onClose={handleDeleteCancel}>
-        <DialogTitle sx={{ bgcolor: "#d84315", color: "white", fontWeight: "bold" }}>Confirmar Eliminación</DialogTitle>
-        <DialogContent sx={{ mt: 2 }}>
-          <Typography sx={{ color: "#171717" }}>
-            ¿Estás seguro de que deseas eliminar el vehículo <strong>{deleteDialog.vehiculo?.patente}</strong>?
-          </Typography>
-          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-            Esta acción no se puede deshacer.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button
-            onClick={handleDeleteCancel}
-            sx={{
-              color: "#171717",
-              "&:hover": { bgcolor: "rgba(23, 23, 23, 0.1)" },
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleDeleteConfirm}
-            variant="contained"
-            sx={{
-              bgcolor: "#f44336",
-              "&:hover": { bgcolor: "#d32f2f" },
-            }}
-          >
-            Eliminar
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </>
+      <TablePagination
+        component="div"
+        count={pagination?.total ?? 0}
+        page={(pagination?.page ?? 1) - 1}
+        onPageChange={handleChangePage}
+        rowsPerPage={pagination?.limit ?? 10}
+        onRowsPerPageChange={handleChangeRowsPerPage}
+        rowsPerPageOptions={[10, 25, 50, 100]}
+        labelRowsPerPage="Por página:"
+        labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count}`}
+        sx={{
+          borderTop: "1px solid #e5e7eb",
+          bgcolor: "#f8fafc",
+          ".MuiTablePagination-toolbar": {
+            minHeight: 52,
+            px: 2,
+          },
+          ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows": {
+            fontSize: "0.813rem",
+            color: "#64748b",
+            fontWeight: 500,
+            m: 0,
+          },
+          ".MuiTablePagination-select": {
+            fontSize: "0.813rem",
+            color: "#0f172a",
+            fontWeight: 600,
+          },
+          ".MuiIconButton-root": {
+            p: 0.75,
+            color: "#64748b",
+            "&:hover": {
+              bgcolor: "#e2e8f0",
+              color: "#dc2626",
+            },
+            "&.Mui-disabled": {
+              color: "#cbd5e1",
+            },
+          },
+        }}
+      />
+    </Box>
   )
 }
 

@@ -13,15 +13,11 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Card,
-  CardContent,
-  Grid,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
 } from "@mui/material"
-import { Add as AddIcon, Search as SearchIcon } from "@mui/icons-material"
+import { Add as AddIcon, Search as SearchIcon, Close as CloseIcon } from "@mui/icons-material"
 import { useClientes } from "../../hooks/useClientes.js"
 import ClientesList from "../../components/Clientes/ClientesList.jsx"
 import ClienteForm from "../../components/Clientes/ClienteForm.jsx"
@@ -37,8 +33,7 @@ const ClientesPage = () => {
     createCliente,
     updateCliente,
     deleteCliente,
-    changePage,
-    changeRowsPerPage,
+    handlePageChange, // Usando el nuevo handler unificado
   } = useClientes()
 
   const [searchTerm, setSearchTerm] = useState("")
@@ -149,124 +144,197 @@ const ClientesPage = () => {
   }
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 4 }}>
-        <Box>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: "bold", color: "#171717" }}>
-            Gestión de Clientes
-          </Typography>
-          <Typography variant="body1" color="textSecondary">
-            Administra la información de tus clientes y mantén un registro completo
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={handleNewCliente}
+    <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", bgcolor: "#f8fafc" }}>
+      <Box
+        sx={{
+          bgcolor: "white",
+          borderBottom: "1px solid #e5e7eb",
+          px: { xs: 2, sm: 2, md: 2 },
+          py: { xs: 2, sm: 2.5 },
+          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+        }}
+      >
+        <Box
           sx={{
-            bgcolor: "#d84315",
-            "&:hover": { bgcolor: "#ff5722" },
-            minWidth: "200px",
-            borderRadius: 2,
-            boxShadow: "0 4px 12px rgba(216, 67, 21, 0.3)",
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "stretch", md: "center" },
+            gap: { xs: 2, md: 0 },
           }}
         >
-          Nuevo Cliente
-        </Button>
-      </Box>
+          <Box sx={{ mb: { xs: 0, md: 0 } }}>
+            <Typography
+              variant="h5"
+              component="h1"
+              sx={{ fontWeight: 700, color: "#0f172a", mb: 0.5, letterSpacing: "-0.025em" }}
+            >
+              Clientes
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.875rem" }}>
+              {pagination.total} registros en total
+            </Typography>
+          </Box>
 
-      <Card elevation={2} sx={{ mb: 4 }}>
-        <CardContent>
-          <Typography variant="h6" gutterBottom>
-            Filtros de Búsqueda
-          </Typography>
-          <Grid container spacing={3} alignItems="center">
-            <Grid item xs={12} sm={6} md={4}>
-              <FormControl fullWidth>
-                <InputLabel>Buscar por</InputLabel>
-                <Select
-                  value={searchCriteria}
-                  label="Buscar por"
-                  onChange={(e) => setSearchCriteria(e.target.value)}
-                  sx={{ borderRadius: 2 }}
-                >
-                  <MenuItem value="nombre">Nombre Completo</MenuItem>
-                  <MenuItem value="dni">DNI</MenuItem>
-                  <MenuItem value="telefono">Teléfono</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} sm={6} md={4}>
-              <TextField
-                fullWidth
-                label="Buscar cliente"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon />
-                    </InputAdornment>
-                  ),
-                }}
-                onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: 1.5,
+              alignItems: { xs: "stretch", sm: "center" },
+              flexWrap: "wrap",
+            }}
+          >
+            <FormControl
+              size="small"
+              sx={{
+                minWidth: { xs: "100%", sm: 140 },
+                flex: { xs: "1 1 auto", sm: "0 0 auto" },
+              }}
+            >
+              <Select
+                value={searchCriteria}
+                onChange={(e) => setSearchCriteria(e.target.value)}
+                displayEmpty
                 sx={{
-                  "& .MuiOutlinedInput-root": {
-                    borderRadius: 2,
+                  bgcolor: "#f8fafc",
+                  fontSize: "0.875rem",
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#e5e7eb",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#cbd5e1",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "#dc2626",
+                    borderWidth: "1px",
                   },
                 }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={12} md={4}>
-              <Box sx={{ display: "flex", gap: 2 }}>
-                <Button
-                  variant="contained"
-                  onClick={handleSearch}
-                  sx={{
-                    bgcolor: "#d84315",
-                    "&:hover": { bgcolor: "#ff5722" },
-                    borderRadius: 2,
-                  }}
-                >
-                  Buscar
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={handleClearFilters}
-                  sx={{
-                    borderColor: "#171717",
-                    color: "#171717",
-                    borderRadius: 2,
-                    "&:hover": {
-                      borderColor: "#171717",
-                      bgcolor: "rgba(23, 23, 23, 0.04)",
-                    },
-                  }}
-                >
-                  Limpiar
-                </Button>
-              </Box>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+              >
+                <MenuItem value="nombre">Nombre</MenuItem>
+                <MenuItem value="dni">DNI</MenuItem>
+                <MenuItem value="telefono">Teléfono</MenuItem>
+              </Select>
+            </FormControl>
 
-      {error && (
-        <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
-          {error}
-        </Alert>
-      )}
+            <TextField
+              size="small"
+              placeholder="Buscar clientes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon sx={{ fontSize: 18, color: "#64748b" }} />
+                  </InputAdornment>
+                ),
+                endAdornment: searchTerm && (
+                  <InputAdornment position="end">
+                    <CloseIcon
+                      sx={{ fontSize: 18, color: "#64748b", cursor: "pointer" }}
+                      onClick={handleClearFilters}
+                    />
+                  </InputAdornment>
+                ),
+              }}
+              sx={{
+                width: { xs: "100%", sm: 280 },
+                flex: { xs: "1 1 auto", sm: "0 0 auto" },
+                bgcolor: "#f8fafc",
+                fontSize: "0.875rem",
+                "& .MuiOutlinedInput-root": {
+                  fontSize: "0.875rem",
+                  "& fieldset": {
+                    borderColor: "#e5e7eb",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#cbd5e1",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#dc2626",
+                    borderWidth: "1px",
+                  },
+                },
+              }}
+            />
 
-      <ClientesList
-        clientes={clientes}
-        loading={loading}
-        pagination={pagination}
-        onPageChange={changePage}
-        onRowsPerPageChange={changeRowsPerPage}
-        onEdit={handleEditCliente}
-        onDelete={handleDeleteCliente}
-        onViewMore={handleViewMore}
-      />
+            <Button
+              variant="outlined"
+              onClick={handleSearch}
+              sx={{
+                minWidth: { xs: "100%", sm: "auto" },
+                px: 2.5,
+                py: 0.75,
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                borderColor: "#e5e7eb",
+                color: "#475569",
+                bgcolor: "#f8fafc",
+                textTransform: "none",
+                "&:hover": {
+                  borderColor: "#cbd5e1",
+                  bgcolor: "white",
+                },
+              }}
+            >
+              Buscar
+            </Button>
+
+            <Button
+              variant="contained"
+              startIcon={<AddIcon sx={{ fontSize: 18 }} />}
+              onClick={handleNewCliente}
+              sx={{
+                bgcolor: "#dc2626",
+                color: "white",
+                minWidth: { xs: "100%", sm: "auto" },
+                px: 2.5,
+                py: 0.75,
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                textTransform: "none",
+                boxShadow: "0 1px 2px 0 rgba(220, 38, 38, 0.15)",
+                "&:hover": {
+                  bgcolor: "#b91c1c",
+                  boxShadow: "0 4px 6px -1px rgba(220, 38, 38, 0.2)",
+                },
+              }}
+            >
+              Nuevo Cliente
+            </Button>
+          </Box>
+        </Box>
+      </Box>
+
+      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", py: 2, overflow: "hidden" }}>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2, py: 0.5 }}>
+            {error}
+          </Alert>
+        )}
+
+        <Box
+          sx={{
+            flex: 1,
+            maxHeight: "calc(100vh - 220px)",
+            overflow: "hidden",
+            bgcolor: "white",
+            border: "1px solid #e5e7eb",
+            boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+          }}
+        >
+          <ClientesList
+            clientes={clientes}
+            loading={loading}
+            pagination={pagination}
+            onPageChange={handlePageChange}
+            onEdit={handleEditCliente}
+            onDelete={handleDeleteCliente}
+            onViewMore={handleViewMore}
+          />
+        </Box>
+      </Box>
 
       <ClienteForm
         open={formOpen}

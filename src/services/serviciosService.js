@@ -9,8 +9,16 @@ const serviciosService = {
 
   // Obtener servicio por ID
   getServicioById: async (id) => {
-    const response = await api.get(`/servicios/${id}`)
-    return response
+    console.log("[v0] API call to /servicios/" + id)
+    try {
+      const response = await api.get(`/servicios/${id}`)
+      console.log("[v0] API response status:", response.status)
+      console.log("[v0] API response data:", response.data)
+      return response.data
+    } catch (error) {
+      console.error("[v0] API error:", error)
+      throw error
+    }
   },
 
   // Crear nuevo servicio
@@ -28,6 +36,12 @@ const serviciosService = {
   // Eliminar servicio
   deleteServicio: async (id) => {
     const response = await api.delete(`/servicios/${id}`)
+    return response
+  },
+
+  // Cancelar servicio
+  cancel: async (id, motivo) => {
+    const response = await api.patch(`/servicios/${id}/cancelar`, { motivo })
     return response
   },
 
