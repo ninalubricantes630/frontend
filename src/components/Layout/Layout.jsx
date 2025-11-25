@@ -5,7 +5,6 @@ import { Outlet } from "react-router-dom"
 import { Box, CssBaseline, useMediaQuery, useTheme } from "@mui/material"
 import Sidebar from "./Sidebar"
 import Header from "./Header"
-import SessionManager from "../Auth/SessionManager"
 
 function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -19,7 +18,6 @@ function Layout() {
   return (
     <Box sx={{ display: "flex", height: "100vh", bgcolor: "#f5f5f5" }}>
       <CssBaseline />
-      <SessionManager />
 
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} isMobile={isMobile} />
 
