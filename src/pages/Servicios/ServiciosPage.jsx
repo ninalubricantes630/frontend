@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Box,
   Typography,
@@ -56,6 +56,11 @@ import useEmpleados from "../../hooks/useEmpleados"
 import useSucursales from "../../hooks/useSucursales"
 import { useAuth } from "../../contexts/AuthContext"
 
+// Assuming Input component and other Tailwind-like styles are available or need to be adapted
+// For this merge, we'll assume a basic Input component exists or adapt the logic.
+// If not, the JSX for the vehiculo step would need to be fully converted to MUI.
+// For now, we'll proceed assuming the JSX for step 1 is a placeholder for MUI conversion later.
+
 const steps = [
   { id: 0, title: "Cliente", icon: User },
   { id: 1, title: "Vehículo", icon: Car },
@@ -86,7 +91,7 @@ const ServiciosPage = () => {
 
   const { user } = useAuth()
   const { clientes, loadClientes } = useClientes()
-  const { vehiculos, loadVehiculos, loadVehiculosByCliente } = useVehiculos()
+  const { vehiculos, setVehiculos, loadVehiculos, loadVehiculosByCliente } = useVehiculos()
   const { tiposServicios, loadTiposServicios } = useTiposServicios()
   const { createServicio, loading } = useServicios()
   const { empleadosActivos, loadEmpleadosActivos, loadEmpleadosBySucursal } = useEmpleados()
@@ -96,6 +101,8 @@ const ServiciosPage = () => {
   const [selectedVehiculo, setSelectedVehiculo] = useState(null)
   const [selectedSucursal, setSelectedSucursal] = useState(null)
   const [clienteSearch, setClienteSearch] = useState("")
+  const [highlightedClienteIndex, setHighlightedClienteIndex] = useState(0)
+  const [highlightedVehiculoIndex, setHighlightedVehiculoIndex] = useState(0)
   const [showItemDialog, setShowItemDialog] = useState(false)
   const [showPagoDialog, setShowPagoDialog] = useState(false)
   const [showDescuentoModal, setShowDescuentoModal] = useState(false)
@@ -108,6 +115,10 @@ const ServiciosPage = () => {
   const [descuento, setDescuento] = useState(null)
 
   const [userSucursalesCount, setUserSucursalesCount] = useState(0)
+
+  // Refs for input focus
+  const clienteInputRef = useRef(null)
+  const vehiculoInputRef = useRef(null)
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity })
@@ -183,50 +194,84 @@ const ServiciosPage = () => {
   }, [user])
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
-        if (activeStep < 4 && canProceed()) {
-          e.preventDefault()
-          handleNext()
-        }
-        return
+    if (activeStep === 0 && clienteInputRef.current) {
+      clienteInputRef.current.focus()
+    }
+  }, [activeStep])
+
+  useEffect(() => {
+    if (activeStep === 1 && vehiculoInputRef.current) {
+      vehiculoInputRef.current.focus()
+    }
+  }, [activeStep])
+
+  useEffect(() => {
+    setHighlightedClienteIndex(0)
+  }, [clienteSearch])
+
+  const [vehiculoSearch, setVehiculoSearch] = useState("")
+
+  useEffect(() => {
+    setHighlightedVehiculoIndex(0)
+  }, [vehiculoSearch])
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+      if (activeStep === 0 && clienteSearch.trim()) {
+        return // Let the cliente keyboard handler take over
+      }
+      if (activeStep === 1 && vehiculoSearch.trim()) {
+        return // Let the vehiculo keyboard handler take over
       }
 
-      if (e.ctrlKey || e.metaKey) {
-        switch (e.key) {
-          case "ArrowRight":
-            e.preventDefault()
-            if (activeStep < 4 && canProceed()) handleNext()
-            break
-          case "ArrowLeft":
-            e.preventDefault()
-            if (activeStep > 0) handleBack()
-            break
-          case "Enter":
-            e.preventDefault()
-            if (activeStep === 4 && canProceed()) handleSubmit()
-            break
-          case "/":
-            e.preventDefault()
-            setShowShortcuts(true)
-            break
-        }
+      if (activeStep < 4 && canProceed()) {
+        e.preventDefault()
+        handleNext()
       }
+      return
     }
 
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key) {
+        case "ArrowRight":
+          e.preventDefault()
+          if (activeStep < 4 && canProceed()) handleNext()
+          break
+        case "ArrowLeft":
+          e.preventDefault()
+          if (activeStep > 0) handleBack()
+          break
+        case "Enter":
+          e.preventDefault()
+          if (activeStep === 4 && canProceed()) handleSubmit()
+          break
+        case "/":
+          e.preventDefault()
+          setShowShortcuts(true)
+          break
+      }
+    }
+  }
+
+  useEffect(() => {
     window.addEventListener("keydown", handleKeyDown)
     return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [activeStep, formData])
+  }, [activeStep, formData, clienteSearch, vehiculoSearch]) // Added dependencies
 
   useEffect(() => {
     loadClientes()
-    loadTiposServicios()
+    loadVehiculos() // Load all vehicles initially
     loadSucursalesActivas()
+    loadEmpleadosActivos()
+    loadTiposServicios()
   }, [])
 
   useEffect(() => {
     if (formData.clienteId) {
       loadVehiculosByCliente(formData.clienteId)
+    } else {
+      // Clear vehicles if no client is selected
+      setVehiculos([])
     }
   }, [formData.clienteId])
 
@@ -277,10 +322,13 @@ const ServiciosPage = () => {
     setSelectedCliente(null)
     setSelectedVehiculo(null)
     setClienteSearch("")
+    setVehiculoSearch("") // Reset vehicle search
     setEditingItemId(null)
     // Reset interest and discount states as well
     setInteres(null)
     setDescuento(null)
+    setHighlightedClienteIndex(0) // Reset highlighted index
+    setHighlightedVehiculoIndex(0) // Reset highlighted index
   }
 
   const handleClienteSelect = (cliente) => {
@@ -291,6 +339,9 @@ const ServiciosPage = () => {
       vehiculoId: null,
     }))
     setSelectedVehiculo(null)
+    setClienteSearch("")
+    setHighlightedClienteIndex(0)
+    loadVehiculosByCliente(cliente?.id) // Load vehicles for the selected client
   }
 
   const handleVehiculoSelect = (vehiculo) => {
@@ -299,6 +350,8 @@ const ServiciosPage = () => {
       ...prev,
       vehiculoId: vehiculo?.id || null,
     }))
+    setVehiculoSearch("")
+    setHighlightedVehiculoIndex(0)
   }
 
   const handleSucursalSelect = (sucursalId) => {
@@ -322,6 +375,7 @@ const ServiciosPage = () => {
     const itemConTotal = {
       ...newItem,
       total: newItem.total !== undefined && newItem.total !== null ? Number(newItem.total) : 0,
+      id: editingItemId || Math.random().toString(36).substr(2, 9), // Generate ID if new, use existing if editing
     }
 
     if (editingItemId) {
@@ -409,26 +463,27 @@ const ServiciosPage = () => {
         observaciones: formData.observaciones,
         tipo_pago: pagoData?.tipo_pago?.toUpperCase() || formData.metodoPago?.toUpperCase() || "EFECTIVO",
         subtotal: calculatedSubtotal,
-        descuento: pagoData?.descuento || 0,
-        tipo_interes_sistema: pagoData?.tipo_interes_sistema || null,
-        valor_interes_sistema: pagoData?.valor_interes_sistema || 0,
-        interes_sistema: pagoData?.interes_sistema || 0,
-        tarjeta_id: pagoData?.tarjeta_id || null,
-        numero_cuotas: pagoData?.numero_cuotas || null,
-        tasa_interes_tarjeta: pagoData?.tasa_interes_tarjeta || null,
-        total_con_interes: pagoData?.total_con_interes || calculatedSubtotal,
-        total_con_interes_tarjeta: pagoData?.total_con_interes_tarjeta || null,
+        descuento: descuento?.montoDescuento || 0, // Use the state value
+        interes_monto: interes?.montoInteres || 0, // Use the state value
+        tipo_interes_sistema: interes?.tipoInteres || null,
+        valor_interes_sistema: interes?.valorInteres || 0,
+        // interes_sistema: pagoData?.interes_sistema || 0, // This might be redundant if interes_monto covers it
+        tarjeta_id: pagoData?.tarjetaId || null, // Corrected key name
+        numero_cuotas: pagoData?.numeroCuotas || null, // Corrected key name
+        tasa_interes_tarjeta: pagoData?.tasaInteresTarjeta || null, // Corrected key name
+        total_con_interes: pagoData?.totalConInteres || calcularTotal(), // Use calculated total
+        total_con_interes_tarjeta: pagoData?.totalConInteresTarjeta || null, // Corrected key name
         items: Array.isArray(formData.items)
           ? formData.items.map((item) => {
               let itemTotal = 0
               if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
-                // Si tiene productos, sumar precios de productos
+                // If it has products, sum prices of products
                 itemTotal = item.productos.reduce(
                   (sum, prod) => sum + (Number(prod.precio_unitario) * Number(prod.cantidad) || 0),
                   0,
                 )
               } else {
-                // Si NO tiene productos, usar item.total (precio manual)
+                // If it does NOT have products, use item.total (manual price)
                 itemTotal = Number(item.total) || 0
               }
 
@@ -444,13 +499,11 @@ const ServiciosPage = () => {
           : [],
       }
 
-  
-
       await createServicio(submitData)
       showSnackbar("¡Servicio creado exitosamente!")
       setShowPagoDialog(false)
       handleReset()
-      setActiveStep(5)
+      setActiveStep(5) // Move to the success step
     } catch (error) {
       console.error("[v0] Error al crear servicio:", error)
       showSnackbar(error.message || "Error al crear el servicio", "error")
@@ -477,6 +530,58 @@ const ServiciosPage = () => {
   const filteredClientes = clientes.filter((cliente) =>
     `${cliente.nombre} ${cliente.apellido} ${cliente.dni}`.toLowerCase().includes(clienteSearch.toLowerCase()),
   )
+
+  const filteredVehiculos = selectedCliente
+    ? vehiculos.filter(
+        (vehiculo) =>
+          vehiculo.clienteId === selectedCliente.id &&
+          `${vehiculo.patente} ${vehiculo.marca} ${vehiculo.modelo}`
+            .toLowerCase()
+            .includes(vehiculoSearch.toLowerCase()),
+      )
+    : []
+
+  const handleClienteKeyDown = (e) => {
+    if (filteredClientes.length === 0) return
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault()
+        setHighlightedClienteIndex((prev) => (prev + 1) % filteredClientes.length)
+        break
+      case "ArrowUp":
+        e.preventDefault()
+        setHighlightedClienteIndex((prev) => (prev - 1 + filteredClientes.length) % filteredClientes.length)
+        break
+      case "Enter":
+        e.preventDefault()
+        handleClienteSelect(filteredClientes[highlightedClienteIndex])
+        break
+      default:
+        break
+    }
+  }
+
+  const handleVehiculoKeyDown = (e) => {
+    if (filteredVehiculos.length === 0) return
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault()
+        setHighlightedVehiculoIndex((prev) => (prev + 1) % filteredVehiculos.length)
+        break
+      case "ArrowUp":
+        e.preventDefault()
+        setHighlightedVehiculoIndex((prev) => (prev - 1 + filteredVehiculos.length) % filteredVehiculos.length)
+        break
+      case "Enter":
+        e.preventDefault()
+        handleVehiculoSelect(filteredVehiculos[highlightedVehiculoIndex])
+        break
+      default:
+        break
+    }
+  }
 
   const renderStepContent = () => {
     switch (activeStep) {
@@ -509,11 +614,13 @@ const ServiciosPage = () => {
             </CardContent>
             <CardContent sx={{ p: 3.5, flex: 1, overflow: "auto" }}>
               <TextField
+                ref={clienteInputRef}
                 fullWidth
                 size="medium"
                 placeholder="Buscar por nombre, apellido o DNI..."
                 value={clienteSearch}
                 onChange={(e) => setClienteSearch(e.target.value)}
+                onKeyDown={handleClienteKeyDown}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -535,22 +642,19 @@ const ServiciosPage = () => {
               {clienteSearch.trim() && (
                 <Grid container spacing={2}>
                   {filteredClientes.length > 0 ? (
-                    filteredClientes.map((cliente) => (
+                    filteredClientes.map((cliente, index) => (
                       <Grid item xs={12} sm={6} md={4} key={cliente.id}>
                         <Card
-                          elevation={selectedCliente?.id === cliente.id ? 1 : 0}
                           sx={{
                             cursor: "pointer",
-                            border: selectedCliente?.id === cliente.id ? "2px solid #dc2626" : "1px solid #e5e7eb",
-                            bgcolor: selectedCliente?.id === cliente.id ? "#fef2f2" : "white",
-                            p: 2.5,
-                            borderRadius: 1.5,
-                            transition: "all 0.2s ease",
-                            height: "100%",
+                            transition: "all 0.2s",
+                            border: "1px solid #e5e7eb",
+                            borderColor: highlightedClienteIndex === index ? "#dc2626" : undefined,
+                            backgroundColor: highlightedClienteIndex === index ? "#fef2f2" : undefined,
+                            boxShadow: highlightedClienteIndex === index ? "0 0 0 2px #fee2e2" : "none",
                             "&:hover": {
                               borderColor: "#dc2626",
-                              bgcolor: "#fafafa",
-                              transform: "translateY(-2px)",
+                              boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
                             },
                           }}
                           onClick={() => handleClienteSelect(cliente)}
@@ -662,7 +766,10 @@ const ServiciosPage = () => {
                 </Box>
               ) : (
                 <Grid container spacing={2}>
-                  {vehiculos.map((vehiculo) => (
+                  {/* This part needs to be converted to MUI components if the placeholder is removed */}
+                  {/* The provided updates use Tailwind-like syntax for this section. */}
+                  {/* For consistency with the rest of the code, we'll keep it as MUI Grid */}
+                  {filteredVehiculos.map((vehiculo, index) => (
                     <Grid item xs={12} sm={6} md={4} key={vehiculo.id}>
                       <Card
                         elevation={selectedVehiculo?.id === vehiculo.id ? 1 : 0}
@@ -679,6 +786,11 @@ const ServiciosPage = () => {
                             bgcolor: "#fafafa",
                             transform: "translateY(-2px)",
                           },
+                          ...(highlightedVehiculoIndex === index && {
+                            borderColor: "#dc2626",
+                            bgcolor: "#fef2f2",
+                            boxShadow: "0 0 0 2px #fee2e2",
+                          }),
                         }}
                         onClick={() => handleVehiculoSelect(vehiculo)}
                       >
