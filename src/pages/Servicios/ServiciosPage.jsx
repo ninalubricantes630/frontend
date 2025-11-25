@@ -283,7 +283,7 @@ const ServiciosPage = () => {
         empleados: [],
       }))
     }
-  }, [formData.sucursalId, loadEmpleadosBySucursal])
+  }, [formData.sucursalId]) // Removed loadEmpleadosBySucursal from dependencies to prevent infinite loop
 
   const handleNext = () => {
     if (activeStep < 4) {
