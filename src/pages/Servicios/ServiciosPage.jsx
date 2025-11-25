@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect } from "react"
 import {
   Box,
   Typography,
@@ -96,9 +96,6 @@ const ServiciosPage = () => {
   const [selectedVehiculo, setSelectedVehiculo] = useState(null)
   const [selectedSucursal, setSelectedSucursal] = useState(null)
   const [clienteSearch, setClienteSearch] = useState("")
-  const [selectedClienteIndex, setSelectedClienteIndex] = useState(-1)
-  const [selectedVehiculoIndex, setSelectedVehiculoIndex] = useState(-1)
-  const clienteInputRef = useRef(null)
   const [showItemDialog, setShowItemDialog] = useState(false)
   const [showPagoDialog, setShowPagoDialog] = useState(false)
   const [showDescuentoModal, setShowDescuentoModal] = useState(false)
@@ -120,27 +117,134 @@ const ServiciosPage = () => {
     setSnackbar({ ...snackbar, open: false })
   }
 
-  const canProceed = () => {
-    switch (activeStep) {
-      case 0:
-        return formData.clienteId !== null
-      case 1:
-        return formData.vehiculoId !== null
-      case 2:
-        return formData.sucursalId !== null
-      case 3:
-        return formData.items.length > 0
-      case 4:
-        return true
-      default:
-        return false
+  const calcularSubtotal = () => {
+    let subtotal = 0
+    if (Array.isArray(formData.items)) {
+      for (const item of formData.items) {
+        if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
+          for (const prod of item.productos) {
+            const precioProducto =
+              (Number.parseFloat(prod.precio_unitario) || 0) * (Number.parseFloat(prod.cantidad) || 0)
+            subtotal += precioProducto
+          }
+        } else {
+          const precioManual = Number.parseFloat(item.total) || 0
+          subtotal += precioManual
+        }
+      }
     }
+    return Math.max(0, subtotal)
   }
+
+  const calcularTotal = () => {
+    // Sum subtotals from all items
+    let subtotal = 0
+    if (Array.isArray(formData.items)) {
+      for (const item of formData.items) {
+        if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
+          for (const prod of item.productos) {
+            subtotal += (Number.parseFloat(prod.precio_unitario) || 0) * (Number.parseFloat(prod.cantidad) || 0)
+          }
+        } else {
+          const precioManual = Number.parseFloat(item.total) || 0
+          subtotal += precioManual
+        }
+      }
+    }
+
+    let total = subtotal
+
+    // Apply discount
+    if (descuento && descuento.montoDescuento > 0) {
+      total -= descuento.montoDescuento
+    }
+
+    // Apply interest
+    if (interes && interes.montoInteres > 0) {
+      total += interes.montoInteres
+    }
+
+    return Math.max(0, total)
+  }
+
+  useEffect(() => {
+    if (user && user.sucursales) {
+      setUserSucursalesCount(user.sucursales.length)
+      // Find the main sucursal or use the first one
+      const mainSucursal = user.sucursales.find((s) => s.es_principal) || user.sucursales[0]
+      if (mainSucursal) {
+        setFormData((prev) => ({
+          ...prev,
+          sucursalId: mainSucursal.id,
+        }))
+        setSelectedSucursal(mainSucursal)
+      }
+    }
+  }, [user])
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+        if (activeStep < 4 && canProceed()) {
+          e.preventDefault()
+          handleNext()
+        }
+        return
+      }
+
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case "ArrowRight":
+            e.preventDefault()
+            if (activeStep < 4 && canProceed()) handleNext()
+            break
+          case "ArrowLeft":
+            e.preventDefault()
+            if (activeStep > 0) handleBack()
+            break
+          case "Enter":
+            e.preventDefault()
+            if (activeStep === 4 && canProceed()) handleSubmit()
+            break
+          case "/":
+            e.preventDefault()
+            setShowShortcuts(true)
+            break
+        }
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [activeStep, formData])
+
+  useEffect(() => {
+    loadClientes()
+    loadTiposServicios()
+    loadSucursalesActivas()
+  }, [])
+
+  useEffect(() => {
+    if (formData.clienteId) {
+      loadVehiculosByCliente(formData.clienteId)
+    }
+  }, [formData.clienteId])
+
+  useEffect(() => {
+    if (formData.sucursalId) {
+      loadEmpleadosBySucursal(formData.sucursalId)
+      setFormData((prev) => ({
+        ...prev,
+        empleados: [],
+      }))
+    }
+  }, [formData.sucursalId, loadEmpleadosBySucursal])
 
   const handleNext = () => {
     if (activeStep < 4) {
       setActiveStep((prev) => Math.min(prev + 1, 4))
     } else if (activeStep === 4) {
+      // When clicking next on confirmation step, open payment modal
       setShowPagoDialog(true)
     }
   }
@@ -174,239 +278,9 @@ const ServiciosPage = () => {
     setSelectedVehiculo(null)
     setClienteSearch("")
     setEditingItemId(null)
+    // Reset interest and discount states as well
     setInteres(null)
     setDescuento(null)
-    setSelectedClienteIndex(-1)
-    setSelectedVehiculoIndex(-1)
-  }
-
-  const handleSubmit = async (pagoData) => {
-    try {
-      const calculatedSubtotal = calcularSubtotal()
-
-      const submitData = {
-        cliente_id: formData.clienteId,
-        vehiculo_id: formData.vehiculoId,
-        sucursal_id: formData.sucursalId,
-        empleados: formData.empleados,
-        observaciones: formData.observaciones,
-        tipo_pago: pagoData?.tipo_pago?.toUpperCase() || formData.metodoPago?.toUpperCase() || "EFECTIVO",
-        subtotal: calculatedSubtotal,
-        descuento: pagoData?.descuento || 0,
-        tipo_interes_sistema: pagoData?.tipo_interes_sistema || null,
-        valor_interes_sistema: pagoData?.valor_interes_sistema || 0,
-        interes_sistema: pagoData?.interes_sistema || 0,
-        tarjeta_id: pagoData?.tarjeta_id || null,
-        numero_cuotas: pagoData?.numero_cuotas || null,
-        tasa_interes_tarjeta: pagoData?.tasa_interes_tarjeta || null,
-        total_con_interes: pagoData?.total_con_interes || calculatedSubtotal,
-        total_con_interes_tarjeta: pagoData?.total_con_interes_tarjeta || null,
-        items: Array.isArray(formData.items)
-          ? formData.items.map((item) => {
-              let itemTotal = 0
-              if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
-                itemTotal = item.productos.reduce(
-                  (sum, prod) => sum + (Number(prod.precio_unitario) * Number(prod.cantidad) || 0),
-                  0,
-                )
-              } else {
-                itemTotal = Number(item.total) || 0
-              }
-
-              return {
-                tipo_servicio_id: item.tipoServicioId,
-                descripcion: item.descripcion || "Sin descripción",
-                observaciones: item.observaciones || null,
-                notas: item.notas || null,
-                total: itemTotal,
-                productos: Array.isArray(item.productos) ? item.productos : [],
-              }
-            })
-          : [],
-      }
-
-      await createServicio(submitData)
-      showSnackbar("¡Servicio creado exitosamente!")
-      setShowPagoDialog(false)
-      handleReset()
-      setActiveStep(5)
-    } catch (error) {
-      console.error("[v0] Error al crear servicio:", error)
-      showSnackbar(error.message || "Error al crear el servicio", "error")
-    }
-  }
-
-  const calcularSubtotal = () => {
-    let subtotal = 0
-    if (Array.isArray(formData.items)) {
-      for (const item of formData.items) {
-        if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
-          for (const prod of item.productos) {
-            const precioProducto =
-              (Number.parseFloat(prod.precio_unitario) || 0) * (Number.parseFloat(prod.cantidad) || 0)
-            subtotal += precioProducto
-          }
-        } else {
-          const precioManual = Number.parseFloat(item.total) || 0
-          subtotal += precioManual
-        }
-      }
-    }
-    return Math.max(0, subtotal)
-  }
-
-  const calcularTotal = () => {
-    let subtotal = 0
-    if (Array.isArray(formData.items)) {
-      for (const item of formData.items) {
-        if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
-          for (const prod of item.productos) {
-            subtotal += (Number.parseFloat(prod.precio_unitario) || 0) * (Number.parseFloat(prod.cantidad) || 0)
-          }
-        } else {
-          const precioManual = Number.parseFloat(item.total) || 0
-          subtotal += precioManual
-        }
-      }
-    }
-
-    let total = subtotal
-
-    if (descuento && descuento.montoDescuento > 0) {
-      total -= descuento.montoDescuento
-    }
-
-    if (interes && interes.montoInteres > 0) {
-      total += interes.montoInteres
-    }
-
-    return Math.max(0, total)
-  }
-
-  useEffect(() => {
-    if (user && user.sucursales) {
-      setUserSucursalesCount(user.sucursales.length)
-      const mainSucursal = user.sucursales.find((s) => s.es_principal) || user.sucursales[0]
-      if (mainSucursal) {
-        setFormData((prev) => ({
-          ...prev,
-          sucursalId: mainSucursal.id,
-        }))
-        setSelectedSucursal(mainSucursal)
-      }
-    }
-  }, [user])
-
-  useEffect(() => {
-    if (activeStep === 0 && clienteInputRef.current) {
-      setTimeout(() => {
-        clienteInputRef.current?.focus()
-      }, 100)
-    }
-  }, [activeStep])
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
-      if (activeStep < 4 && canProceed()) {
-        e.preventDefault()
-        handleNext()
-      }
-      return
-    }
-
-    if (e.ctrlKey || e.metaKey) {
-      switch (e.key) {
-        case "ArrowRight":
-          e.preventDefault()
-          if (activeStep < 4 && canProceed()) handleNext()
-          break
-        case "ArrowLeft":
-          e.preventDefault()
-          if (activeStep > 0) handleBack()
-          break
-        case "Enter":
-          e.preventDefault()
-          if (activeStep === 4 && canProceed()) handleSubmit()
-          break
-        case "/":
-          e.preventDefault()
-          setShowShortcuts(true)
-          break
-      }
-    }
-  }
-
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [activeStep, formData, canProceed, handleSubmit, handleNext, handleBack])
-
-  useEffect(() => {
-    loadClientes()
-    loadTiposServicios()
-    loadSucursalesActivas()
-  }, [])
-
-  useEffect(() => {
-    if (formData.clienteId) {
-      loadVehiculosByCliente(formData.clienteId)
-    }
-  }, [formData.clienteId])
-
-  useEffect(() => {
-    if (formData.sucursalId) {
-      loadEmpleadosBySucursal(formData.sucursalId)
-      setFormData((prev) => ({
-        ...prev,
-        empleados: [],
-      }))
-    }
-  }, [formData.sucursalId, loadEmpleadosBySucursal])
-
-  const handleClienteKeyDown = (e) => {
-    if (!filteredClientes.length) return
-
-    switch (e.key) {
-      case "ArrowRight":
-        e.preventDefault()
-        setSelectedClienteIndex((prev) => (prev + 1) % filteredClientes.length)
-        break
-      case "ArrowLeft":
-        e.preventDefault()
-        setSelectedClienteIndex((prev) => (prev - 1 + filteredClientes.length) % filteredClientes.length)
-        break
-      case "Enter":
-        e.preventDefault()
-        if (selectedClienteIndex >= 0) {
-          handleClienteSelect(filteredClientes[selectedClienteIndex])
-        }
-        break
-      default:
-        break
-    }
-  }
-
-  const handleVehiculoKeyDown = (e) => {
-    if (!vehiculos.length) return
-
-    switch (e.key) {
-      case "ArrowRight":
-        e.preventDefault()
-        setSelectedVehiculoIndex((prev) => (prev + 1) % vehiculos.length)
-        break
-      case "ArrowLeft":
-        e.preventDefault()
-        setSelectedVehiculoIndex((prev) => (prev - 1 + vehiculos.length) % vehiculos.length)
-        break
-      case "Enter":
-        e.preventDefault()
-        if (selectedVehiculoIndex >= 0) {
-          handleVehiculoSelect(vehiculos[selectedVehiculoIndex])
-        }
-        break
-      default:
-        break
-    }
   }
 
   const handleClienteSelect = (cliente) => {
@@ -417,8 +291,6 @@ const ServiciosPage = () => {
       vehiculoId: null,
     }))
     setSelectedVehiculo(null)
-    setSelectedClienteIndex(-1)
-    setSelectedVehiculoIndex(-1)
   }
 
   const handleVehiculoSelect = (vehiculo) => {
@@ -427,7 +299,6 @@ const ServiciosPage = () => {
       ...prev,
       vehiculoId: vehiculo?.id || null,
     }))
-    setSelectedVehiculoIndex(-1)
   }
 
   const handleSucursalSelect = (sucursalId) => {
@@ -526,17 +397,86 @@ const ServiciosPage = () => {
     showSnackbar("Descuento actualizado", "success")
   }
 
+  const handleSubmit = async (pagoData) => {
+    try {
+      const calculatedSubtotal = calcularSubtotal()
+
+      const submitData = {
+        cliente_id: formData.clienteId,
+        vehiculo_id: formData.vehiculoId,
+        sucursal_id: formData.sucursalId,
+        empleados: formData.empleados,
+        observaciones: formData.observaciones,
+        tipo_pago: pagoData?.tipo_pago?.toUpperCase() || formData.metodoPago?.toUpperCase() || "EFECTIVO",
+        subtotal: calculatedSubtotal,
+        descuento: pagoData?.descuento || 0,
+        tipo_interes_sistema: pagoData?.tipo_interes_sistema || null,
+        valor_interes_sistema: pagoData?.valor_interes_sistema || 0,
+        interes_sistema: pagoData?.interes_sistema || 0,
+        tarjeta_id: pagoData?.tarjeta_id || null,
+        numero_cuotas: pagoData?.numero_cuotas || null,
+        tasa_interes_tarjeta: pagoData?.tasa_interes_tarjeta || null,
+        total_con_interes: pagoData?.total_con_interes || calculatedSubtotal,
+        total_con_interes_tarjeta: pagoData?.total_con_interes_tarjeta || null,
+        items: Array.isArray(formData.items)
+          ? formData.items.map((item) => {
+              let itemTotal = 0
+              if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
+                // Si tiene productos, sumar precios de productos
+                itemTotal = item.productos.reduce(
+                  (sum, prod) => sum + (Number(prod.precio_unitario) * Number(prod.cantidad) || 0),
+                  0,
+                )
+              } else {
+                // Si NO tiene productos, usar item.total (precio manual)
+                itemTotal = Number(item.total) || 0
+              }
+
+              return {
+                tipo_servicio_id: item.tipoServicioId,
+                descripcion: item.descripcion || "Sin descripción",
+                observaciones: item.observaciones || null,
+                notas: item.notas || null,
+                total: itemTotal,
+                productos: Array.isArray(item.productos) ? item.productos : [],
+              }
+            })
+          : [],
+      }
+
+  
+
+      await createServicio(submitData)
+      showSnackbar("¡Servicio creado exitosamente!")
+      setShowPagoDialog(false)
+      handleReset()
+      setActiveStep(5)
+    } catch (error) {
+      console.error("[v0] Error al crear servicio:", error)
+      showSnackbar(error.message || "Error al crear el servicio", "error")
+    }
+  }
+
+  const canProceed = () => {
+    switch (activeStep) {
+      case 0:
+        return formData.clienteId !== null
+      case 1:
+        return formData.vehiculoId !== null
+      case 2:
+        return formData.sucursalId !== null
+      case 3:
+        return formData.items.length > 0
+      case 4:
+        return true
+      default:
+        return false
+    }
+  }
+
   const filteredClientes = clientes.filter((cliente) =>
     `${cliente.nombre} ${cliente.apellido} ${cliente.dni}`.toLowerCase().includes(clienteSearch.toLowerCase()),
   )
-
-  useEffect(() => {
-    if (filteredClientes.length > 0 && selectedClienteIndex === -1) {
-      setSelectedClienteIndex(0)
-    } else if (filteredClientes.length === 0) {
-      setSelectedClienteIndex(-1)
-    }
-  }, [filteredClientes])
 
   const renderStepContent = () => {
     switch (activeStep) {
@@ -562,20 +502,18 @@ const ServiciosPage = () => {
                     Seleccionar Cliente
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#6b7280", fontSize: "0.8rem" }}>
-                    Busca el cliente por nombre, apellido o DNI
+                    Busca el cliente que recibirá el servicio
                   </Typography>
                 </Box>
               </Box>
             </CardContent>
             <CardContent sx={{ p: 3.5, flex: 1, overflow: "auto" }}>
               <TextField
-                inputRef={clienteInputRef}
-                autoFocus
                 fullWidth
-                placeholder="Escribe el nombre o DNI del cliente..."
+                size="medium"
+                placeholder="Buscar por nombre, apellido o DNI..."
                 value={clienteSearch}
                 onChange={(e) => setClienteSearch(e.target.value)}
-                onKeyDown={handleClienteKeyDown}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -597,20 +535,14 @@ const ServiciosPage = () => {
               {clienteSearch.trim() && (
                 <Grid container spacing={2}>
                   {filteredClientes.length > 0 ? (
-                    filteredClientes.map((cliente, index) => (
+                    filteredClientes.map((cliente) => (
                       <Grid item xs={12} sm={6} md={4} key={cliente.id}>
                         <Card
-                          elevation={selectedClienteIndex === index || selectedCliente?.id === cliente.id ? 1 : 0}
+                          elevation={selectedCliente?.id === cliente.id ? 1 : 0}
                           sx={{
                             cursor: "pointer",
-                            border:
-                              selectedClienteIndex === index || selectedCliente?.id === cliente.id
-                                ? "2px solid #dc2626"
-                                : "1px solid #e5e7eb",
-                            bgcolor:
-                              selectedClienteIndex === index || selectedCliente?.id === cliente.id
-                                ? "#fef2f2"
-                                : "white",
+                            border: selectedCliente?.id === cliente.id ? "2px solid #dc2626" : "1px solid #e5e7eb",
+                            bgcolor: selectedCliente?.id === cliente.id ? "#fef2f2" : "white",
                             p: 2.5,
                             borderRadius: 1.5,
                             transition: "all 0.2s ease",
@@ -622,7 +554,6 @@ const ServiciosPage = () => {
                             },
                           }}
                           onClick={() => handleClienteSelect(cliente)}
-                          onMouseEnter={() => setSelectedClienteIndex(index)}
                         >
                           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                             <Box sx={{ flex: 1 }}>
@@ -636,7 +567,7 @@ const ServiciosPage = () => {
                                 Tel: {cliente.telefono || "No especificado"}
                               </Typography>
                             </Box>
-                            {(selectedClienteIndex === index || selectedCliente?.id === cliente.id) && (
+                            {selectedCliente?.id === cliente.id && (
                               <CheckCircle size={20} color="#dc2626" strokeWidth={2.5} />
                             )}
                           </Box>
@@ -647,11 +578,8 @@ const ServiciosPage = () => {
                     <Grid item xs={12}>
                       <Box sx={{ textAlign: "center", py: 4 }}>
                         <Search size={32} color="#d1d5db" sx={{ mb: 1 }} />
-                        <Typography variant="body2" sx={{ color: "#6b7280", mb: 1 }}>
+                        <Typography variant="body2" sx={{ color: "#6b7280" }}>
                           No se encontraron clientes
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: "#9ca3af" }}>
-                          Intenta con otro nombre o DNI
                         </Typography>
                       </Box>
                     </Grid>
@@ -659,10 +587,36 @@ const ServiciosPage = () => {
                 </Grid>
               )}
 
-              {!clienteSearch.trim() && (
-                <Box sx={{ textAlign: "center", py: 6 }}>
+              {!clienteSearch.trim() && selectedCliente && (
+                <Card elevation={0} sx={{ border: "2px solid #dc2626", bgcolor: "#fef2f2", p: 2.5, borderRadius: 1.5 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Box sx={{ p: 1, bgcolor: "#dc2626", color: "white", borderRadius: 1 }}>
+                      <CheckCircle size={18} />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="subtitle2" sx={{ color: "#171717", fontWeight: 700 }}>
+                        {selectedCliente.nombre} {selectedCliente.apellido}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                        DNI: {selectedCliente.dni}
+                      </Typography>
+                    </Box>
+                  </Box>
+                </Card>
+              )}
+
+              {!clienteSearch.trim() && !selectedCliente && (
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    py: 6,
+                    border: "2px dashed #e5e7eb",
+                    borderRadius: 2,
+                    bgcolor: "#f9fafb",
+                  }}
+                >
                   <User size={40} color="#d1d5db" sx={{ mb: 1.5 }} />
-                  <Typography variant="body2" sx={{ color: "#6b7280" }}>
+                  <Typography variant="body2" sx={{ color: "#6b7280", fontWeight: 500 }}>
                     Comienza a buscar un cliente
                   </Typography>
                 </Box>
@@ -693,12 +647,12 @@ const ServiciosPage = () => {
                     Seleccionar Vehículo
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#6b7280", fontSize: "0.8rem" }}>
-                    Elige el vehículo que recibirá el servicio (Usa ← → para navegar)
+                    Elige el vehículo que recibirá el servicio
                   </Typography>
                 </Box>
               </Box>
             </CardContent>
-            <CardContent sx={{ p: 3.5, flex: 1, overflow: "auto" }} onKeyDown={handleVehiculoKeyDown} tabIndex={0}>
+            <CardContent sx={{ p: 3.5, flex: 1, overflow: "auto" }}>
               {vehiculos.length === 0 ? (
                 <Box sx={{ textAlign: "center", py: 6 }}>
                   <Car size={40} color="#d1d5db" sx={{ mb: 1.5 }} />
@@ -708,20 +662,14 @@ const ServiciosPage = () => {
                 </Box>
               ) : (
                 <Grid container spacing={2}>
-                  {vehiculos.map((vehiculo, index) => (
+                  {vehiculos.map((vehiculo) => (
                     <Grid item xs={12} sm={6} md={4} key={vehiculo.id}>
                       <Card
-                        elevation={selectedVehiculoIndex === index || selectedVehiculo?.id === vehiculo.id ? 1 : 0}
+                        elevation={selectedVehiculo?.id === vehiculo.id ? 1 : 0}
                         sx={{
                           cursor: "pointer",
-                          border:
-                            selectedVehiculoIndex === index || selectedVehiculo?.id === vehiculo.id
-                              ? "2px solid #dc2626"
-                              : "1px solid #e5e7eb",
-                          bgcolor:
-                            selectedVehiculoIndex === index || selectedVehiculo?.id === vehiculo.id
-                              ? "#fef2f2"
-                              : "white",
+                          border: selectedVehiculo?.id === vehiculo.id ? "2px solid #dc2626" : "1px solid #e5e7eb",
+                          bgcolor: selectedVehiculo?.id === vehiculo.id ? "#fef2f2" : "white",
                           p: 2.5,
                           borderRadius: 1.5,
                           transition: "all 0.2s ease",
@@ -733,7 +681,6 @@ const ServiciosPage = () => {
                           },
                         }}
                         onClick={() => handleVehiculoSelect(vehiculo)}
-                        onMouseEnter={() => setSelectedVehiculoIndex(index)}
                       >
                         <Box
                           sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}
@@ -748,7 +695,7 @@ const ServiciosPage = () => {
                               {vehiculo.marca} {vehiculo.modelo}
                             </Typography>
                           </Box>
-                          {(selectedVehiculoIndex === index || selectedVehiculo?.id === vehiculo.id) && (
+                          {selectedVehiculo?.id === vehiculo.id && (
                             <CheckCircle size={20} color="#dc2626" strokeWidth={2.5} />
                           )}
                         </Box>
