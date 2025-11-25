@@ -215,6 +215,21 @@ const ServiciosPage = () => {
     setHighlightedVehiculoIndex(0)
   }, [vehiculoSearch])
 
+  // Moved filter definitions BEFORE they're used in handlers
+  const filteredClientes = clientes.filter((cliente) =>
+    `${cliente.nombre} ${cliente.apellido} ${cliente.dni}`.toLowerCase().includes(clienteSearch.toLowerCase()),
+  )
+
+  const filteredVehiculos = selectedCliente
+    ? vehiculos.filter(
+        (vehiculo) =>
+          vehiculo.clienteId === selectedCliente.id &&
+          `${vehiculo.patente} ${vehiculo.marca} ${vehiculo.modelo}`
+            .toLowerCase()
+            .includes(vehiculoSearch.toLowerCase()),
+      )
+    : []
+
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
       if (activeStep === 0 && clienteSearch.trim()) {
@@ -283,7 +298,7 @@ const ServiciosPage = () => {
         empleados: [],
       }))
     }
-  }, [formData.sucursalId]) // Removed loadEmpleadosBySucursal from dependencies to prevent infinite loop
+  }, [formData.sucursalId])
 
   const handleNext = () => {
     if (activeStep < 4) {
@@ -527,19 +542,20 @@ const ServiciosPage = () => {
     }
   }
 
-  const filteredClientes = clientes.filter((cliente) =>
-    `${cliente.nombre} ${cliente.apellido} ${cliente.dni}`.toLowerCase().includes(clienteSearch.toLowerCase()),
-  )
+  // Moved filter definitions BEFORE they're used in handlers
+  // const filteredClientes = clientes.filter((cliente) =>
+  //   `${cliente.nombre} ${cliente.apellido} ${cliente.dni}`.toLowerCase().includes(clienteSearch.toLowerCase()),
+  // )
 
-  const filteredVehiculos = selectedCliente
-    ? vehiculos.filter(
-        (vehiculo) =>
-          vehiculo.clienteId === selectedCliente.id &&
-          `${vehiculo.patente} ${vehiculo.marca} ${vehiculo.modelo}`
-            .toLowerCase()
-            .includes(vehiculoSearch.toLowerCase()),
-      )
-    : []
+  // const filteredVehiculos = selectedCliente
+  //   ? vehiculos.filter(
+  //       (vehiculo) =>
+  //         vehiculo.clienteId === selectedCliente.id &&
+  //         `${vehiculo.patente} ${vehiculo.marca} ${vehiculo.modelo}`
+  //           .toLowerCase()
+  //           .includes(vehiculoSearch.toLowerCase()),
+  //     )
+  //   : []
 
   const handleClienteKeyDown = (e) => {
     if (filteredClientes.length === 0) return
