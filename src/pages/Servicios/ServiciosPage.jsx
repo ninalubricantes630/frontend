@@ -56,11 +56,6 @@ import useEmpleados from "../../hooks/useEmpleados"
 import useSucursales from "../../hooks/useSucursales"
 import { useAuth } from "../../contexts/AuthContext"
 
-// Assuming Input component and other Tailwind-like styles are available or need to be adapted
-// For this merge, we'll assume a basic Input component exists or adapt the logic.
-// If not, the JSX for the vehiculo step would need to be fully converted to MUI.
-// For now, we'll proceed assuming the JSX for step 1 is a placeholder for MUI conversion later.
-
 const steps = [
   { id: 0, title: "Cliente", icon: User },
   { id: 1, title: "Vehículo", icon: Car },
@@ -91,7 +86,7 @@ const ServiciosPage = () => {
 
   const { user } = useAuth()
   const { clientes, loadClientes } = useClientes()
-  const { vehiculos, setVehiculos, loadVehiculos, loadVehiculosByCliente } = useVehiculos()
+  const { vehiculos, loadVehiculos, loadVehiculosByCliente } = useVehiculos()
   const { tiposServicios, loadTiposServicios } = useTiposServicios()
   const { createServicio, loading } = useServicios()
   const { empleadosActivos, loadEmpleadosActivos, loadEmpleadosBySucursal } = useEmpleados()
@@ -101,8 +96,9 @@ const ServiciosPage = () => {
   const [selectedVehiculo, setSelectedVehiculo] = useState(null)
   const [selectedSucursal, setSelectedSucursal] = useState(null)
   const [clienteSearch, setClienteSearch] = useState("")
-  const [highlightedClienteIndex, setHighlightedClienteIndex] = useState(0)
-  const [highlightedVehiculoIndex, setHighlightedVehiculoIndex] = useState(0)
+  const [selectedClienteIndex, setSelectedClienteIndex] = useState(-1)
+  const [selectedVehiculoIndex, setSelectedVehiculoIndex] = useState(-1)
+  const clienteInputRef = useRef(null)
   const [showItemDialog, setShowItemDialog] = useState(false)
   const [showPagoDialog, setShowPagoDialog] = useState(false)
   const [showDescuentoModal, setShowDescuentoModal] = useState(false)
@@ -116,10 +112,6 @@ const ServiciosPage = () => {
 
   const [userSucursalesCount, setUserSucursalesCount] = useState(0)
 
-  // Refs for input focus
-  const clienteInputRef = useRef(null)
-  const vehiculoInputRef = useRef(null)
-
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity })
   }
@@ -128,183 +120,27 @@ const ServiciosPage = () => {
     setSnackbar({ ...snackbar, open: false })
   }
 
-  const calcularSubtotal = () => {
-    let subtotal = 0
-    if (Array.isArray(formData.items)) {
-      for (const item of formData.items) {
-        if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
-          for (const prod of item.productos) {
-            const precioProducto =
-              (Number.parseFloat(prod.precio_unitario) || 0) * (Number.parseFloat(prod.cantidad) || 0)
-            subtotal += precioProducto
-          }
-        } else {
-          const precioManual = Number.parseFloat(item.total) || 0
-          subtotal += precioManual
-        }
-      }
-    }
-    return Math.max(0, subtotal)
-  }
-
-  const calcularTotal = () => {
-    // Sum subtotals from all items
-    let subtotal = 0
-    if (Array.isArray(formData.items)) {
-      for (const item of formData.items) {
-        if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
-          for (const prod of item.productos) {
-            subtotal += (Number.parseFloat(prod.precio_unitario) || 0) * (Number.parseFloat(prod.cantidad) || 0)
-          }
-        } else {
-          const precioManual = Number.parseFloat(item.total) || 0
-          subtotal += precioManual
-        }
-      }
-    }
-
-    let total = subtotal
-
-    // Apply discount
-    if (descuento && descuento.montoDescuento > 0) {
-      total -= descuento.montoDescuento
-    }
-
-    // Apply interest
-    if (interes && interes.montoInteres > 0) {
-      total += interes.montoInteres
-    }
-
-    return Math.max(0, total)
-  }
-
-  useEffect(() => {
-    if (user && user.sucursales) {
-      setUserSucursalesCount(user.sucursales.length)
-      // Find the main sucursal or use the first one
-      const mainSucursal = user.sucursales.find((s) => s.es_principal) || user.sucursales[0]
-      if (mainSucursal) {
-        setFormData((prev) => ({
-          ...prev,
-          sucursalId: mainSucursal.id,
-        }))
-        setSelectedSucursal(mainSucursal)
-      }
-    }
-  }, [user])
-
-  useEffect(() => {
-    if (activeStep === 0 && clienteInputRef.current) {
-      clienteInputRef.current.focus()
-    }
-  }, [activeStep])
-
-  useEffect(() => {
-    if (activeStep === 1 && vehiculoInputRef.current) {
-      vehiculoInputRef.current.focus()
-    }
-  }, [activeStep])
-
-  useEffect(() => {
-    setHighlightedClienteIndex(0)
-  }, [clienteSearch])
-
-  const [vehiculoSearch, setVehiculoSearch] = useState("")
-
-  useEffect(() => {
-    setHighlightedVehiculoIndex(0)
-  }, [vehiculoSearch])
-
-  // Moved filter definitions BEFORE they're used in handlers
-  const filteredClientes = clientes.filter((cliente) =>
-    `${cliente.nombre} ${cliente.apellido} ${cliente.dni}`.toLowerCase().includes(clienteSearch.toLowerCase()),
-  )
-
-  const filteredVehiculos = selectedCliente
-    ? vehiculos.filter(
-        (vehiculo) =>
-          vehiculo.clienteId === selectedCliente.id &&
-          `${vehiculo.patente} ${vehiculo.marca} ${vehiculo.modelo}`
-            .toLowerCase()
-            .includes(vehiculoSearch.toLowerCase()),
-      )
-    : []
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
-      if (activeStep === 0 && clienteSearch.trim()) {
-        return // Let the cliente keyboard handler take over
-      }
-      if (activeStep === 1 && vehiculoSearch.trim()) {
-        return // Let the vehiculo keyboard handler take over
-      }
-
-      if (activeStep < 4 && canProceed()) {
-        e.preventDefault()
-        handleNext()
-      }
-      return
-    }
-
-    if (e.ctrlKey || e.metaKey) {
-      switch (e.key) {
-        case "ArrowRight":
-          e.preventDefault()
-          if (activeStep < 4 && canProceed()) handleNext()
-          break
-        case "ArrowLeft":
-          e.preventDefault()
-          if (activeStep > 0) handleBack()
-          break
-        case "Enter":
-          e.preventDefault()
-          if (activeStep === 4 && canProceed()) handleSubmit()
-          break
-        case "/":
-          e.preventDefault()
-          setShowShortcuts(true)
-          break
-      }
+  const canProceed = () => {
+    switch (activeStep) {
+      case 0:
+        return formData.clienteId !== null
+      case 1:
+        return formData.vehiculoId !== null
+      case 2:
+        return formData.sucursalId !== null
+      case 3:
+        return formData.items.length > 0
+      case 4:
+        return true
+      default:
+        return false
     }
   }
-
-  useEffect(() => {
-    window.addEventListener("keydown", handleKeyDown)
-    return () => window.removeEventListener("keydown", handleKeyDown)
-  }, [activeStep, formData, clienteSearch, vehiculoSearch]) // Added dependencies
-
-  useEffect(() => {
-    loadClientes()
-    loadVehiculos() // Load all vehicles initially
-    loadSucursalesActivas()
-    loadEmpleadosActivos()
-    loadTiposServicios()
-  }, [])
-
-  useEffect(() => {
-    if (formData.clienteId) {
-      loadVehiculosByCliente(formData.clienteId)
-    } else {
-      // Clear vehicles if no client is selected
-      setVehiculos([])
-    }
-  }, [formData.clienteId])
-
-  useEffect(() => {
-    if (formData.sucursalId) {
-      loadEmpleadosBySucursal(formData.sucursalId)
-      setFormData((prev) => ({
-        ...prev,
-        empleados: [],
-      }))
-    }
-  }, [formData.sucursalId])
 
   const handleNext = () => {
     if (activeStep < 4) {
       setActiveStep((prev) => Math.min(prev + 1, 4))
     } else if (activeStep === 4) {
-      // When clicking next on confirmation step, open payment modal
       setShowPagoDialog(true)
     }
   }
@@ -337,13 +173,240 @@ const ServiciosPage = () => {
     setSelectedCliente(null)
     setSelectedVehiculo(null)
     setClienteSearch("")
-    setVehiculoSearch("") // Reset vehicle search
     setEditingItemId(null)
-    // Reset interest and discount states as well
     setInteres(null)
     setDescuento(null)
-    setHighlightedClienteIndex(0) // Reset highlighted index
-    setHighlightedVehiculoIndex(0) // Reset highlighted index
+    setSelectedClienteIndex(-1)
+    setSelectedVehiculoIndex(-1)
+  }
+
+  const handleSubmit = async (pagoData) => {
+    try {
+      const calculatedSubtotal = calcularSubtotal()
+
+      const submitData = {
+        cliente_id: formData.clienteId,
+        vehiculo_id: formData.vehiculoId,
+        sucursal_id: formData.sucursalId,
+        empleados: formData.empleados,
+        observaciones: formData.observaciones,
+        tipo_pago: pagoData?.tipo_pago?.toUpperCase() || formData.metodoPago?.toUpperCase() || "EFECTIVO",
+        subtotal: calculatedSubtotal,
+        descuento: pagoData?.descuento || 0,
+        tipo_interes_sistema: pagoData?.tipo_interes_sistema || null,
+        valor_interes_sistema: pagoData?.valor_interes_sistema || 0,
+        interes_sistema: pagoData?.interes_sistema || 0,
+        tarjeta_id: pagoData?.tarjeta_id || null,
+        numero_cuotas: pagoData?.numero_cuotas || null,
+        tasa_interes_tarjeta: pagoData?.tasa_interes_tarjeta || null,
+        total_con_interes: pagoData?.total_con_interes || calculatedSubtotal,
+        total_con_interes_tarjeta: pagoData?.total_con_interes_tarjeta || null,
+        items: Array.isArray(formData.items)
+          ? formData.items.map((item) => {
+              let itemTotal = 0
+              if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
+                itemTotal = item.productos.reduce(
+                  (sum, prod) => sum + (Number(prod.precio_unitario) * Number(prod.cantidad) || 0),
+                  0,
+                )
+              } else {
+                itemTotal = Number(item.total) || 0
+              }
+
+              return {
+                tipo_servicio_id: item.tipoServicioId,
+                descripcion: item.descripcion || "Sin descripción",
+                observaciones: item.observaciones || null,
+                notas: item.notas || null,
+                total: itemTotal,
+                productos: Array.isArray(item.productos) ? item.productos : [],
+              }
+            })
+          : [],
+      }
+
+      await createServicio(submitData)
+      showSnackbar("¡Servicio creado exitosamente!")
+      setShowPagoDialog(false)
+      handleReset()
+      setActiveStep(5)
+    } catch (error) {
+      console.error("[v0] Error al crear servicio:", error)
+      showSnackbar(error.message || "Error al crear el servicio", "error")
+    }
+  }
+
+  const calcularSubtotal = () => {
+    let subtotal = 0
+    if (Array.isArray(formData.items)) {
+      for (const item of formData.items) {
+        if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
+          for (const prod of item.productos) {
+            const precioProducto =
+              (Number.parseFloat(prod.precio_unitario) || 0) * (Number.parseFloat(prod.cantidad) || 0)
+            subtotal += precioProducto
+          }
+        } else {
+          const precioManual = Number.parseFloat(item.total) || 0
+          subtotal += precioManual
+        }
+      }
+    }
+    return Math.max(0, subtotal)
+  }
+
+  const calcularTotal = () => {
+    let subtotal = 0
+    if (Array.isArray(formData.items)) {
+      for (const item of formData.items) {
+        if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
+          for (const prod of item.productos) {
+            subtotal += (Number.parseFloat(prod.precio_unitario) || 0) * (Number.parseFloat(prod.cantidad) || 0)
+          }
+        } else {
+          const precioManual = Number.parseFloat(item.total) || 0
+          subtotal += precioManual
+        }
+      }
+    }
+
+    let total = subtotal
+
+    if (descuento && descuento.montoDescuento > 0) {
+      total -= descuento.montoDescuento
+    }
+
+    if (interes && interes.montoInteres > 0) {
+      total += interes.montoInteres
+    }
+
+    return Math.max(0, total)
+  }
+
+  useEffect(() => {
+    if (user && user.sucursales) {
+      setUserSucursalesCount(user.sucursales.length)
+      const mainSucursal = user.sucursales.find((s) => s.es_principal) || user.sucursales[0]
+      if (mainSucursal) {
+        setFormData((prev) => ({
+          ...prev,
+          sucursalId: mainSucursal.id,
+        }))
+        setSelectedSucursal(mainSucursal)
+      }
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (activeStep === 0 && clienteInputRef.current) {
+      setTimeout(() => {
+        clienteInputRef.current?.focus()
+      }, 100)
+    }
+  }, [activeStep])
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
+      if (activeStep < 4 && canProceed()) {
+        e.preventDefault()
+        handleNext()
+      }
+      return
+    }
+
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key) {
+        case "ArrowRight":
+          e.preventDefault()
+          if (activeStep < 4 && canProceed()) handleNext()
+          break
+        case "ArrowLeft":
+          e.preventDefault()
+          if (activeStep > 0) handleBack()
+          break
+        case "Enter":
+          e.preventDefault()
+          if (activeStep === 4 && canProceed()) handleSubmit()
+          break
+        case "/":
+          e.preventDefault()
+          setShowShortcuts(true)
+          break
+      }
+    }
+  }
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [activeStep, formData, canProceed, handleSubmit, handleNext, handleBack])
+
+  useEffect(() => {
+    loadClientes()
+    loadTiposServicios()
+    loadSucursalesActivas()
+  }, [])
+
+  useEffect(() => {
+    if (formData.clienteId) {
+      loadVehiculosByCliente(formData.clienteId)
+    }
+  }, [formData.clienteId])
+
+  useEffect(() => {
+    if (formData.sucursalId) {
+      loadEmpleadosBySucursal(formData.sucursalId)
+      setFormData((prev) => ({
+        ...prev,
+        empleados: [],
+      }))
+    }
+  }, [formData.sucursalId, loadEmpleadosBySucursal])
+
+  const handleClienteKeyDown = (e) => {
+    if (!filteredClientes.length) return
+
+    switch (e.key) {
+      case "ArrowRight":
+        e.preventDefault()
+        setSelectedClienteIndex((prev) => (prev + 1) % filteredClientes.length)
+        break
+      case "ArrowLeft":
+        e.preventDefault()
+        setSelectedClienteIndex((prev) => (prev - 1 + filteredClientes.length) % filteredClientes.length)
+        break
+      case "Enter":
+        e.preventDefault()
+        if (selectedClienteIndex >= 0) {
+          handleClienteSelect(filteredClientes[selectedClienteIndex])
+        }
+        break
+      default:
+        break
+    }
+  }
+
+  const handleVehiculoKeyDown = (e) => {
+    if (!vehiculos.length) return
+
+    switch (e.key) {
+      case "ArrowRight":
+        e.preventDefault()
+        setSelectedVehiculoIndex((prev) => (prev + 1) % vehiculos.length)
+        break
+      case "ArrowLeft":
+        e.preventDefault()
+        setSelectedVehiculoIndex((prev) => (prev - 1 + vehiculos.length) % vehiculos.length)
+        break
+      case "Enter":
+        e.preventDefault()
+        if (selectedVehiculoIndex >= 0) {
+          handleVehiculoSelect(vehiculos[selectedVehiculoIndex])
+        }
+        break
+      default:
+        break
+    }
   }
 
   const handleClienteSelect = (cliente) => {
@@ -354,9 +417,8 @@ const ServiciosPage = () => {
       vehiculoId: null,
     }))
     setSelectedVehiculo(null)
-    setClienteSearch("")
-    setHighlightedClienteIndex(0)
-    loadVehiculosByCliente(cliente?.id) // Load vehicles for the selected client
+    setSelectedClienteIndex(-1)
+    setSelectedVehiculoIndex(-1)
   }
 
   const handleVehiculoSelect = (vehiculo) => {
@@ -365,8 +427,7 @@ const ServiciosPage = () => {
       ...prev,
       vehiculoId: vehiculo?.id || null,
     }))
-    setVehiculoSearch("")
-    setHighlightedVehiculoIndex(0)
+    setSelectedVehiculoIndex(-1)
   }
 
   const handleSucursalSelect = (sucursalId) => {
@@ -390,7 +451,6 @@ const ServiciosPage = () => {
     const itemConTotal = {
       ...newItem,
       total: newItem.total !== undefined && newItem.total !== null ? Number(newItem.total) : 0,
-      id: editingItemId || Math.random().toString(36).substr(2, 9), // Generate ID if new, use existing if editing
     }
 
     if (editingItemId) {
@@ -466,138 +526,17 @@ const ServiciosPage = () => {
     showSnackbar("Descuento actualizado", "success")
   }
 
-  const handleSubmit = async (pagoData) => {
-    try {
-      const calculatedSubtotal = calcularSubtotal()
+  const filteredClientes = clientes.filter((cliente) =>
+    `${cliente.nombre} ${cliente.apellido} ${cliente.dni}`.toLowerCase().includes(clienteSearch.toLowerCase()),
+  )
 
-      const submitData = {
-        cliente_id: formData.clienteId,
-        vehiculo_id: formData.vehiculoId,
-        sucursal_id: formData.sucursalId,
-        empleados: formData.empleados,
-        observaciones: formData.observaciones,
-        tipo_pago: pagoData?.tipo_pago?.toUpperCase() || formData.metodoPago?.toUpperCase() || "EFECTIVO",
-        subtotal: calculatedSubtotal,
-        descuento: descuento?.montoDescuento || 0, // Use the state value
-        interes_monto: interes?.montoInteres || 0, // Use the state value
-        tipo_interes_sistema: interes?.tipoInteres || null,
-        valor_interes_sistema: interes?.valorInteres || 0,
-        // interes_sistema: pagoData?.interes_sistema || 0, // This might be redundant if interes_monto covers it
-        tarjeta_id: pagoData?.tarjetaId || null, // Corrected key name
-        numero_cuotas: pagoData?.numeroCuotas || null, // Corrected key name
-        tasa_interes_tarjeta: pagoData?.tasaInteresTarjeta || null, // Corrected key name
-        total_con_interes: pagoData?.totalConInteres || calcularTotal(), // Use calculated total
-        total_con_interes_tarjeta: pagoData?.totalConInteresTarjeta || null, // Corrected key name
-        items: Array.isArray(formData.items)
-          ? formData.items.map((item) => {
-              let itemTotal = 0
-              if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
-                // If it has products, sum prices of products
-                itemTotal = item.productos.reduce(
-                  (sum, prod) => sum + (Number(prod.precio_unitario) * Number(prod.cantidad) || 0),
-                  0,
-                )
-              } else {
-                // If it does NOT have products, use item.total (manual price)
-                itemTotal = Number(item.total) || 0
-              }
-
-              return {
-                tipo_servicio_id: item.tipoServicioId,
-                descripcion: item.descripcion || "Sin descripción",
-                observaciones: item.observaciones || null,
-                notas: item.notas || null,
-                total: itemTotal,
-                productos: Array.isArray(item.productos) ? item.productos : [],
-              }
-            })
-          : [],
-      }
-
-      await createServicio(submitData)
-      showSnackbar("¡Servicio creado exitosamente!")
-      setShowPagoDialog(false)
-      handleReset()
-      setActiveStep(5) // Move to the success step
-    } catch (error) {
-      console.error("[v0] Error al crear servicio:", error)
-      showSnackbar(error.message || "Error al crear el servicio", "error")
+  useEffect(() => {
+    if (filteredClientes.length > 0 && selectedClienteIndex === -1) {
+      setSelectedClienteIndex(0)
+    } else if (filteredClientes.length === 0) {
+      setSelectedClienteIndex(-1)
     }
-  }
-
-  const canProceed = () => {
-    switch (activeStep) {
-      case 0:
-        return formData.clienteId !== null
-      case 1:
-        return formData.vehiculoId !== null
-      case 2:
-        return formData.sucursalId !== null
-      case 3:
-        return formData.items.length > 0
-      case 4:
-        return true
-      default:
-        return false
-    }
-  }
-
-  // Moved filter definitions BEFORE they're used in handlers
-  // const filteredClientes = clientes.filter((cliente) =>
-  //   `${cliente.nombre} ${cliente.apellido} ${cliente.dni}`.toLowerCase().includes(clienteSearch.toLowerCase()),
-  // )
-
-  // const filteredVehiculos = selectedCliente
-  //   ? vehiculos.filter(
-  //       (vehiculo) =>
-  //         vehiculo.clienteId === selectedCliente.id &&
-  //         `${vehiculo.patente} ${vehiculo.marca} ${vehiculo.modelo}`
-  //           .toLowerCase()
-  //           .includes(vehiculoSearch.toLowerCase()),
-  //     )
-  //   : []
-
-  const handleClienteKeyDown = (e) => {
-    if (filteredClientes.length === 0) return
-
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault()
-        setHighlightedClienteIndex((prev) => (prev + 1) % filteredClientes.length)
-        break
-      case "ArrowUp":
-        e.preventDefault()
-        setHighlightedClienteIndex((prev) => (prev - 1 + filteredClientes.length) % filteredClientes.length)
-        break
-      case "Enter":
-        e.preventDefault()
-        handleClienteSelect(filteredClientes[highlightedClienteIndex])
-        break
-      default:
-        break
-    }
-  }
-
-  const handleVehiculoKeyDown = (e) => {
-    if (filteredVehiculos.length === 0) return
-
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault()
-        setHighlightedVehiculoIndex((prev) => (prev + 1) % filteredVehiculos.length)
-        break
-      case "ArrowUp":
-        e.preventDefault()
-        setHighlightedVehiculoIndex((prev) => (prev - 1 + filteredVehiculos.length) % filteredVehiculos.length)
-        break
-      case "Enter":
-        e.preventDefault()
-        handleVehiculoSelect(filteredVehiculos[highlightedVehiculoIndex])
-        break
-      default:
-        break
-    }
-  }
+  }, [filteredClientes])
 
   const renderStepContent = () => {
     switch (activeStep) {
@@ -623,17 +562,17 @@ const ServiciosPage = () => {
                     Seleccionar Cliente
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#6b7280", fontSize: "0.8rem" }}>
-                    Busca el cliente que recibirá el servicio
+                    Busca el cliente por nombre, apellido o DNI
                   </Typography>
                 </Box>
               </Box>
             </CardContent>
             <CardContent sx={{ p: 3.5, flex: 1, overflow: "auto" }}>
               <TextField
-                ref={clienteInputRef}
+                inputRef={clienteInputRef}
+                autoFocus
                 fullWidth
-                size="medium"
-                placeholder="Buscar por nombre, apellido o DNI..."
+                placeholder="Escribe el nombre o DNI del cliente..."
                 value={clienteSearch}
                 onChange={(e) => setClienteSearch(e.target.value)}
                 onKeyDown={handleClienteKeyDown}
@@ -661,19 +600,29 @@ const ServiciosPage = () => {
                     filteredClientes.map((cliente, index) => (
                       <Grid item xs={12} sm={6} md={4} key={cliente.id}>
                         <Card
+                          elevation={selectedClienteIndex === index || selectedCliente?.id === cliente.id ? 1 : 0}
                           sx={{
                             cursor: "pointer",
-                            transition: "all 0.2s",
-                            border: "1px solid #e5e7eb",
-                            borderColor: highlightedClienteIndex === index ? "#dc2626" : undefined,
-                            backgroundColor: highlightedClienteIndex === index ? "#fef2f2" : undefined,
-                            boxShadow: highlightedClienteIndex === index ? "0 0 0 2px #fee2e2" : "none",
+                            border:
+                              selectedClienteIndex === index || selectedCliente?.id === cliente.id
+                                ? "2px solid #dc2626"
+                                : "1px solid #e5e7eb",
+                            bgcolor:
+                              selectedClienteIndex === index || selectedCliente?.id === cliente.id
+                                ? "#fef2f2"
+                                : "white",
+                            p: 2.5,
+                            borderRadius: 1.5,
+                            transition: "all 0.2s ease",
+                            height: "100%",
                             "&:hover": {
                               borderColor: "#dc2626",
-                              boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)",
+                              bgcolor: "#fafafa",
+                              transform: "translateY(-2px)",
                             },
                           }}
                           onClick={() => handleClienteSelect(cliente)}
+                          onMouseEnter={() => setSelectedClienteIndex(index)}
                         >
                           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                             <Box sx={{ flex: 1 }}>
@@ -687,7 +636,7 @@ const ServiciosPage = () => {
                                 Tel: {cliente.telefono || "No especificado"}
                               </Typography>
                             </Box>
-                            {selectedCliente?.id === cliente.id && (
+                            {(selectedClienteIndex === index || selectedCliente?.id === cliente.id) && (
                               <CheckCircle size={20} color="#dc2626" strokeWidth={2.5} />
                             )}
                           </Box>
@@ -698,8 +647,11 @@ const ServiciosPage = () => {
                     <Grid item xs={12}>
                       <Box sx={{ textAlign: "center", py: 4 }}>
                         <Search size={32} color="#d1d5db" sx={{ mb: 1 }} />
-                        <Typography variant="body2" sx={{ color: "#6b7280" }}>
+                        <Typography variant="body2" sx={{ color: "#6b7280", mb: 1 }}>
                           No se encontraron clientes
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: "#9ca3af" }}>
+                          Intenta con otro nombre o DNI
                         </Typography>
                       </Box>
                     </Grid>
@@ -707,36 +659,10 @@ const ServiciosPage = () => {
                 </Grid>
               )}
 
-              {!clienteSearch.trim() && selectedCliente && (
-                <Card elevation={0} sx={{ border: "2px solid #dc2626", bgcolor: "#fef2f2", p: 2.5, borderRadius: 1.5 }}>
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Box sx={{ p: 1, bgcolor: "#dc2626", color: "white", borderRadius: 1 }}>
-                      <CheckCircle size={18} />
-                    </Box>
-                    <Box sx={{ flex: 1 }}>
-                      <Typography variant="subtitle2" sx={{ color: "#171717", fontWeight: 700 }}>
-                        {selectedCliente.nombre} {selectedCliente.apellido}
-                      </Typography>
-                      <Typography variant="caption" sx={{ color: "#6b7280" }}>
-                        DNI: {selectedCliente.dni}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Card>
-              )}
-
-              {!clienteSearch.trim() && !selectedCliente && (
-                <Box
-                  sx={{
-                    textAlign: "center",
-                    py: 6,
-                    border: "2px dashed #e5e7eb",
-                    borderRadius: 2,
-                    bgcolor: "#f9fafb",
-                  }}
-                >
+              {!clienteSearch.trim() && (
+                <Box sx={{ textAlign: "center", py: 6 }}>
                   <User size={40} color="#d1d5db" sx={{ mb: 1.5 }} />
-                  <Typography variant="body2" sx={{ color: "#6b7280", fontWeight: 500 }}>
+                  <Typography variant="body2" sx={{ color: "#6b7280" }}>
                     Comienza a buscar un cliente
                   </Typography>
                 </Box>
@@ -767,12 +693,12 @@ const ServiciosPage = () => {
                     Seleccionar Vehículo
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#6b7280", fontSize: "0.8rem" }}>
-                    Elige el vehículo que recibirá el servicio
+                    Elige el vehículo que recibirá el servicio (Usa ← → para navegar)
                   </Typography>
                 </Box>
               </Box>
             </CardContent>
-            <CardContent sx={{ p: 3.5, flex: 1, overflow: "auto" }}>
+            <CardContent sx={{ p: 3.5, flex: 1, overflow: "auto" }} onKeyDown={handleVehiculoKeyDown} tabIndex={0}>
               {vehiculos.length === 0 ? (
                 <Box sx={{ textAlign: "center", py: 6 }}>
                   <Car size={40} color="#d1d5db" sx={{ mb: 1.5 }} />
@@ -782,17 +708,20 @@ const ServiciosPage = () => {
                 </Box>
               ) : (
                 <Grid container spacing={2}>
-                  {/* This part needs to be converted to MUI components if the placeholder is removed */}
-                  {/* The provided updates use Tailwind-like syntax for this section. */}
-                  {/* For consistency with the rest of the code, we'll keep it as MUI Grid */}
-                  {filteredVehiculos.map((vehiculo, index) => (
+                  {vehiculos.map((vehiculo, index) => (
                     <Grid item xs={12} sm={6} md={4} key={vehiculo.id}>
                       <Card
-                        elevation={selectedVehiculo?.id === vehiculo.id ? 1 : 0}
+                        elevation={selectedVehiculoIndex === index || selectedVehiculo?.id === vehiculo.id ? 1 : 0}
                         sx={{
                           cursor: "pointer",
-                          border: selectedVehiculo?.id === vehiculo.id ? "2px solid #dc2626" : "1px solid #e5e7eb",
-                          bgcolor: selectedVehiculo?.id === vehiculo.id ? "#fef2f2" : "white",
+                          border:
+                            selectedVehiculoIndex === index || selectedVehiculo?.id === vehiculo.id
+                              ? "2px solid #dc2626"
+                              : "1px solid #e5e7eb",
+                          bgcolor:
+                            selectedVehiculoIndex === index || selectedVehiculo?.id === vehiculo.id
+                              ? "#fef2f2"
+                              : "white",
                           p: 2.5,
                           borderRadius: 1.5,
                           transition: "all 0.2s ease",
@@ -802,13 +731,9 @@ const ServiciosPage = () => {
                             bgcolor: "#fafafa",
                             transform: "translateY(-2px)",
                           },
-                          ...(highlightedVehiculoIndex === index && {
-                            borderColor: "#dc2626",
-                            bgcolor: "#fef2f2",
-                            boxShadow: "0 0 0 2px #fee2e2",
-                          }),
                         }}
                         onClick={() => handleVehiculoSelect(vehiculo)}
+                        onMouseEnter={() => setSelectedVehiculoIndex(index)}
                       >
                         <Box
                           sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 1.5 }}
@@ -823,7 +748,7 @@ const ServiciosPage = () => {
                               {vehiculo.marca} {vehiculo.modelo}
                             </Typography>
                           </Box>
-                          {selectedVehiculo?.id === vehiculo.id && (
+                          {(selectedVehiculoIndex === index || selectedVehiculo?.id === vehiculo.id) && (
                             <CheckCircle size={20} color="#dc2626" strokeWidth={2.5} />
                           )}
                         </Box>
