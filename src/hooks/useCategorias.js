@@ -15,6 +15,9 @@ export const useCategorias = () => {
     total: 0,
     limit: 50,
   })
+  const [cachedCategorias, setCachedCategorias] = useState(null)
+  const [cacheTimestamp, setCacheTimestamp] = useState(null)
+  const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
   const { showToast } = useToast()
   const { handleError } = useErrorHandler()
@@ -24,6 +27,15 @@ export const useCategorias = () => {
   const loadCategorias = useCallback(
     async (page = 1, search = "", limit = null) => {
       const actualLimit = limit || pagination.limit
+
+      if (!search && page === 1) {
+        const now = Date.now()
+        if (cachedCategorias && cacheTimestamp && now - cacheTimestamp < CACHE_DURATION) {
+          setCategorias(cachedCategorias)
+          return
+        }
+      }
+
       setLoading(true)
       setError(null)
 
@@ -50,6 +62,10 @@ export const useCategorias = () => {
         const paginationData = response.data?.pagination || {}
 
         setCategorias(categoriasData)
+        if (!search) {
+          setCachedCategorias(categoriasData)
+          setCacheTimestamp(Date.now())
+        }
         setPagination({
           page: paginationData.page || page,
           totalPages: paginationData.totalPages || 1,
@@ -69,7 +85,7 @@ export const useCategorias = () => {
         setLoading(false)
       }
     },
-    [pagination.limit],
+    [pagination.limit, cachedCategorias, cacheTimestamp],
   )
 
   const handlePageChange = useCallback(

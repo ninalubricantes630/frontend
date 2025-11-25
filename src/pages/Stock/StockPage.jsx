@@ -64,6 +64,19 @@ const StockPage = () => {
   const [productoParaHistorial, setProductoParaHistorial] = useState(null)
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" })
 
+  // Initial load for categorias and sucursales only once
+  useEffect(() => {
+    loadCategorias(1, "", 100)
+    loadSucursales()
+  }, []) // Empty dependency array - load only once on mount
+
+  // Load productos when user is ready
+  useEffect(() => {
+    if (user?.sucursales && user.sucursales.length > 0) {
+      loadProductos()
+    }
+  }, [user?.id]) // Only trigger when user ID changes, not on every user prop change
+
   useEffect(() => {
     if (user?.sucursales && user.sucursales.length > 0) {
       if (user.sucursales.length === 1) {
@@ -81,20 +94,13 @@ const StockPage = () => {
     }
   }, [user])
 
-  useEffect(() => {
-    if (user?.sucursales && user.sucursales.length > 0) {
-      loadProductos()
-    }
-    loadCategorias(1, "", 100)
-    loadSucursales(1, 100)
-  }, [user])
-
+  // Search debounce effect
   useEffect(() => {
     if (!user?.sucursales || user.sucursales.length === 0) return
 
     const timeoutId = setTimeout(() => {
       handleSearch()
-    }, 500)
+    }, 1000)
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm, filters, priceRange, user])

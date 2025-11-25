@@ -14,28 +14,41 @@ export const useSucursales = () => {
     total: 0,
     totalPages: 0,
   })
+  const [cachedSucursales, setCachedSucursales] = useState(null)
+  const [cacheTimestamp, setCacheTimestamp] = useState(null)
+  const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-  const loadSucursales = useCallback(async (params = {}) => {
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await sucursalesService.getAll(params)
+  const loadSucursales = useCallback(
+    async (params = {}) => {
+      try {
+        const now = Date.now()
+        if (cachedSucursales && cacheTimestamp && now - cacheTimestamp < CACHE_DURATION) {
+          setSucursales(cachedSucursales)
+          return
+        }
 
+        setLoading(true)
+        setError(null)
+        const response = await sucursalesService.getAll(params)
 
-      setSucursales(response.data?.sucursales || [])
-      setPagination({
-        page: response.data?.pagination?.page || 1,
-        limit: response.data?.pagination?.limit || 10,
-        total: response.data?.pagination?.total || 0,
-        totalPages: response.data?.pagination?.totalPages || 0,
-      })
-    } catch (error) {
-      console.error("[v0] Error loading sucursales:", error)
-      setError(error.message || "Error al cargar sucursales")
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+        setSucursales(response.data?.sucursales || [])
+        setCachedSucursales(response.data?.sucursales || [])
+        setCacheTimestamp(now)
+        setPagination({
+          page: response.data?.pagination?.page || 1,
+          limit: response.data?.pagination?.limit || 10,
+          total: response.data?.pagination?.total || 0,
+          totalPages: response.data?.pagination?.totalPages || 0,
+        })
+      } catch (error) {
+        console.error("[v0] Error loading sucursales:", error)
+        setError(error.message || "Error al cargar sucursales")
+      } finally {
+        setLoading(false)
+      }
+    },
+    [cachedSucursales, cacheTimestamp],
+  )
 
   const loadSucursalesActivas = useCallback(async () => {
     try {
@@ -91,8 +104,7 @@ export const useSucursales = () => {
 
   useEffect(() => {
     loadSucursales()
-    loadSucursalesActivas()
-  }, [loadSucursales, loadSucursalesActivas])
+  }, [])
 
   return {
     sucursales,
