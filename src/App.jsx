@@ -24,7 +24,8 @@ import HistorialCajaPage from "./pages/Caja/HistorialCajaPage"
 import LoadingSpinner from "./components/Common/LoadingSpinner"
 import ToastContainer from "./components/Common/ToastContainer"
 import GestionTarjetasPage from "./pages/Configuracion/GestionTarjetasPage"
- 
+import PermissionGuard from "./components/Auth/PermissionGuard"
+
 function App() {
   const { isAuthenticated, loading } = useAuth()
 
@@ -53,10 +54,38 @@ function App() {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="clientes" element={<ClientesPage />} />
           <Route path="vehiculos" element={<VehiculosPage />} />
-          <Route path="servicios" element={<ServiciosPage />} />
-          <Route path="stock" element={<StockPage />} />
-          <Route path="ventas" element={<VentasPage />} />
-          <Route path="caja" element={<CajaPage />} />
+          <Route
+            path="servicios"
+            element={
+              <PermissionGuard requiredPermission="servicios">
+                <ServiciosPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="stock"
+            element={
+              <PermissionGuard requiredPermission="stock">
+                <StockPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="ventas"
+            element={
+              <PermissionGuard requiredPermission="ventas">
+                <VentasPage />
+              </PermissionGuard>
+            }
+          />
+          <Route
+            path="caja"
+            element={
+              <PermissionGuard requiredPermission="caja">
+                <CajaPage />
+              </PermissionGuard>
+            }
+          />
           <Route path="caja/historial" element={<HistorialCajaPage />} />
           <Route path="reportes" element={<ReportesPage />} />
           <Route path="reportes/ventas" element={<ReportesVentasPage />} />

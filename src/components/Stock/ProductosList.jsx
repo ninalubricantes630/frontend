@@ -28,6 +28,7 @@ import {
   History as HistoryIcon,
 } from "@mui/icons-material"
 import { formatCurrency, formatQuantity } from "../../utils/formatters"
+import { useAuth } from "../../contexts/AuthContext"
 
 const getStockColor = (stock) => {
   if (stock > 50) {
@@ -50,6 +51,7 @@ const ProductosList = ({
   onPageChange,
 }) => {
   const [toggleDialog, setToggleDialog] = useState({ open: false, producto: null })
+  const { hasPermissionSlug, isAdmin } = useAuth()
 
   const handleToggleClick = (producto) => {
     setToggleDialog({ open: true, producto })
@@ -292,60 +294,71 @@ const ProductosList = ({
                   </TableCell>
                   <TableCell align="right" sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                     <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
-                      <IconButton
-                        size="small"
-                        onClick={() => onEdit(producto)}
-                        sx={{
-                          color: "#dc2626",
-                          p: 0.5,
-                          "&:hover": { bgcolor: "#fee2e2" },
-                        }}
-                      >
-                        <EditIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => onMovimiento(producto)}
-                        disabled={!producto.activo}
-                        sx={{
-                          color: "#2563eb",
-                          p: 0.5,
-                          "&:hover": { bgcolor: "#dbeafe" },
-                          "&.Mui-disabled": {
-                            color: "#cbd5e1",
-                          },
-                        }}
-                      >
-                        <SwapVertIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => onVerHistorial(producto)}
-                        sx={{
-                          color: "#7c3aed",
-                          p: 0.5,
-                          "&:hover": { bgcolor: "#ede9fe" },
-                        }}
-                      >
-                        <HistoryIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleToggleClick(producto)}
-                        sx={{
-                          color: producto.activo ? "#1f2937" : "#16a34a",
-                          p: 0.5,
-                          "&:hover": {
-                            bgcolor: producto.activo ? "#f3f4f6" : "#dcfce7",
-                          },
-                        }}
-                      >
-                        {producto.activo ? (
-                          <ToggleOffIcon sx={{ fontSize: 16 }} />
-                        ) : (
-                          <ToggleOnIcon sx={{ fontSize: 16 }} />
-                        )}
-                      </IconButton>
+                      {(isAdmin() || hasPermissionSlug("stock_editar")) && (
+                        <IconButton
+                          size="small"
+                          onClick={() => onEdit(producto)}
+                          sx={{
+                            color: "#dc2626",
+                            p: 0.5,
+                            "&:hover": { bgcolor: "#fee2e2" },
+                          }}
+                        >
+                          <EditIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      )}
+
+                      {(isAdmin() || hasPermissionSlug("stock_registrar_movimientos")) && (
+                        <IconButton
+                          size="small"
+                          onClick={() => onMovimiento(producto)}
+                          disabled={!producto.activo}
+                          sx={{
+                            color: "#2563eb",
+                            p: 0.5,
+                            "&:hover": { bgcolor: "#dbeafe" },
+                            "&.Mui-disabled": {
+                              color: "#cbd5e1",
+                            },
+                          }}
+                        >
+                          <SwapVertIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      )}
+
+                      {(isAdmin() || hasPermissionSlug("stock_ver_movimientos")) && (
+                        <IconButton
+                          size="small"
+                          onClick={() => onVerHistorial(producto)}
+                          sx={{
+                            color: "#7c3aed",
+                            p: 0.5,
+                            "&:hover": { bgcolor: "#ede9fe" },
+                          }}
+                        >
+                          <HistoryIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      )}
+
+                      {(isAdmin() || hasPermissionSlug("stock_eliminar")) && (
+                        <IconButton
+                          size="small"
+                          onClick={() => handleToggleClick(producto)}
+                          sx={{
+                            color: producto.activo ? "#1f2937" : "#16a34a",
+                            p: 0.5,
+                            "&:hover": {
+                              bgcolor: producto.activo ? "#f3f4f6" : "#dcfce7",
+                            },
+                          }}
+                        >
+                          {producto.activo ? (
+                            <ToggleOnIcon sx={{ fontSize: 16 }} />
+                          ) : (
+                            <ToggleOffIcon sx={{ fontSize: 16 }} />
+                          )}
+                        </IconButton>
+                      )}
                     </Box>
                   </TableCell>
                 </TableRow>
