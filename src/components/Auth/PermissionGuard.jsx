@@ -13,12 +13,12 @@ const PermissionGuard = ({ children, requiredPermission, fallback = null }) => {
 
     if (!user?.permisos || user.permisos.length === 0) return false
 
-    // Si el permiso requerido contiene "_", es un permiso específico (ej: stock_ver)
+    // Si el permiso requerido contiene "_", es un permiso específico (ej: view_stock)
     // Si es solo un módulo (ej: "stock"), verificar si tiene al menos un permiso de ese módulo
     if (requiredPermission.includes("_")) {
-      return hasPermissionSlug(requiredPermission)
+      return user.permisos.some((p) => p.codigo === requiredPermission)
     } else {
-      return user.permisos.some((p) => p.codigo.startsWith(requiredPermission + "_"))
+      return user.permisos.some((p) => p.modulo === requiredPermission)
     }
   }
 
