@@ -51,6 +51,7 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
   })
 
   const [errors, setErrors] = useState({})
+  const [unidadMedidaCambiada, setUnidadMedidaCambiada] = useState(false)
 
   useEffect(() => {
     if (open) {
@@ -69,6 +70,7 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
           sucursal_id: producto.sucursal_id || "",
           unidad_medida: producto.unidad_medida || "unidad",
         })
+        setUnidadMedidaCambiada(false)
       } else {
         setFormData({
           codigo: "",
@@ -82,6 +84,7 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
           sucursal_id: "",
           unidad_medida: "unidad",
         })
+        setUnidadMedidaCambiada(false)
       }
       setErrors({})
     }
@@ -89,10 +92,21 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+
+    if (name === "unidad_medida" && isEditing && value !== producto?.unidad_medida) {
+      setUnidadMedidaCambiada(true)
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+        stock: 0, // Poner stock en cero cuando se cambia unidad
+      }))
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }))
+    }
+
     if (errors[name]) {
       setErrors((prev) => ({
         ...prev,
@@ -178,8 +192,8 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
       if (isNaN(stockMinimoNum) || stockMinimoNum < 0) {
         newErrors.stock_minimo = "El stock mínimo no puede ser negativo"
       }
-      if (formData.unidad_medida === "unidad" && !Number.isInteger(stockMinimoNum)) {
-        newErrors.stock_minimo = "El stock mínimo para productos de unidad debe ser un número entero"
+      if (formData.unidad_medida === "litro" && !Number.isInteger(stockMinimoNum)) {
+        newErrors.stock_minimo = "El stock mínimo para productos de litro debe ser un número entero"
       }
     }
 
@@ -217,6 +231,7 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
       unidad_medida: "unidad",
     })
     setErrors({})
+    setUnidadMedidaCambiada(false)
     onClose()
   }
 
@@ -519,10 +534,9 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
                       value={formData.unidad_medida}
                       label="Tipo de Unidad"
                       onChange={handleChange}
-                      disabled={isEditing}
                       sx={{
                         borderRadius: 1.5,
-                        backgroundColor: isEditing ? "#f3f4f6" : "#fafafa",
+                        backgroundColor: "#fafafa",
                         "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
                           borderColor: "#dc2626",
                         },
@@ -533,10 +547,11 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
                     </Select>
                     {errors.unidad_medida && <FormHelperText>{errors.unidad_medida}</FormHelperText>}
                   </FormControl>
-                  {isEditing && (
-                    <Alert severity="warning" sx={{ mt: 1.5, borderRadius: 1.5 }}>
+                  {isEditing && unidadMedidaCambiada && (
+                    <Alert severity="error" sx={{ mt: 1.5, borderRadius: 1.5 }}>
                       <Typography variant="caption">
-                        La unidad de medida no se puede modificar después de creado
+                        Unidad de medida modificada. El stock ha sido puesto en cero para que lo ingreses correctamente
+                        con la nueva unidad.
                       </Typography>
                     </Alert>
                   )}
