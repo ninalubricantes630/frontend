@@ -74,6 +74,8 @@ export function AuthProvider({ children }) {
         const token = secureStorage.getToken()
         if (token) {
           const user = await authService.getCurrentUser()
+          console.log("[v0] User loaded from getCurrentUser:", user)
+          console.log("[v0] Permisos en user:", user.permisos)
           dispatch({ type: "LOGIN_SUCCESS", payload: user })
         } else {
           dispatch({ type: "SET_LOADING", payload: false })
@@ -129,11 +131,15 @@ export function AuthProvider({ children }) {
 
   const hasPermissionSlug = (permissionSlug) => {
     if (!state.user) return false
-    if (state.user.role === "admin") return true // Los admins tienen todos los permisos
+    if (state.user.role === "admin") return true
 
-    // Si es empleado, verificar si tiene el permiso asignado
+    console.log("[v0] Verificando permiso:", permissionSlug)
+    console.log("[v0] Permisos del usuario:", state.user.permisos)
+
     if (state.user.permisos && Array.isArray(state.user.permisos)) {
-      return state.user.permisos.some((p) => p.slug === permissionSlug)
+      const hasIt = state.user.permisos.some((p) => p.slug === permissionSlug)
+      console.log("[v0] Resultado de validación:", hasIt)
+      return hasIt
     }
     return false
   }
