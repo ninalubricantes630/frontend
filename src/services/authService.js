@@ -4,17 +4,30 @@ import secureStorage from "../utils/secureStorage"
 export const authService = {
   async login(credentials) {
     try {
+      console.log("[v0] authService.login - enviando credenciales:", credentials.email)
       const response = await api.post("/auth/login", credentials)
 
-      if (response.success && response.data) {
-        secureStorage.setToken(response.data.token)
-        secureStorage.setUser(response.data.user)
-        return response.data
+      console.log("[v0] authService.login - response completo:", response)
+
+      // Entonces response en este punto YA es { user, token, expiresIn }
+      if (response && response.user) {
+        console.log("[v0] authService.login - usuario recibido:", response.user)
+        console.log("[v0] authService.login - token recibido:", response.token)
+        console.log("[v0] authService.login - permisos en usuario:", response.user?.permisos)
+
+        // Guardar token
+        secureStorage.setToken(response.token)
+
+        // Guardar usuario completo
+        secureStorage.setUser(response.user)
+        console.log("[v0] authService.login - usuario guardado en secureStorage:", response.user)
+
+        return response.user // Retornar solo el usuario, no el token
       }
 
-      throw new Error(response.message || "Error en el login")
+      throw new Error("Estructura de respuesta inválida")
     } catch (error) {
-      console.log("[v0] authService.login - error capturado:", error.message)
+      console.error("[v0] authService.login - error capturado:", error.message)
       throw error
     }
   },
@@ -31,16 +44,22 @@ export const authService = {
 
   async getCurrentUser() {
     try {
+      console.log("[v0] authService.getCurrentUser - iniciando")
       const response = await api.get("/auth/me")
 
-      if (response.success && response.data) {
-        secureStorage.setUser(response.data)
-        return response.data
+      console.log("[v0] authService.getCurrentUser - response.data:", response)
+
+      if (response && response.userId) {
+        console.log("[v0] authService.getCurrentUser - usuario cargado:", response)
+        console.log("[v0] authService.getCurrentUser - permisos:", response.permisos)
+        secureStorage.setUser(response)
+        return response
       }
 
-      throw new Error(response.message || "Error al obtener usuario")
+      throw new Error("Estructura de respuesta inválida")
     } catch (error) {
-      throw new Error(error.message || "Error de conexión")
+      console.error("[v0] authService.getCurrentUser - error:", error)
+      throw error
     }
   },
 
@@ -48,27 +67,29 @@ export const authService = {
     try {
       const response = await api.post("/auth/change-password", data)
 
-      if (response.success) {
+      if (response && response.success !== false) {
         return response
       }
 
-      const errorMessage = response.message || "Error al cambiar contraseña"
+      const errorMessage = response?.message || "Error al cambiar contraseña"
       throw new Error(errorMessage)
     } catch (error) {
-      // Si el error ya tiene un mensaje personalizado, usarlo
       if (error.message && !error.message.includes("Network Error")) {
         throw error
       }
-      // De lo contrario, lanzar un error genérico
       throw new Error("Error de conexión al cambiar la contraseña")
     }
   },
 
   getCurrentUserFromStorage() {
     try {
-      return secureStorage.getUser()
+      console.log("[v0] authService.getCurrentUserFromStorage - obteniendo usuario del storage")
+      const user = secureStorage.getUser()
+      console.log("[v0] authService.getCurrentUserFromStorage - usuario obtenido:", user)
+      console.log("[v0] authService.getCurrentUserFromStorage - permisos obtenidos:", user?.permisos)
+      return user
     } catch (error) {
-      console.error("Error getting user from storage:", error)
+      console.error("[v0] authService.getCurrentUserFromStorage - error:", error)
       secureStorage.removeUser()
       return null
     }
