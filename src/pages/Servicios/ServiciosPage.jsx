@@ -55,6 +55,7 @@ import { useServicios } from "../../hooks/useServicios"
 import useEmpleados from "../../hooks/useEmpleados"
 import useSucursales from "../../hooks/useSucursales"
 import { useAuth } from "../../contexts/AuthContext"
+import PermissionGuard from "../../components/Auth/PermissionGuard"
 
 const steps = [
   { id: 0, title: "Cliente", icon: User },
@@ -443,8 +444,6 @@ const ServiciosPage = () => {
             })
           : [],
       }
-
-  
 
       await createServicio(submitData)
       showSnackbar("¡Servicio creado exitosamente!")
@@ -1134,177 +1133,179 @@ const ServiciosPage = () => {
   }
 
   return (
-    <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", p: 2.5, bgcolor: "#f8f9fa" }}>
-      {activeStep < 5 && (
-        <Card elevation={0} sx={{ mb: 2.5, border: "1px solid #e5e7eb", bgcolor: "white", borderRadius: 2.5 }}>
-          <CardContent sx={{ py: 2.5, px: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <IconButton
-                onClick={handleBack}
-                disabled={activeStep === 0}
-                size="small"
-                sx={{
-                  color: activeStep === 0 ? "#d1d5db" : "#6b7280",
-                  "&:hover": { bgcolor: "#f3f4f6" },
-                  "&:disabled": { opacity: 0.4 },
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <ArrowLeft size={18} />
-              </IconButton>
+    <PermissionGuard requiredPermission="ver_servicios">
+      <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", p: 2.5, bgcolor: "#f8f9fa" }}>
+        {activeStep < 5 && (
+          <Card elevation={0} sx={{ mb: 2.5, border: "1px solid #e5e7eb", bgcolor: "white", borderRadius: 2.5 }}>
+            <CardContent sx={{ py: 2.5, px: 3 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                <IconButton
+                  onClick={handleBack}
+                  disabled={activeStep === 0}
+                  size="small"
+                  sx={{
+                    color: activeStep === 0 ? "#d1d5db" : "#6b7280",
+                    "&:hover": { bgcolor: "#f3f4f6" },
+                    "&:disabled": { opacity: 0.4 },
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <ArrowLeft size={18} />
+                </IconButton>
 
-              <Box sx={{ flex: 1 }}>
-                <Stepper activeStep={activeStep} alternativeLabel sx={{ m: 0, p: 0 }}>
-                  {steps.map((step, index) => {
-                    const Icon = step.icon
-                    return (
-                      <Step key={step.id}>
-                        <StepLabel
-                          StepIconComponent={() => (
-                            <Box
-                              sx={{
-                                width: 40,
-                                height: 40,
-                                borderRadius: "50%",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                border: "2px solid",
-                                borderColor: index <= activeStep ? "#dc2626" : "#e5e7eb",
-                                bgcolor: index < activeStep ? "#dc2626" : index === activeStep ? "#fef2f2" : "white",
-                                color: index < activeStep ? "white" : index === activeStep ? "#dc2626" : "#9ca3af",
-                                transition: "all 0.3s ease",
-                              }}
-                            >
-                              {index < activeStep ? <CheckCircle size={20} /> : <Icon size={20} />}
-                            </Box>
-                          )}
-                          sx={{
-                            "& .MuiStepLabel-label": {
-                              color: index <= activeStep ? "#0f172a" : "#9ca3af",
-                              fontWeight: index === activeStep ? 700 : 500,
-                              fontSize: "0.9rem",
-                              mt: 0.75,
-                            },
-                          }}
-                        >
-                          {step.title}
-                        </StepLabel>
-                      </Step>
-                    )
-                  })}
-                </Stepper>
+                <Box sx={{ flex: 1 }}>
+                  <Stepper activeStep={activeStep} alternativeLabel sx={{ m: 0, p: 0 }}>
+                    {steps.map((step, index) => {
+                      const Icon = step.icon
+                      return (
+                        <Step key={step.id}>
+                          <StepLabel
+                            StepIconComponent={() => (
+                              <Box
+                                sx={{
+                                  width: 40,
+                                  height: 40,
+                                  borderRadius: "50%",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  border: "2px solid",
+                                  borderColor: index <= activeStep ? "#dc2626" : "#e5e7eb",
+                                  bgcolor: index < activeStep ? "#dc2626" : index === activeStep ? "#fef2f2" : "white",
+                                  color: index < activeStep ? "white" : index === activeStep ? "#dc2626" : "#9ca3af",
+                                  transition: "all 0.3s ease",
+                                }}
+                              >
+                                {index < activeStep ? <CheckCircle size={20} /> : <Icon size={20} />}
+                              </Box>
+                            )}
+                            sx={{
+                              "& .MuiStepLabel-label": {
+                                color: index <= activeStep ? "#0f172a" : "#9ca3af",
+                                fontWeight: index === activeStep ? 700 : 500,
+                                fontSize: "0.9rem",
+                                mt: 0.75,
+                              },
+                            }}
+                          >
+                            {step.title}
+                          </StepLabel>
+                        </Step>
+                      )
+                    })}
+                  </Stepper>
+                </Box>
+
+                <IconButton
+                  onClick={handleNext}
+                  disabled={!canProceed()}
+                  size="small"
+                  sx={{
+                    color: !canProceed() ? "#d1d5db" : "#dc2626",
+                    "&:hover": { bgcolor: "#fef2f2" },
+                    "&:disabled": { opacity: 0.4 },
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <ArrowRight size={18} />
+                </IconButton>
               </Box>
+            </CardContent>
+          </Card>
+        )}
 
-              <IconButton
-                onClick={handleNext}
-                disabled={!canProceed()}
-                size="small"
-                sx={{
-                  color: !canProceed() ? "#d1d5db" : "#dc2626",
-                  "&:hover": { bgcolor: "#fef2f2" },
-                  "&:disabled": { opacity: 0.4 },
-                  transition: "all 0.2s ease",
-                }}
-              >
-                <ArrowRight size={18} />
-              </IconButton>
+        <Box sx={{ flex: 1, mb: 2.5, maxHeight: "calc(100vh - 280px)", overflow: "auto", borderRadius: 2 }}>
+          {renderStepContent()}
+        </Box>
+
+        <AgregarServicioModal
+          isOpen={showItemDialog}
+          onClose={() => {
+            setShowItemDialog(false)
+            setEditingItemId(null)
+          }}
+          onAddItem={handleAddItem}
+          tiposServicios={tiposServicios}
+          sucursalId={formData.sucursalId}
+          editingItem={editingItemId ? formData.items.find((item) => item.id === editingItemId) : null}
+        />
+
+        <PagoModalServicio
+          isOpen={showPagoDialog}
+          onClose={() => setShowPagoDialog(false)}
+          onConfirm={handlePagoConfirm}
+          total={calcularTotal()}
+          subtotal={calcularSubtotal()}
+          clienteId={formData.clienteId}
+          servicioData={{
+            subtotal: calcularSubtotal(),
+          }}
+          descuento={descuento}
+          interes={interes}
+        />
+
+        <DescuentoModalServicio
+          open={showDescuentoModal}
+          onClose={() => setShowDescuentoModal(false)}
+          subtotal={formData.items.reduce((sum, item) => sum + (item.total || 0), 0)}
+          onConfirm={handleConfirmarDescuento}
+          hayInteres={interes && interes.montoInteres > 0}
+        />
+
+        <InteresModalServicio
+          open={showInteresModal}
+          onClose={() => setShowInteresModal(false)}
+          subtotal={formData.items.reduce((sum, item) => sum + (item.total || 0), 0)}
+          onConfirm={handleConfirmarInteres}
+          hayDescuento={descuento && descuento.montoDescuento > 0}
+        />
+
+        <Dialog open={showShortcuts} onClose={() => setShowShortcuts(false)} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, pb: 1 }}>
+            <Keyboard size={20} />
+            Atajos de Teclado
+            <IconButton onClick={() => setShowShortcuts(false)} sx={{ position: "absolute", right: 8, top: 8 }}>
+              <X size={20} />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent>
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="body2">Avanzar paso (si es válido)</Typography>
+                <Chip label="Enter" variant="outlined" size="small" />
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="body2">Siguiente paso</Typography>
+                <Chip label="Ctrl + →" variant="outlined" size="small" />
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="body2">Paso anterior</Typography>
+                <Chip label="Ctrl + ←" variant="outlined" size="small" />
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="body2">Registrar Servicio</Typography>
+                <Chip label="Ctrl + Enter" variant="outlined" size="small" />
+              </Box>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography variant="body2">Ver atajos</Typography>
+                <Chip label="Ctrl + /" variant="outlined" size="small" />
+              </Box>
             </Box>
-          </CardContent>
-        </Card>
-      )}
+          </DialogContent>
+        </Dialog>
 
-      <Box sx={{ flex: 1, mb: 2.5, maxHeight: "calc(100vh - 280px)", overflow: "auto", borderRadius: 2 }}>
-        {renderStepContent()}
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={3000}
+          onClose={handleCloseSnackbar}
+          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
       </Box>
-
-      <AgregarServicioModal
-        isOpen={showItemDialog}
-        onClose={() => {
-          setShowItemDialog(false)
-          setEditingItemId(null)
-        }}
-        onAddItem={handleAddItem}
-        tiposServicios={tiposServicios}
-        sucursalId={formData.sucursalId}
-        editingItem={editingItemId ? formData.items.find((item) => item.id === editingItemId) : null}
-      />
-
-      <PagoModalServicio
-        isOpen={showPagoDialog}
-        onClose={() => setShowPagoDialog(false)}
-        onConfirm={handlePagoConfirm}
-        total={calcularTotal()}
-        subtotal={calcularSubtotal()}
-        clienteId={formData.clienteId}
-        servicioData={{
-          subtotal: calcularSubtotal(),
-        }}
-        descuento={descuento}
-        interes={interes}
-      />
-
-      <DescuentoModalServicio
-        open={showDescuentoModal}
-        onClose={() => setShowDescuentoModal(false)}
-        subtotal={formData.items.reduce((sum, item) => sum + (item.total || 0), 0)}
-        onConfirm={handleConfirmarDescuento}
-        hayInteres={interes && interes.montoInteres > 0}
-      />
-
-      <InteresModalServicio
-        open={showInteresModal}
-        onClose={() => setShowInteresModal(false)}
-        subtotal={formData.items.reduce((sum, item) => sum + (item.total || 0), 0)}
-        onConfirm={handleConfirmarInteres}
-        hayDescuento={descuento && descuento.montoDescuento > 0}
-      />
-
-      <Dialog open={showShortcuts} onClose={() => setShowShortcuts(false)} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ display: "flex", alignItems: "center", gap: 1, pb: 1 }}>
-          <Keyboard size={20} />
-          Atajos de Teclado
-          <IconButton onClick={() => setShowShortcuts(false)} sx={{ position: "absolute", right: 8, top: 8 }}>
-            <X size={20} />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="body2">Avanzar paso (si es válido)</Typography>
-              <Chip label="Enter" variant="outlined" size="small" />
-            </Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="body2">Siguiente paso</Typography>
-              <Chip label="Ctrl + →" variant="outlined" size="small" />
-            </Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="body2">Paso anterior</Typography>
-              <Chip label="Ctrl + ←" variant="outlined" size="small" />
-            </Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="body2">Registrar Servicio</Typography>
-              <Chip label="Ctrl + Enter" variant="outlined" size="small" />
-            </Box>
-            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <Typography variant="body2">Ver atajos</Typography>
-              <Chip label="Ctrl + /" variant="outlined" size="small" />
-            </Box>
-          </Box>
-        </DialogContent>
-      </Dialog>
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={3000}
-        onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: "100%" }}>
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+    </PermissionGuard>
   )
 }
 

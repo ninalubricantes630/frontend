@@ -142,6 +142,7 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
                 sm: "1fr 1fr",
               },
               gap: 2,
+              mt: 4
             }}
           >
             {Object.entries(permisosAgrupados).map(([modulo, permisos]) => (

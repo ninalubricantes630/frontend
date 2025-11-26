@@ -127,6 +127,17 @@ export function AuthProvider({ children }) {
     return state.user.role === requiredRole
   }
 
+  const hasPermissionSlug = (permissionSlug) => {
+    if (!state.user) return false
+    if (state.user.role === "admin") return true // Los admins tienen todos los permisos
+
+    // Si es empleado, verificar si tiene el permiso asignado
+    if (state.user.permisos && Array.isArray(state.user.permisos)) {
+      return state.user.permisos.some((p) => p.slug === permissionSlug)
+    }
+    return false
+  }
+
   const isAdmin = () => {
     return state.user?.role === "admin"
   }
@@ -156,6 +167,7 @@ export function AuthProvider({ children }) {
     logout,
     changePassword,
     hasPermission,
+    hasPermissionSlug,
     isAdmin,
     clearError,
     updateUser,

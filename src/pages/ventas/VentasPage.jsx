@@ -13,6 +13,7 @@ import DescuentoModal from "../../components/Ventas/DescuentoModal"
 import { useVentas } from "../../hooks/useVentas"
 import { useProductos } from "../../hooks/useProductos"
 import { useAuth } from "../../contexts/AuthContext"
+import PermissionGuard from "../../components/Auth/PermissionGuard"
 
 export default function VentasPage() {
   const [carrito, setCarrito] = useState([])
@@ -408,202 +409,210 @@ export default function VentasPage() {
 
   if (authLoading || (user && user.sucursales === undefined)) {
     return (
-      <Box sx={{ p: 2, display: "flex", justifyContent: "center", alignItems: "center", height: "calc(100vh - 80px)" }}>
-        <CircularProgress sx={{ color: "#dc2626" }} />
-      </Box>
+      <PermissionGuard requiredPermission="ver_ventas">
+        <Box
+          sx={{ p: 2, display: "flex", justifyContent: "center", alignItems: "center", height: "calc(100vh - 80px)" }}
+        >
+          <CircularProgress sx={{ color: "#dc2626" }} />
+        </Box>
+      </PermissionGuard>
     )
   }
 
   if (!user?.sucursales || user.sucursales.length === 0) {
     return (
-      <Box sx={{ p: 2 }}>
-        <Alert
-          severity="error"
-          sx={{
-            borderRadius: 2,
-            border: "1px solid",
-            borderColor: "error.light",
-          }}
-        >
-          Tu usuario no tiene sucursales asignadas. Contacta al administrador para que te asigne una sucursal.
-        </Alert>
-      </Box>
+      <PermissionGuard requiredPermission="ver_ventas">
+        <Box sx={{ p: 2 }}>
+          <Alert
+            severity="error"
+            sx={{
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "error.light",
+            }}
+          >
+            Tu usuario no tiene sucursales asignadas. Contacta al administrador para que te asigne una sucursal.
+          </Alert>
+        </Box>
+      </PermissionGuard>
     )
   }
 
   return (
-    <Box
-      ref={pageRef}
-      sx={{
-        p: 2,
-        height: "calc(100vh - 80px)",
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        bgcolor: "#f8fafc",
-      }}
-      tabIndex={0}
-    >
+    <PermissionGuard requiredPermission="ver_ventas">
       <Box
+        ref={pageRef}
         sx={{
+          p: 2,
+          height: "calc(100vh - 80px)",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          px: 1,
+          flexDirection: "column",
+          gap: 2,
+          bgcolor: "#f8fafc",
         }}
+        tabIndex={0}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-          <ShoppingCartIcon sx={{ color: "#dc2626", fontSize: 28 }} />
-          <Typography
-            variant="h5"
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            px: 1,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <ShoppingCartIcon sx={{ color: "#dc2626", fontSize: 28 }} />
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 600,
+                color: "#1e293b",
+                letterSpacing: "-0.02em",
+              }}
+            >
+              Punto de Venta
+            </Typography>
+          </Box>
+          {sucursalVenta && (
+            <Chip
+              icon={<StoreIcon sx={{ fontSize: 16 }} />}
+              label={sucursalVenta.nombre}
+              sx={{
+                bgcolor: "#dc2626",
+                color: "white",
+                fontWeight: 500,
+                height: 32,
+                "& .MuiChip-icon": {
+                  color: "white",
+                },
+              }}
+            />
+          )}
+        </Box>
+
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: "1fr 400px",
+            gap: 2,
+            flex: 1,
+            overflow: "hidden",
+          }}
+        >
+          <Paper
+            elevation={0}
             sx={{
-              fontWeight: 600,
-              color: "#1e293b",
-              letterSpacing: "-0.02em",
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              border: "1px solid #e2e8f0",
+              borderRadius: 2,
+              bgcolor: "white",
             }}
           >
-            Punto de Venta
-          </Typography>
-        </Box>
-        {sucursalVenta && (
-          <Chip
-            icon={<StoreIcon sx={{ fontSize: 16 }} />}
-            label={sucursalVenta.nombre}
+            <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
+              <ProductoSelector
+                productos={productos}
+                loading={loadingProductos}
+                onSelectProducto={handleSelectProducto}
+                searchTerm={searchTerm}
+                onSearchChange={handleSearchChange}
+                hasMore={hasMore}
+                onLoadMore={handleLoadMore}
+                sucursalVenta={sucursalVenta}
+                usuarioTieneMultiplesSucursales={user.sucursales.length > 1}
+                searchInputRef={searchInputRef}
+              />
+            </Box>
+          </Paper>
+
+          <Paper
+            elevation={0}
             sx={{
-              bgcolor: "#dc2626",
-              color: "white",
-              fontWeight: 500,
-              height: 32,
-              "& .MuiChip-icon": {
-                color: "white",
-              },
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              border: "1px solid #e2e8f0",
+              borderRadius: 2,
+              bgcolor: "white",
             }}
-          />
-        )}
-      </Box>
-
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: "1fr 400px",
-          gap: 2,
-          flex: 1,
-          overflow: "hidden",
-        }}
-      >
-        <Paper
-          elevation={0}
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            border: "1px solid #e2e8f0",
-            borderRadius: 2,
-            bgcolor: "white",
-          }}
-        >
-          <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
-            <ProductoSelector
-              productos={productos}
-              loading={loadingProductos}
-              onSelectProducto={handleSelectProducto}
-              searchTerm={searchTerm}
-              onSearchChange={handleSearchChange}
-              hasMore={hasMore}
-              onLoadMore={handleLoadMore}
-              sucursalVenta={sucursalVenta}
-              usuarioTieneMultiplesSucursales={user.sucursales.length > 1}
-              searchInputRef={searchInputRef}
+          >
+            <CarritoVentas
+              items={carrito}
+              subtotal={calcularSubtotal()}
+              descuento={descuento}
+              onEditDescuento={() => setShowDescuentoModal(true)}
+              interes={interes}
+              onEditInteres={() => setShowInteresModal(true)}
+              total={calcularTotal()}
+              onRemoveItem={handleEliminarProducto}
+              onProcesarVenta={handleProcesarVenta}
+              onEditItem={handleAbrirCantidadModal}
+              loading={loading}
             />
-          </Box>
-        </Paper>
+          </Paper>
+        </Box>
 
-        <Paper
-          elevation={0}
-          sx={{
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            border: "1px solid #e2e8f0",
-            borderRadius: 2,
-            bgcolor: "white",
+        <CantidadModal
+          open={showCantidadModal}
+          onClose={() => {
+            setShowCantidadModal(false)
+            setProductoSeleccionado(null)
+            setEditandoItem(false)
+            setTimeout(() => {
+              if (searchInputRef.current) {
+                searchInputRef.current.focus()
+              }
+            }, 100)
           }}
-        >
-          <CarritoVentas
-            items={carrito}
-            subtotal={calcularSubtotal()}
-            descuento={descuento}
-            onEditDescuento={() => setShowDescuentoModal(true)}
-            interes={interes}
-            onEditInteres={() => setShowInteresModal(true)}
-            total={calcularTotal()}
-            onRemoveItem={handleEliminarProducto}
-            onProcesarVenta={handleProcesarVenta}
-            onEditItem={handleAbrirCantidadModal}
-            loading={loading}
-          />
-        </Paper>
-      </Box>
+          producto={productoSeleccionado}
+          onConfirm={handleConfirmarCantidad}
+          isEditing={editandoItem}
+        />
 
-      <CantidadModal
-        open={showCantidadModal}
-        onClose={() => {
-          setShowCantidadModal(false)
-          setProductoSeleccionado(null)
-          setEditandoItem(false)
-          setTimeout(() => {
-            if (searchInputRef.current) {
-              searchInputRef.current.focus()
-            }
-          }, 100)
-        }}
-        producto={productoSeleccionado}
-        onConfirm={handleConfirmarCantidad}
-        isEditing={editandoItem}
-      />
+        <DescuentoModal
+          open={showDescuentoModal}
+          onClose={() => setShowDescuentoModal(false)}
+          subtotal={calcularSubtotal()}
+          onConfirm={handleConfirmarDescuento}
+        />
 
-      <DescuentoModal
-        open={showDescuentoModal}
-        onClose={() => setShowDescuentoModal(false)}
-        subtotal={calcularSubtotal()}
-        onConfirm={handleConfirmarDescuento}
-      />
+        <InteresModal
+          open={showInteresModal}
+          onClose={() => setShowInteresModal(false)}
+          subtotal={calcularSubtotal()}
+          onConfirm={handleConfirmarInteres}
+        />
 
-      <InteresModal
-        open={showInteresModal}
-        onClose={() => setShowInteresModal(false)}
-        subtotal={calcularSubtotal()}
-        onConfirm={handleConfirmarInteres}
-      />
+        <PagoModal
+          open={showPagoModal}
+          onClose={() => setShowPagoModal(false)}
+          subtotal={calcularSubtotal()}
+          descuento={descuento}
+          interes={interes}
+          total={calcularTotal()}
+          onConfirm={handleConfirmarVenta}
+        />
 
-      <PagoModal
-        open={showPagoModal}
-        onClose={() => setShowPagoModal(false)}
-        subtotal={calcularSubtotal()}
-        descuento={descuento}
-        interes={interes}
-        total={calcularTotal()}
-        onConfirm={handleConfirmarVenta}
-      />
-
-      <Snackbar
-        open={notification.open}
-        autoHideDuration={3000}
-        onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-      >
-        <Alert
+        <Snackbar
+          open={notification.open}
+          autoHideDuration={3000}
           onClose={handleCloseNotification}
-          severity={notification.severity}
-          sx={{
-            width: "100%",
-            borderRadius: 2,
-            boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-          }}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         >
-          {notification.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+          <Alert
+            onClose={handleCloseNotification}
+            severity={notification.severity}
+            sx={{
+              width: "100%",
+              borderRadius: 2,
+              boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+            }}
+          >
+            {notification.message}
+          </Alert>
+        </Snackbar>
+      </Box>
+    </PermissionGuard>
   )
 }
