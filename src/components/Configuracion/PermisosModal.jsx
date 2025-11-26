@@ -12,16 +12,10 @@ import {
   FormControlLabel,
   Checkbox,
   Typography,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   CircularProgress,
   Alert,
   Divider,
 } from "@mui/material"
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
-import SaveIcon from "@mui/icons-material/Save"
-import CancelIcon from "@mui/icons-material/Close"
 import permisosService from "../../services/permisosService"
 
 const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
@@ -104,11 +98,11 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
     <Dialog
       open={open}
       onClose={onClose}
-      maxWidth="sm"
+      maxWidth="lg"
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: "8px",
+          borderRadius: "12px",
           boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
         },
       }}
@@ -118,100 +112,146 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
           bgcolor: "#dc2626",
           color: "white",
           fontWeight: 700,
-          fontSize: "1.125rem",
+          fontSize: "1.25rem",
+          p: 3,
           display: "flex",
           alignItems: "center",
           gap: 1,
         }}
       >
-        🔐 Asignar Permisos a {usuario?.nombre}
+        🔐 Permisos de {usuario?.nombre}
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 3 }}>
+      <DialogContent sx={{ p: 3 }}>
         {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
+          <Alert severity="error" sx={{ mb: 3 }}>
             {error}
           </Alert>
         )}
 
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
             <CircularProgress />
           </Box>
         ) : (
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "1fr 1fr",
+              },
+              gap: 2,
+            }}
+          >
             {Object.entries(permisosAgrupados).map(([modulo, permisos]) => (
-              <Accordion
+              <Box
                 key={modulo}
-                defaultExpanded
                 sx={{
                   border: "1px solid #e5e7eb",
-                  "&:before": {
-                    display: "none",
-                  },
-                  "&.Mui-expanded": {
-                    margin: 0,
+                  borderRadius: "8px",
+                  overflow: "hidden",
+                  bgcolor: "#fff",
+                  transition: "all 0.2s ease",
+                  "&:hover": {
+                    borderColor: "#dc2626",
+                    boxShadow: "0 4px 12px rgba(220, 38, 38, 0.08)",
                   },
                 }}
               >
-                <AccordionSummary
-                  expandIcon={<ExpandMoreIcon />}
+                {/* Encabezado del módulo */}
+                <Box
                   sx={{
                     bgcolor: "#f9fafb",
-                    "& .MuiAccordionSummary-content": {
-                      margin: "8px 0",
-                    },
+                    p: 2,
+                    borderBottom: "2px solid #e5e7eb",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
                   }}
                 >
                   <Typography
                     sx={{
-                      fontWeight: 600,
+                      fontWeight: 700,
                       color: "#1f2937",
-                      fontSize: "0.95rem",
+                      fontSize: "1rem",
+                      flex: 1,
                     }}
                   >
                     {moduloLabels[modulo] || modulo}
                   </Typography>
-                </AccordionSummary>
+                  <Typography
+                    sx={{
+                      fontSize: "0.75rem",
+                      bgcolor: "#dc2626",
+                      color: "white",
+                      px: 1.5,
+                      py: 0.5,
+                      borderRadius: "12px",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {permisos.filter((p) => permisosSeleccionados.has(p.id)).length}/{permisos.length}
+                  </Typography>
+                </Box>
 
-                <AccordionDetails sx={{ pt: 2, pb: 2 }}>
-                  <FormGroup>
-                    {permisos.map((permiso) => (
-                      <FormControlLabel
-                        key={permiso.id}
-                        control={
-                          <Checkbox
-                            checked={permisosSeleccionados.has(permiso.id)}
-                            onChange={() => handleTogglePermiso(permiso.id)}
-                            size="small"
-                            sx={{
+                {/* Permisos del módulo */}
+                <FormGroup sx={{ p: 2, gap: 1 }}>
+                  {permisos.map((permiso) => (
+                    <FormControlLabel
+                      key={permiso.id}
+                      control={
+                        <Checkbox
+                          checked={permisosSeleccionados.has(permiso.id)}
+                          onChange={() => handleTogglePermiso(permiso.id)}
+                          size="small"
+                          sx={{
+                            color: "#d1d5db",
+                            "&.Mui-checked": {
                               color: "#dc2626",
-                              "&.Mui-checked": {
-                                color: "#dc2626",
-                              },
+                            },
+                            flexShrink: 0,
+                          }}
+                        />
+                      }
+                      label={
+                        <Box sx={{ ml: 1 }}>
+                          <Typography
+                            sx={{
+                              fontSize: "0.875rem",
+                              fontWeight: 500,
+                              color: permisosSeleccionados.has(permiso.id) ? "#1f2937" : "#6b7280",
+                              transition: "color 0.2s ease",
                             }}
-                          />
-                        }
-                        label={
-                          <Box>
-                            <Typography sx={{ fontSize: "0.875rem", fontWeight: 500 }}>{permiso.nombre}</Typography>
-                            <Typography
-                              sx={{
-                                fontSize: "0.75rem",
-                                color: "#6b7280",
-                                mt: 0.25,
-                              }}
-                            >
-                              {permiso.descripcion}
-                            </Typography>
-                          </Box>
-                        }
-                        sx={{ mb: 1.5 }}
-                      />
-                    ))}
-                  </FormGroup>
-                </AccordionDetails>
-              </Accordion>
+                          >
+                            {permiso.nombre}
+                          </Typography>
+                          <Typography
+                            sx={{
+                              fontSize: "0.75rem",
+                              color: "#9ca3af",
+                              mt: 0.25,
+                            }}
+                          >
+                            {permiso.descripcion}
+                          </Typography>
+                        </Box>
+                      }
+                      sx={{
+                        m: 0,
+                        py: 1,
+                        px: 1,
+                        borderRadius: "6px",
+                        transition: "all 0.2s ease",
+                        backgroundColor: permisosSeleccionados.has(permiso.id) ? "#fef2f2" : "transparent",
+                        "&:hover": {
+                          backgroundColor: "#f9fafb",
+                        },
+                      }}
+                    />
+                  ))}
+                </FormGroup>
+              </Box>
             ))}
           </Box>
         )}
@@ -221,19 +261,20 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
 
       <DialogActions
         sx={{
-          p: 2,
+          p: 3,
           display: "flex",
-          gap: 1,
+          gap: 1.5,
           justifyContent: "flex-end",
+          bgcolor: "#fafafa",
         }}
       >
         <Button
           onClick={onClose}
-          startIcon={<CancelIcon sx={{ fontSize: 18 }} />}
           sx={{
             textTransform: "none",
             color: "#6b7280",
             borderColor: "#e5e7eb",
+            px: 3,
             "&:hover": {
               borderColor: "#d1d5db",
               bgcolor: "#f9fafb",
@@ -247,11 +288,12 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
 
         <Button
           onClick={handleGuardar}
-          startIcon={<SaveIcon sx={{ fontSize: 18 }} />}
           sx={{
             textTransform: "none",
             bgcolor: "#dc2626",
             color: "white",
+            px: 3,
+            fontWeight: 600,
             "&:hover": {
               bgcolor: "#b91c1c",
             },
@@ -262,7 +304,6 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
           }}
           variant="contained"
           disabled={loading || saving}
-          fullWidth
         >
           {saving ? "Guardando..." : "Guardar Permisos"}
         </Button>
