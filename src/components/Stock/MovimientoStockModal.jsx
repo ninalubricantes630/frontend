@@ -95,8 +95,11 @@ const MovimientoStockModal = ({ open, onClose, onSubmit, producto, loading = fal
   }, [open, reset])
 
   const handleFormSubmit = (data) => {
+    const tipoMovimiento = data.tipo.toUpperCase()
+
     onSubmit({
       ...data,
+      tipo: tipoMovimiento,
       producto_id: producto.id,
     })
   }
