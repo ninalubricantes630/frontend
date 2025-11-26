@@ -1,7 +1,7 @@
 import axios from "axios"
 import secureStorage from "../utils/secureStorage"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL
+const API_BASE_URL = import.meta.env.VITE_API_URL 
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -26,12 +26,6 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
-    console.log("[v0] api.interceptors.response - response.data:", response.data)
-    if (response.data && response.data.data) {
-      console.log("[v0] api.interceptors.response - tiene propiedad 'data', retornando response.data.data")
-      return response.data.data
-    }
-    console.log("[v0] api.interceptors.response - retornando response.data directamente")
     return response.data
   },
   (error) => {

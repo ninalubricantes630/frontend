@@ -71,21 +71,17 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("[v0] AuthProvider.checkAuth - iniciando")
         const token = secureStorage.getToken()
-        console.log("[v0] AuthProvider.checkAuth - token encontrado:", !!token)
-
         if (token) {
           const user = await authService.getCurrentUser()
-          console.log("[v0] AuthProvider.checkAuth - usuario cargado:", user)
-          console.log("[v0] AuthProvider.checkAuth - permisos cargados:", user?.permisos)
+          console.log("[v0] User loaded from getCurrentUser:", user)
+          console.log("[v0] Permisos en user:", user.permisos)
           dispatch({ type: "LOGIN_SUCCESS", payload: user })
         } else {
-          console.log("[v0] AuthProvider.checkAuth - sin token, no autenticado")
           dispatch({ type: "SET_LOADING", payload: false })
         }
       } catch (error) {
-        console.error("[v0] AuthProvider.checkAuth - error:", error)
+        console.error("Error al verificar autenticación:", error)
         secureStorage.clearAll()
         dispatch({ type: "SET_LOADING", payload: false })
       }
@@ -97,35 +93,26 @@ export function AuthProvider({ children }) {
   const login = async (credentials) => {
     try {
       dispatch({ type: "LOGIN_START" })
-      console.log("[v0] AuthContext.login - iniciando login")
 
       const response = await authService.login(credentials)
-      console.log("[v0] AuthContext.login - response de login:", response)
 
+      // La estructura completa está en response (userId, role, permisos, sucursales, etc)
       let userData = response
 
-      console.log("[v0] AuthContext.login - userData completo:", userData)
-      console.log("[v0] AuthContext.login - userData.userId:", userData.userId)
-      console.log("[v0] AuthContext.login - userData.role:", userData.role)
-      console.log("[v0] AuthContext.login - userData.permisos:", userData.permisos)
-      console.log("[v0] AuthContext.login - userData.permisos length:", userData.permisos?.length)
-
       if (!userData.sucursales || userData.sucursales.length === 0) {
-        console.log("[v0] AuthContext.login - sin sucursales, obteniendo nuevamente")
         try {
           userData = await authService.getCurrentUser()
-          console.log("[v0] AuthContext.login - userData después de getCurrentUser:", userData)
         } catch (error) {
-          console.error("[v0] AuthContext.login - error en getCurrentUser:", error)
           // Silent fail - user data will load on next request
         }
       }
 
-      console.log("[v0] AuthContext.login - dispatching LOGIN_SUCCESS con:", userData)
+      console.log("[v0] userData después de login:", userData)
+      console.log("[v0] userData.permisos:", userData.permisos)
+
       dispatch({ type: "LOGIN_SUCCESS", payload: userData })
       return response
     } catch (error) {
-      console.error("[v0] AuthContext.login - error capturado:", error)
       const errorMessage = error.message || "Error de conexión"
       dispatch({ type: "LOGIN_ERROR", payload: errorMessage })
       throw error
@@ -148,30 +135,17 @@ export function AuthProvider({ children }) {
   }
 
   const hasPermissionSlug = (permissionCode) => {
-    console.log("[v0] AuthContext.hasPermissionSlug - verificando permiso:", permissionCode)
-    console.log("[v0] AuthContext.hasPermissionSlug - user:", state.user)
-    console.log("[v0] AuthContext.hasPermissionSlug - user.role:", state.user?.role)
+    if (!state.user) return false
+    if (state.user.role === "admin") return true
 
-    if (!state.user) {
-      console.log("[v0] AuthContext.hasPermissionSlug - sin usuario")
-      return false
-    }
-
-    if (state.user.role === "admin") {
-      console.log("[v0] AuthContext.hasPermissionSlug - usuario es admin")
-      return true
-    }
-
-    console.log("[v0] AuthContext.hasPermissionSlug - permisos del usuario:", state.user.permisos)
-    console.log("[v0] AuthContext.hasPermissionSlug - es array:", Array.isArray(state.user.permisos))
+    console.log("[v0] Verificando permiso:", permissionCode)
+    console.log("[v0] Permisos del usuario:", state.user.permisos)
 
     if (state.user.permisos && Array.isArray(state.user.permisos)) {
       const hasIt = state.user.permisos.some((p) => p.codigo === permissionCode)
-      console.log("[v0] AuthContext.hasPermissionSlug - resultado:", hasIt)
+      console.log("[v0] Resultado de validación:", hasIt)
       return hasIt
     }
-
-    console.log("[v0] AuthContext.hasPermissionSlug - permisos no es array")
     return false
   }
 
