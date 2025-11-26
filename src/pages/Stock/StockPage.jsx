@@ -257,7 +257,7 @@ const StockPage = () => {
       await productosService.registrarMovimiento({
         producto_id: productoParaMovimiento.id,
         tipo: data.tipo.toUpperCase(),
-        cantidad: Number.parseInt(data.cantidad, 10),
+        cantidad: Number.parseFloat(data.cantidad),
         motivo: data.motivo,
       })
       handleCloseMovimiento()
