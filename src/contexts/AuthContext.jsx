@@ -129,15 +129,15 @@ export function AuthProvider({ children }) {
     return state.user.role === requiredRole
   }
 
-  const hasPermissionSlug = (permissionSlug) => {
+  const hasPermissionSlug = (permissionCode) => {
     if (!state.user) return false
     if (state.user.role === "admin") return true
 
-    console.log("[v0] Verificando permiso:", permissionSlug)
+    console.log("[v0] Verificando permiso:", permissionCode)
     console.log("[v0] Permisos del usuario:", state.user.permisos)
 
     if (state.user.permisos && Array.isArray(state.user.permisos)) {
-      const hasIt = state.user.permisos.some((p) => p.slug === permissionSlug)
+      const hasIt = state.user.permisos.some((p) => p.codigo === permissionCode)
       console.log("[v0] Resultado de validación:", hasIt)
       return hasIt
     }

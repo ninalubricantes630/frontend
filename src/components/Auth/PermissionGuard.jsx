@@ -3,9 +3,26 @@
 import { useAuth } from "../../contexts/AuthContext"
 
 const PermissionGuard = ({ children, requiredPermission, fallback = null }) => {
-  const { hasPermissionSlug } = useAuth()
+  const { hasPermissionSlug, user, isAdmin } = useAuth()
 
-  if (!hasPermissionSlug(requiredPermission)) {
+  // Para módulos, permitir acceso si tiene AL MENOS UN permiso del módulo
+  const hasAccess = () => {
+    if (isAdmin()) return true
+
+    if (!requiredPermission) return true
+
+    if (!user?.permisos || user.permisos.length === 0) return false
+
+    // Si el permiso requerido contiene "_", es un permiso específico (ej: stock_ver)
+    // Si es solo un módulo (ej: "stock"), verificar si tiene al menos un permiso de ese módulo
+    if (requiredPermission.includes("_")) {
+      return hasPermissionSlug(requiredPermission)
+    } else {
+      return user.permisos.some((p) => p.codigo.startsWith(requiredPermission + "_"))
+    }
+  }
+
+  if (!hasAccess()) {
     return (
       fallback || (
         <div className="flex items-center justify-center min-h-screen">
