@@ -51,6 +51,15 @@ export const productosService = {
       throw error.response?.data || error
     }
   },
+
+  registrarMovimiento: async (data) => {
+    const response = await api.post(`/productos/${data.producto_id}/movimientos`, {
+      tipo: data.tipo,
+      cantidad: data.cantidad,
+      motivo: data.motivo,
+    })
+    return response.data
+  },
 }
 
 export default productosService
