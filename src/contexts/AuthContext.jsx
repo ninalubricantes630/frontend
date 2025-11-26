@@ -96,7 +96,9 @@ export function AuthProvider({ children }) {
 
       const response = await authService.login(credentials)
 
-      let userData = response.user
+      // La estructura completa está en response (userId, role, permisos, sucursales, etc)
+      let userData = response
+
       if (!userData.sucursales || userData.sucursales.length === 0) {
         try {
           userData = await authService.getCurrentUser()
@@ -104,6 +106,9 @@ export function AuthProvider({ children }) {
           // Silent fail - user data will load on next request
         }
       }
+
+      console.log("[v0] userData después de login:", userData)
+      console.log("[v0] userData.permisos:", userData.permisos)
 
       dispatch({ type: "LOGIN_SUCCESS", payload: userData })
       return response
