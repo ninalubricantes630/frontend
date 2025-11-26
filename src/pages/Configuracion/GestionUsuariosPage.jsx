@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import {
   Box,
   Typography,
@@ -29,9 +29,11 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
   Close as CloseIcon,
+  Lock as LockIcon,
 } from "@mui/icons-material"
 import { useUsuarios } from "../../hooks/useUsuarios"
 import UsuarioForm from "../../components/Usuarios/UsuarioForm"
+import PermisosModal from "../../components/Configuracion/PermisosModal"
 
 const GestionUsuariosPage = () => {
   const {
@@ -55,15 +57,13 @@ const GestionUsuariosPage = () => {
   const [editingUser, setEditingUser] = useState(null)
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" })
   const [formLoading, setFormLoading] = useState(false)
+  const [openPermisosModal, setOpenPermisosModal] = useState(false)
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null)
 
   const handleCloseSnackbar = () => {
     setSnackbar({ open: false, message: "", severity: "success" })
     clearError()
   }
-
-  useEffect(() => {
-    loadUsuarios()
-  }, [loadUsuarios])
 
   const handleSearch = () => {
     const filters = {}
@@ -153,6 +153,23 @@ const GestionUsuariosPage = () => {
   const handleRowsPerPageChangeLocal = (event) => {
     const newLimit = Number.parseInt(event.target.value, 10)
     handlePageChange(1, newLimit)
+  }
+
+  const handleOpenPermisosModal = (usuario) => {
+    if (usuario.rol === "empleado") {
+      setUsuarioSeleccionado(usuario)
+      setOpenPermisosModal(true)
+    }
+  }
+
+  const handleClosePermisosModal = () => {
+    setOpenPermisosModal(false)
+    setUsuarioSeleccionado(null)
+  }
+
+  const handlePermisosExitoso = () => {
+    // Refrescar la lista de usuarios
+    loadUsuarios()
   }
 
   const totalRegistros = pagination.total
@@ -508,6 +525,22 @@ const GestionUsuariosPage = () => {
                         </TableCell>
                         <TableCell align="right" sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                           <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
+                            {usuario.rol === "empleado" && (
+                              <Tooltip title="Asignar Permisos">
+                                <IconButton
+                                  onClick={() => handleOpenPermisosModal(usuario)}
+                                  size="small"
+                                  sx={{
+                                    color: "#7c3aed",
+                                    p: 0.5,
+                                    "&:hover": { bgcolor: "#f3e8ff" },
+                                  }}
+                                >
+                                  <LockIcon sx={{ fontSize: 16 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+
                             <Tooltip title="Editar">
                               <IconButton
                                 onClick={() => handleEdit(usuario)}
@@ -595,6 +628,13 @@ const GestionUsuariosPage = () => {
         onSubmit={handleSave}
         usuario={editingUser}
         loading={formLoading}
+      />
+
+      <PermisosModal
+        open={openPermisosModal}
+        usuario={usuarioSeleccionado}
+        onClose={handleClosePermisosModal}
+        onSuccess={handlePermisosExitoso}
       />
 
       <Snackbar open={snackbar.open || !!error} autoHideDuration={6000} onClose={handleCloseSnackbar}>
