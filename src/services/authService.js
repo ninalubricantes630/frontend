@@ -7,27 +7,27 @@ export const authService = {
       console.log("[v0] authService.login - enviando credenciales:", credentials.email)
       const response = await api.post("/auth/login", credentials)
 
-      console.log("[v0] authService.login - response completo:", response)
+      console.log("[v0] authService.login - response recibido:", response)
 
-      // Entonces response en este punto YA es { user, token, expiresIn }
       if (response && response.user) {
         console.log("[v0] authService.login - usuario recibido:", response.user)
         console.log("[v0] authService.login - token recibido:", response.token)
-        console.log("[v0] authService.login - permisos en usuario:", response.user?.permisos)
+        console.log("[v0] authService.login - permisos:", response.user?.permisos?.length)
 
         // Guardar token
         secureStorage.setToken(response.token)
 
         // Guardar usuario completo
         secureStorage.setUser(response.user)
-        console.log("[v0] authService.login - usuario guardado en secureStorage:", response.user)
+        console.log("[v0] authService.login - datos guardados en storage")
 
-        return response.user // Retornar solo el usuario, no el token
+        return response.user
+      } else {
+        console.error("[v0] authService.login - respuesta inválida, no contiene user:", JSON.stringify(response))
+        throw new Error("Estructura de respuesta inválida: no se recibió usuario")
       }
-
-      throw new Error("Estructura de respuesta inválida")
     } catch (error) {
-      console.error("[v0] authService.login - error capturado:", error.message)
+      console.error("[v0] authService.login - error:", error.message)
       throw error
     }
   },
@@ -47,18 +47,19 @@ export const authService = {
       console.log("[v0] authService.getCurrentUser - iniciando")
       const response = await api.get("/auth/me")
 
-      console.log("[v0] authService.getCurrentUser - response.data:", response)
+      console.log("[v0] authService.getCurrentUser - response:", response)
 
       if (response && response.userId) {
-        console.log("[v0] authService.getCurrentUser - usuario cargado:", response)
-        console.log("[v0] authService.getCurrentUser - permisos:", response.permisos)
+        console.log("[v0] authService.getCurrentUser - usuario cargado con userId:", response.userId)
+        console.log("[v0] authService.getCurrentUser - permisos:", response.permisos?.length)
         secureStorage.setUser(response)
         return response
+      } else {
+        console.error("[v0] authService.getCurrentUser - respuesta inválida:", JSON.stringify(response))
+        throw new Error("Estructura de respuesta inválida en getCurrentUser")
       }
-
-      throw new Error("Estructura de respuesta inválida")
     } catch (error) {
-      console.error("[v0] authService.getCurrentUser - error:", error)
+      console.error("[v0] authService.getCurrentUser - error:", error.message)
       throw error
     }
   },
