@@ -759,7 +759,7 @@ const StockPage = () => {
             onDelete={handleDelete}
             onToggle={handleToggle}
             onMovimiento={handleOpenMovimiento}
-            onHistorial={handleOpenHistorial}
+            onVerHistorial={handleOpenHistorial}
             onPageChange={handlePageChange}
           />
         </Box>

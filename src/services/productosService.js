@@ -53,7 +53,8 @@ export const productosService = {
   },
 
   registrarMovimiento: async (data) => {
-    const response = await api.post(`/productos/${data.producto_id}/movimientos`, {
+    const response = await api.post("/movimientos-stock", {
+      producto_id: data.producto_id,
       tipo: data.tipo,
       cantidad: data.cantidad,
       motivo: data.motivo,
