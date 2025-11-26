@@ -22,7 +22,7 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 import SaveIcon from "@mui/icons-material/Save"
 import CancelIcon from "@mui/icons-material/Close"
-import * as permisosService from "../../services/permisosService"
+import permisosService from "../../services/permisosService"
 
 const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false)
