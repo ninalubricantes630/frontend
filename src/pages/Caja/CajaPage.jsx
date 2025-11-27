@@ -23,7 +23,7 @@ import cajaService from "../../services/cajaService"
 import PermissionGuard from "../../components/Auth/PermissionGuard"
 
 export default function CajaPage() {
-  const { user } = useAuth()
+  const { user, hasPermissionSlug } = useAuth()
   const {
     sesionActiva,
     movimientos,
@@ -125,7 +125,7 @@ export default function CajaPage() {
   const montoActual = sesionActiva ? Number.parseFloat(sesionActiva.monto_inicial) + totalIngresos - totalEgresos : 0
 
   return (
-    <PermissionGuard requiredPermission="ver_caja">
+    <PermissionGuard requiredPermission="view_caja">
       <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", p: 2, bgcolor: "#fafafa" }}>
         {loading ? (
           <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
@@ -183,64 +183,72 @@ export default function CajaPage() {
               <Box sx={{ display: "flex", gap: 1.5 }}>
                 {sesionActiva ? (
                   <>
-                    <Button
-                      variant="contained"
-                      startIcon={<AddIcon sx={{ fontSize: 18 }} />}
-                      onClick={() => setMovimientoModal(true)}
-                      sx={{
-                        bgcolor: "#dc2626",
-                        color: "white",
-                        px: 2.5,
-                        fontWeight: 500,
-                        textTransform: "none",
-                        boxShadow: "none",
-                        "&:hover": {
-                          bgcolor: "#b91c1c",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                        },
-                      }}
-                    >
-                      Registrar Movimiento
-                    </Button>
-                    <Button
-                      variant="outlined"
-                      startIcon={<CloseIcon sx={{ fontSize: 18 }} />}
-                      onClick={() => setCerrarModal(true)}
-                      sx={{
-                        borderColor: "#dc2626",
-                        color: "#dc2626",
-                        px: 2.5,
-                        fontWeight: 500,
-                        textTransform: "none",
-                        "&:hover": {
-                          borderColor: "#b91c1c",
-                          bgcolor: "#fef2f2",
-                        },
-                      }}
-                    >
-                      Cerrar Caja
-                    </Button>
+                    {hasPermissionSlug("registrar_movimiento_caja") && (
+                      <Button
+                        variant="contained"
+                        startIcon={<AddIcon sx={{ fontSize: 18 }} />}
+                        onClick={() => setMovimientoModal(true)}
+                        sx={{
+                          bgcolor: "#dc2626",
+                          color: "white",
+                          px: 2.5,
+                          fontWeight: 500,
+                          textTransform: "none",
+                          boxShadow: "none",
+                          "&:hover": {
+                            bgcolor: "#b91c1c",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                          },
+                        }}
+                      >
+                        Registrar Movimiento
+                      </Button>
+                    )}
+                    {hasPermissionSlug("cerrar_caja") && (
+                      <Button
+                        variant="outlined"
+                        startIcon={<CloseIcon sx={{ fontSize: 18 }} />}
+                        onClick={() => setCerrarModal(true)}
+                        sx={{
+                          borderColor: "#dc2626",
+                          color: "#dc2626",
+                          px: 2.5,
+                          fontWeight: 500,
+                          textTransform: "none",
+                          "&:hover": {
+                            borderColor: "#b91c1c",
+                            bgcolor: "#fef2f2",
+                          },
+                        }}
+                      >
+                        Cerrar Caja
+                      </Button>
+                    )}
                   </>
                 ) : (
-                  <Button
-                    variant="contained"
-                    startIcon={<MoneyIcon sx={{ fontSize: 18 }} />}
-                    onClick={() => setAbrirModal(true)}
-                    sx={{
-                      bgcolor: "#059669",
-                      color: "white",
-                      px: 2.5,
-                      fontWeight: 500,
-                      textTransform: "none",
-                      boxShadow: "none",
-                      "&:hover": {
-                        bgcolor: "#047857",
-                        boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-                      },
-                    }}
-                  >
-                    Abrir Caja
-                  </Button>
+                  <>
+                    {hasPermissionSlug("abrir_caja") && (
+                      <Button
+                        variant="contained"
+                        startIcon={<MoneyIcon sx={{ fontSize: 18 }} />}
+                        onClick={() => setAbrirModal(true)}
+                        sx={{
+                          bgcolor: "#059669",
+                          color: "white",
+                          px: 2.5,
+                          fontWeight: 500,
+                          textTransform: "none",
+                          boxShadow: "none",
+                          "&:hover": {
+                            bgcolor: "#047857",
+                            boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+                          },
+                        }}
+                      >
+                        Abrir Caja
+                      </Button>
+                    )}
+                  </>
                 )}
               </Box>
             </Box>
@@ -442,27 +450,29 @@ export default function CajaPage() {
                   <Typography variant="body2" sx={{ color: "#94a3b8", mb: 3 }}>
                     Abre una caja para comenzar a registrar movimientos
                   </Typography>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    startIcon={<MoneyIcon />}
-                    onClick={() => setAbrirModal(true)}
-                    sx={{
-                      bgcolor: "#059669",
-                      color: "white",
-                      px: 3,
-                      py: 1.5,
-                      fontWeight: 500,
-                      textTransform: "none",
-                      boxShadow: "none",
-                      "&:hover": {
-                        bgcolor: "#047857",
-                        boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                      },
-                    }}
-                  >
-                    Abrir Caja
-                  </Button>
+                  {hasPermissionSlug("abrir_caja") && (
+                    <Button
+                      variant="contained"
+                      size="large"
+                      startIcon={<MoneyIcon />}
+                      onClick={() => setAbrirModal(true)}
+                      sx={{
+                        bgcolor: "#059669",
+                        color: "white",
+                        px: 3,
+                        py: 1.5,
+                        fontWeight: 500,
+                        textTransform: "none",
+                        boxShadow: "none",
+                        "&:hover": {
+                          bgcolor: "#047857",
+                          boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                        },
+                      }}
+                    >
+                      Abrir Caja
+                    </Button>
+                  )}
                 </Box>
               </Box>
             )}

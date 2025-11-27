@@ -81,12 +81,19 @@ function App() {
           <Route
             path="caja"
             element={
-              <PermissionGuard requiredPermission="caja">
+              <PermissionGuard requiredPermission="view_caja">
                 <CajaPage />
               </PermissionGuard>
             }
           />
-          <Route path="caja/historial" element={<HistorialCajaPage />} />
+          <Route
+            path="caja/historial"
+            element={
+              <PermissionGuard requiredPermission="view_historial_caja">
+                <HistorialCajaPage />
+              </PermissionGuard>
+            }
+          />
           <Route path="reportes" element={<ReportesPage />} />
           <Route path="reportes/ventas" element={<ReportesVentasPage />} />
           {/* Configuración */}
