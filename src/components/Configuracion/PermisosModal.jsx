@@ -170,6 +170,7 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
                 lg: "repeat(3, 1fr)",
               },
               gap: 2,
+              alignItems: "start", // Agregar alignItems: "start" para que cada card solo ocupe su altura necesaria
             }}
           >
             {Object.entries(permisosAgrupados).map(([modulo, permisos]) => {
