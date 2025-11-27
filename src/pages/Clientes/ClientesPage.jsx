@@ -23,7 +23,7 @@ import ClientesList from "../../components/Clientes/ClientesList.jsx"
 import ClienteForm from "../../components/Clientes/ClienteForm.jsx"
 import ClienteDetalleModal from "../../components/Clientes/ClienteDetalleModal.jsx"
 import { useAuth } from "../../contexts/AuthContext.jsx"
-import { PermissionGuard } from "../../components/Auth/PermissionGuard.jsx"
+import PermissionGuard from "../../components/Auth/PermissionGuard"
 
 const ClientesPage = () => {
   const { hasPermissionSlug } = useAuth()
