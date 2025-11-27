@@ -294,7 +294,7 @@ const ProductosList = ({
                   </TableCell>
                   <TableCell align="right" sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                     <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
-                      {(isAdmin() || hasPermissionSlug("stock_editar")) && (
+                      {(isAdmin() || hasPermissionSlug("edit_producto")) && (
                         <IconButton
                           size="small"
                           onClick={() => onEdit(producto)}
@@ -308,7 +308,7 @@ const ProductosList = ({
                         </IconButton>
                       )}
 
-                      {(isAdmin() || hasPermissionSlug("stock_registrar_movimientos")) && (
+                      {(isAdmin() || hasPermissionSlug("registrar_movimiento")) && (
                         <IconButton
                           size="small"
                           onClick={() => onMovimiento(producto)}
@@ -326,7 +326,7 @@ const ProductosList = ({
                         </IconButton>
                       )}
 
-                      {(isAdmin() || hasPermissionSlug("stock_ver_movimientos")) && (
+                      {(isAdmin() || hasPermissionSlug("view_movimientos_stock")) && (
                         <IconButton
                           size="small"
                           onClick={() => onVerHistorial(producto)}
@@ -340,7 +340,7 @@ const ProductosList = ({
                         </IconButton>
                       )}
 
-                      {(isAdmin() || hasPermissionSlug("stock_eliminar")) && (
+                      {(isAdmin() || hasPermissionSlug("delete_producto")) && (
                         <IconButton
                           size="small"
                           onClick={() => handleToggleClick(producto)}
