@@ -18,8 +18,11 @@ import {
 import { Visibility as VisibilityIcon, Cancel as CancelIcon } from "@mui/icons-material"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useAuth } from "../../contexts/AuthContext"
 
 const VentasList = ({ ventas, loading, pagination, onPageChange, onView, onCancel }) => {
+  const { hasPermissionSlug } = useAuth()
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
@@ -253,19 +256,21 @@ const VentasList = ({ ventas, loading, pagination, onPageChange, onView, onCance
                 </TableCell>
                 <TableCell align="right" sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                   <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
-                    <Tooltip title="Ver detalles">
-                      <IconButton
-                        size="small"
-                        onClick={() => onView(venta)}
-                        sx={{
-                          color: "#1976d2",
-                          p: 0.5,
-                          "&:hover": { bgcolor: "#e3f2fd" },
-                        }}
-                      >
-                        <VisibilityIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                    </Tooltip>
+                    {hasPermissionSlug("view_detalle_ventas") && (
+                      <Tooltip title="Ver detalles">
+                        <IconButton
+                          size="small"
+                          onClick={() => onView(venta)}
+                          sx={{
+                            color: "#1976d2",
+                            p: 0.5,
+                            "&:hover": { bgcolor: "#e3f2fd" },
+                          }}
+                        >
+                          <VisibilityIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     {venta.estado === "COMPLETADA" && venta.sesion_caja_estado === "ABIERTA" && (
                       <Tooltip title="Cancelar venta">
                         <IconButton

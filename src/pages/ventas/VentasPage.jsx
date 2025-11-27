@@ -409,7 +409,7 @@ export default function VentasPage() {
 
   if (authLoading || (user && user.sucursales === undefined)) {
     return (
-      <PermissionGuard requiredPermission="ver_ventas">
+      <PermissionGuard requiredPermission="create_venta">
         <Box
           sx={{ p: 2, display: "flex", justifyContent: "center", alignItems: "center", height: "calc(100vh - 80px)" }}
         >
@@ -421,7 +421,7 @@ export default function VentasPage() {
 
   if (!user?.sucursales || user.sucursales.length === 0) {
     return (
-      <PermissionGuard requiredPermission="ver_ventas">
+      <PermissionGuard requiredPermission="create_venta">
         <Box sx={{ p: 2 }}>
           <Alert
             severity="error"
@@ -439,7 +439,7 @@ export default function VentasPage() {
   }
 
   return (
-    <PermissionGuard requiredPermission="ver_ventas">
+    <PermissionGuard requiredPermission="create_venta">
       <Box
         ref={pageRef}
         sx={{
