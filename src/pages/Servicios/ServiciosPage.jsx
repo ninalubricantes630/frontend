@@ -1133,7 +1133,7 @@ const ServiciosPage = () => {
   }
 
   return (
-    <PermissionGuard requiredPermission="ver_servicios">
+    <PermissionGuard requiredPermission="create_servicio">
       <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", p: 2.5, bgcolor: "#f8f9fa" }}>
         {activeStep < 5 && (
           <Card elevation={0} sx={{ mb: 2.5, border: "1px solid #e5e7eb", bgcolor: "white", borderRadius: 2.5 }}>

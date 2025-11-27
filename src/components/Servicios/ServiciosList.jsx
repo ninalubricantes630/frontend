@@ -17,8 +17,11 @@ import {
 import { Visibility, Cancel } from "@mui/icons-material"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import { useAuth } from "../../contexts/AuthContext"
 
 const ServiciosList = ({ servicios, onView, loading, pagination, onPageChange, onDelete, onCancel }) => {
+  const { hasPermissionSlug } = useAuth()
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
@@ -266,19 +269,21 @@ const ServiciosList = ({ servicios, onView, loading, pagination, onPageChange, o
                 </TableCell>
                 <TableCell align="right" sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                   <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
-                    <Tooltip title="Ver Detalle">
-                      <IconButton
-                        size="small"
-                        onClick={() => onView(servicio)}
-                        sx={{
-                          color: "#1976d2",
-                          p: 0.5,
-                          "&:hover": { bgcolor: "#e3f2fd" },
-                        }}
-                      >
-                        <Visibility sx={{ fontSize: 16 }} />
-                      </IconButton>
-                    </Tooltip>
+                    {hasPermissionSlug("view_detalle_servicio") && (
+                      <Tooltip title="Ver Detalle">
+                        <IconButton
+                          size="small"
+                          onClick={() => onView(servicio)}
+                          sx={{
+                            color: "#1976d2",
+                            p: 0.5,
+                            "&:hover": { bgcolor: "#e3f2fd" },
+                          }}
+                        >
+                          <Visibility sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                     {servicio.estado === "COMPLETADA" && servicio.sesion_caja_estado === "ABIERTA" && onCancel && (
                       <Tooltip title="Cancelar servicio">
                         <IconButton

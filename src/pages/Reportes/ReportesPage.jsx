@@ -27,6 +27,7 @@ import ServicioDetalleModal from "../../components/Servicios/ServicioDetalleModa
 import serviciosService from "../../services/serviciosService.js"
 import { useAuth } from "../../contexts/AuthContext"
 import { useSucursales } from "../../hooks/useSucursales"
+import PermissionGuard from "../../components/Auth/PermissionGuard"
 
 const ReportesPage = () => {
   const { user } = useAuth()
@@ -311,160 +312,252 @@ const ReportesPage = () => {
   }
 
   return (
-    <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", bgcolor: "#f8fafc" }}>
-      <Box
-        sx={{
-          bgcolor: "white",
-          borderBottom: "1px solid #e5e7eb",
-          px: { xs: 2, sm: 2, md: 2 },
-          py: { xs: 2, sm: 2.5 },
-          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
-        }}
-      >
+    <PermissionGuard requiredPermission="view_servicios">
+      <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", bgcolor: "#f8fafc" }}>
         <Box
           sx={{
-            display: "flex",
-            flexDirection: { xs: "column", md: "row" },
-            justifyContent: "space-between",
-            alignItems: { xs: "stretch", md: "center" },
-            gap: { xs: 2, md: 0 },
+            bgcolor: "white",
+            borderBottom: "1px solid #e5e7eb",
+            px: { xs: 2, sm: 2, md: 2 },
+            py: { xs: 2, sm: 2.5 },
+            boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
           }}
         >
-          <Box sx={{ mb: { xs: 0, md: 0 } }}>
-            <Typography
-              variant="h5"
-              component="h1"
-              sx={{ fontWeight: 700, color: "#0f172a", mb: 0.5, letterSpacing: "-0.025em" }}
-            >
-              Reportes de Servicios
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.875rem" }}>
-              {pagination.total} {pagination.total === 1 ? "registro" : "registros"}
-              {clienteFilterName && ` - ${clienteFilterName}`}
-            </Typography>
-          </Box>
-
           <Box
             sx={{
               display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              gap: 1.5,
-              alignItems: { xs: "stretch", sm: "center" },
-              flexWrap: "wrap",
+              flexDirection: { xs: "column", md: "row" },
+              justifyContent: "space-between",
+              alignItems: { xs: "stretch", md: "center" },
+              gap: { xs: 2, md: 0 },
             }}
           >
-            <TextField
-              size="small"
-              placeholder="Buscar servicios..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <SearchIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                  </InputAdornment>
-                ),
-                endAdornment: searchTerm && (
-                  <InputAdornment position="end">
-                    <CloseIcon
-                      sx={{ fontSize: 18, color: "#64748b", cursor: "pointer" }}
-                      onClick={() => setSearchTerm("")}
-                    />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                width: { xs: "100%", sm: 280 },
-                flex: { xs: "1 1 auto", sm: "0 0 auto" },
-                bgcolor: "#f8fafc",
-                fontSize: "0.875rem",
-                "& .MuiOutlinedInput-root": {
-                  fontSize: "0.875rem",
-                  "& fieldset": {
-                    borderColor: "#e5e7eb",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "#cbd5e1",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#dc2626",
-                    borderWidth: "1px",
-                  },
-                },
-              }}
-            />
+            <Box sx={{ mb: { xs: 0, md: 0 } }}>
+              <Typography
+                variant="h5"
+                component="h1"
+                sx={{ fontWeight: 700, color: "#0f172a", mb: 0.5, letterSpacing: "-0.025em" }}
+              >
+                Reportes de Servicios
+              </Typography>
+              <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.875rem" }}>
+                {pagination.total} {pagination.total === 1 ? "registro" : "registros"}
+                {clienteFilterName && ` - ${clienteFilterName}`}
+              </Typography>
+            </Box>
 
-            <Button
-              variant="outlined"
-              startIcon={<FilterListIcon sx={{ fontSize: 18 }} />}
-              onClick={() => setShowFilters(!showFilters)}
+            <Box
               sx={{
-                minWidth: { xs: "100%", sm: "auto" },
-                px: 2.5,
-                py: 0.75,
-                fontSize: "0.875rem",
-                fontWeight: 500,
-                borderColor: showFilters ? "#dc2626" : "#e5e7eb",
-                color: showFilters ? "#dc2626" : "#475569",
-                bgcolor: showFilters ? "#fef2f2" : "#f8fafc",
-                textTransform: "none",
-                position: "relative",
-                "&:hover": {
-                  borderColor: "#dc2626",
-                  bgcolor: "#fef2f2",
-                },
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 1.5,
+                alignItems: { xs: "stretch", sm: "center" },
+                flexWrap: "wrap",
               }}
             >
-              Filtros
-              {activeFiltersCount() > 0 && (
-                <Chip
-                  label={activeFiltersCount()}
+              <TextField
+                size="small"
+                placeholder="Buscar servicios..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ fontSize: 18, color: "#64748b" }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: searchTerm && (
+                    <InputAdornment position="end">
+                      <CloseIcon
+                        sx={{ fontSize: 18, color: "#64748b", cursor: "pointer" }}
+                        onClick={() => setSearchTerm("")}
+                      />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  width: { xs: "100%", sm: 280 },
+                  flex: { xs: "1 1 auto", sm: "0 0 auto" },
+                  bgcolor: "#f8fafc",
+                  fontSize: "0.875rem",
+                  "& .MuiOutlinedInput-root": {
+                    fontSize: "0.875rem",
+                    "& fieldset": {
+                      borderColor: "#e5e7eb",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#cbd5e1",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#dc2626",
+                      borderWidth: "1px",
+                    },
+                  },
+                }}
+              />
+
+              <Button
+                variant="outlined"
+                startIcon={<FilterListIcon sx={{ fontSize: 18 }} />}
+                onClick={() => setShowFilters(!showFilters)}
+                sx={{
+                  minWidth: { xs: "100%", sm: "auto" },
+                  px: 2.5,
+                  py: 0.75,
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  borderColor: showFilters ? "#dc2626" : "#e5e7eb",
+                  color: showFilters ? "#dc2626" : "#475569",
+                  bgcolor: showFilters ? "#fef2f2" : "#f8fafc",
+                  textTransform: "none",
+                  position: "relative",
+                  "&:hover": {
+                    borderColor: "#dc2626",
+                    bgcolor: "#fef2f2",
+                  },
+                }}
+              >
+                Filtros
+                {activeFiltersCount() > 0 && (
+                  <Chip
+                    label={activeFiltersCount()}
+                    size="small"
+                    sx={{
+                      position: "absolute",
+                      top: -8,
+                      right: -8,
+                      height: 20,
+                      minWidth: 20,
+                      bgcolor: "#dc2626",
+                      color: "white",
+                      fontSize: "0.688rem",
+                      fontWeight: 700,
+                      "& .MuiChip-label": {
+                        px: 0.75,
+                      },
+                    }}
+                  />
+                )}
+              </Button>
+            </Box>
+          </Box>
+
+          <Collapse in={showFilters}>
+            <Box
+              sx={{
+                mt: 2,
+                pt: 2,
+                borderTop: "1px solid #e5e7eb",
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 1.5,
+                alignItems: "center",
+              }}
+            >
+              {usuarioTieneMultiplesSucursales && (
+                <FormControl
                   size="small"
                   sx={{
-                    position: "absolute",
-                    top: -8,
-                    right: -8,
-                    height: 20,
-                    minWidth: 20,
-                    bgcolor: "#dc2626",
-                    color: "white",
-                    fontSize: "0.688rem",
-                    fontWeight: 700,
-                    "& .MuiChip-label": {
-                      px: 0.75,
-                    },
+                    minWidth: { xs: "100%", sm: 180 },
+                    flex: { xs: "1 1 auto", sm: "0 0 auto" },
                   }}
-                />
+                >
+                  <InputLabel>Sucursal</InputLabel>
+                  <Select
+                    value={filters.sucursal_id}
+                    label="Sucursal"
+                    onChange={(e) => handleFilterChange("sucursal_id", e.target.value)}
+                    sx={{
+                      bgcolor: "#f8fafc",
+                      fontSize: "0.875rem",
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#e5e7eb",
+                      },
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#cbd5e1",
+                      },
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#dc2626",
+                        borderWidth: "1px",
+                      },
+                    }}
+                  >
+                    <MenuItem value="">
+                      <em>Todas las sucursales</em>
+                    </MenuItem>
+                    {sucursales.map((sucursal) => (
+                      <MenuItem key={sucursal.id} value={sucursal.id}>
+                        {sucursal.nombre}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               )}
-            </Button>
-          </Box>
-        </Box>
 
-        <Collapse in={showFilters}>
-          <Box
-            sx={{
-              mt: 2,
-              pt: 2,
-              borderTop: "1px solid #e5e7eb",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 1.5,
-              alignItems: "center",
-            }}
-          >
-            {usuarioTieneMultiplesSucursales && (
+              <TextField
+                size="small"
+                type="date"
+                label="Desde"
+                value={filters.fecha_desde}
+                onChange={(e) => handleFilterChange("fecha_desde", e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  width: { xs: "100%", sm: 150 },
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: "#f8fafc",
+                    fontSize: "0.875rem",
+                    "& fieldset": {
+                      borderColor: "#e5e7eb",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#cbd5e1",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#dc2626",
+                      borderWidth: "1px",
+                    },
+                  },
+                }}
+              />
+
+              <TextField
+                size="small"
+                type="date"
+                label="Hasta"
+                value={filters.fecha_hasta}
+                onChange={(e) => handleFilterChange("fecha_hasta", e.target.value)}
+                InputLabelProps={{ shrink: true }}
+                sx={{
+                  width: { xs: "100%", sm: 150 },
+                  "& .MuiOutlinedInput-root": {
+                    bgcolor: "#f8fafc",
+                    fontSize: "0.875rem",
+                    "& fieldset": {
+                      borderColor: "#e5e7eb",
+                    },
+                    "&:hover fieldset": {
+                      borderColor: "#cbd5e1",
+                    },
+                    "&.Mui-focused fieldset": {
+                      borderColor: "#dc2626",
+                      borderWidth: "1px",
+                    },
+                  },
+                }}
+              />
+
               <FormControl
                 size="small"
                 sx={{
-                  minWidth: { xs: "100%", sm: 180 },
+                  minWidth: { xs: "100%", sm: 140 },
                   flex: { xs: "1 1 auto", sm: "0 0 auto" },
                 }}
               >
-                <InputLabel>Sucursal</InputLabel>
+                <InputLabel>Tipo de Pago</InputLabel>
                 <Select
-                  value={filters.sucursal_id}
-                  label="Sucursal"
-                  onChange={(e) => handleFilterChange("sucursal_id", e.target.value)}
+                  value={filters.tipo_pago}
+                  label="Tipo de Pago"
+                  onChange={(e) => handleFilterChange("tipo_pago", e.target.value)}
                   sx={{
                     bgcolor: "#f8fafc",
                     fontSize: "0.875rem",
@@ -480,409 +573,319 @@ const ReportesPage = () => {
                     },
                   }}
                 >
-                  <MenuItem value="">
-                    <em>Todas las sucursales</em>
-                  </MenuItem>
-                  {sucursales.map((sucursal) => (
-                    <MenuItem key={sucursal.id} value={sucursal.id}>
-                      {sucursal.nombre}
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="">Todos</MenuItem>
+                  <MenuItem value="EFECTIVO">Efectivo</MenuItem>
+                  <MenuItem value="TARJETA_CREDITO">Tarjeta de Crédito</MenuItem>
+                  <MenuItem value="TRANSFERENCIA">Transferencia</MenuItem>
+                  <MenuItem value="CUENTA_CORRIENTE">Cuenta Corriente</MenuItem>
                 </Select>
               </FormControl>
-            )}
 
-            <TextField
-              size="small"
-              type="date"
-              label="Desde"
-              value={filters.fecha_desde}
-              onChange={(e) => handleFilterChange("fecha_desde", e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{
-                width: { xs: "100%", sm: 150 },
-                "& .MuiOutlinedInput-root": {
-                  bgcolor: "#f8fafc",
-                  fontSize: "0.875rem",
-                  "& fieldset": {
-                    borderColor: "#e5e7eb",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "#cbd5e1",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#dc2626",
-                    borderWidth: "1px",
-                  },
-                },
-              }}
-            />
-
-            <TextField
-              size="small"
-              type="date"
-              label="Hasta"
-              value={filters.fecha_hasta}
-              onChange={(e) => handleFilterChange("fecha_hasta", e.target.value)}
-              InputLabelProps={{ shrink: true }}
-              sx={{
-                width: { xs: "100%", sm: 150 },
-                "& .MuiOutlinedInput-root": {
-                  bgcolor: "#f8fafc",
-                  fontSize: "0.875rem",
-                  "& fieldset": {
-                    borderColor: "#e5e7eb",
-                  },
-                  "&:hover fieldset": {
-                    borderColor: "#cbd5e1",
-                  },
-                  "&.Mui-focused fieldset": {
-                    borderColor: "#dc2626",
-                    borderWidth: "1px",
-                  },
-                },
-              }}
-            />
-
-            <FormControl
-              size="small"
-              sx={{
-                minWidth: { xs: "100%", sm: 140 },
-                flex: { xs: "1 1 auto", sm: "0 0 auto" },
-              }}
-            >
-              <InputLabel>Tipo de Pago</InputLabel>
-              <Select
-                value={filters.tipo_pago}
-                label="Tipo de Pago"
-                onChange={(e) => handleFilterChange("tipo_pago", e.target.value)}
+              <FormControl
+                size="small"
                 sx={{
-                  bgcolor: "#f8fafc",
+                  minWidth: { xs: "100%", sm: 120 },
+                  flex: { xs: "1 1 auto", sm: "0 0 auto" },
+                }}
+              >
+                <InputLabel>Estado</InputLabel>
+                <Select
+                  value={filters.estado}
+                  label="Estado"
+                  onChange={(e) => handleFilterChange("estado", e.target.value)}
+                  sx={{
+                    bgcolor: "#f8fafc",
+                    fontSize: "0.875rem",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#e5e7eb",
+                    },
+                    "&:hover .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#cbd5e1",
+                    },
+                    "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "#dc2626",
+                      borderWidth: "1px",
+                    },
+                  }}
+                >
+                  <MenuItem value="">Todos</MenuItem>
+                  <MenuItem value="COMPLETADA">Completada</MenuItem>
+                  <MenuItem value="CANCELADA">Cancelada</MenuItem>
+                </Select>
+              </FormControl>
+
+              <Button
+                variant="outlined"
+                onClick={handleClearFilters}
+                sx={{
+                  minWidth: { xs: "100%", sm: "auto" },
+                  px: 2.5,
+                  py: 0.75,
                   fontSize: "0.875rem",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#e5e7eb",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                  fontWeight: 500,
+                  borderColor: "#e5e7eb",
+                  color: "#475569",
+                  bgcolor: "#f8fafc",
+                  textTransform: "none",
+                  "&:hover": {
                     borderColor: "#cbd5e1",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#dc2626",
-                    borderWidth: "1px",
+                    bgcolor: "white",
                   },
                 }}
               >
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="EFECTIVO">Efectivo</MenuItem>
-                <MenuItem value="TARJETA_CREDITO">Tarjeta de Crédito</MenuItem>
-                <MenuItem value="TRANSFERENCIA">Transferencia</MenuItem>
-                <MenuItem value="CUENTA_CORRIENTE">Cuenta Corriente</MenuItem>
-              </Select>
-            </FormControl>
+                Limpiar Filtros
+              </Button>
+            </Box>
+          </Collapse>
+        </Box>
 
-            <FormControl
-              size="small"
-              sx={{
-                minWidth: { xs: "100%", sm: 120 },
-                flex: { xs: "1 1 auto", sm: "0 0 auto" },
-              }}
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", py: 2, overflow: "hidden" }}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2, py: 0.5 }}>
+              {error}
+            </Alert>
+          )}
+
+          {clienteFilter && (
+            <Alert
+              severity="info"
+              sx={{ mb: 2, borderRadius: 2, border: "1px solid #dbeafe" }}
+              action={
+                <Button
+                  color="inherit"
+                  size="small"
+                  onClick={handleClearFilters}
+                  sx={{ fontWeight: 600, color: "#1e40af" }}
+                >
+                  Limpiar Filtro
+                </Button>
+              }
             >
-              <InputLabel>Estado</InputLabel>
-              <Select
-                value={filters.estado}
-                label="Estado"
-                onChange={(e) => handleFilterChange("estado", e.target.value)}
-                sx={{
-                  bgcolor: "#f8fafc",
-                  fontSize: "0.875rem",
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#e5e7eb",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#cbd5e1",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "#dc2626",
-                    borderWidth: "1px",
-                  },
-                }}
-              >
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="COMPLETADA">Completada</MenuItem>
-                <MenuItem value="CANCELADA">Cancelada</MenuItem>
-              </Select>
-            </FormControl>
+              Mostrando servicios: {clienteFilterName}
+            </Alert>
+          )}
 
+          <Box
+            sx={{
+              flex: 1,
+              maxHeight: "calc(100vh - 220px)",
+              overflow: "hidden",
+              bgcolor: "white",
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+            }}
+          >
+            <ServiciosList
+              servicios={servicios}
+              loading={loading}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onEdit={handleEditServicio}
+              onDelete={handleDeleteServicio}
+              onView={handleViewMore}
+              onCancel={handleCancelarServicio}
+            />
+          </Box>
+        </Box>
+
+        <Dialog
+          open={deleteDialogOpen}
+          onClose={() => setDeleteDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: 2,
+              border: "1px solid #e5e7eb",
+            },
+          }}
+        >
+          <DialogTitle
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              borderBottom: "1px solid #e5e7eb",
+              pb: 2,
+            }}
+          >
+            <Box
+              sx={{
+                width: 4,
+                height: 32,
+                bgcolor: "#dc2626",
+                borderRadius: 1,
+              }}
+            />
+            <Typography variant="h6" sx={{ fontWeight: 600, color: "#0f172a" }}>
+              Confirmar Eliminación
+            </Typography>
+          </DialogTitle>
+          <DialogContent sx={{ pt: 3 }}>
+            <Typography sx={{ color: "#475569", mb: 1 }}>
+              ¿Estás seguro de que deseas eliminar el servicio <strong>#{servicioToDelete?.numero}</strong>?
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#64748b" }}>
+              Esta acción marcará el servicio como inactivo pero conservará su historial.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5, gap: 1, borderTop: "1px solid #e5e7eb" }}>
             <Button
+              onClick={() => setDeleteDialogOpen(false)}
               variant="outlined"
-              onClick={handleClearFilters}
               sx={{
-                minWidth: { xs: "100%", sm: "auto" },
-                px: 2.5,
-                py: 0.75,
-                fontSize: "0.875rem",
-                fontWeight: 500,
                 borderColor: "#e5e7eb",
                 color: "#475569",
-                bgcolor: "#f8fafc",
-                textTransform: "none",
+                borderRadius: 2,
+                px: 3,
                 "&:hover": {
                   borderColor: "#cbd5e1",
-                  bgcolor: "white",
+                  bgcolor: "#f8fafc",
                 },
               }}
             >
-              Limpiar Filtros
+              Cancelar
             </Button>
-          </Box>
-        </Collapse>
-      </Box>
+            <Button
+              onClick={confirmDelete}
+              variant="contained"
+              sx={{
+                bgcolor: "#dc2626",
+                borderRadius: 2,
+                px: 3,
+                "&:hover": { bgcolor: "#b91c1c" },
+              }}
+            >
+              Confirmar Eliminación
+            </Button>
+          </DialogActions>
+        </Dialog>
 
-      <Box sx={{ flex: 1, display: "flex", flexDirection: "column", py: 2, overflow: "hidden" }}>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2, py: 0.5 }}>
-            {error}
-          </Alert>
-        )}
-
-        {clienteFilter && (
-          <Alert
-            severity="info"
-            sx={{ mb: 2, borderRadius: 2, border: "1px solid #dbeafe" }}
-            action={
-              <Button
-                color="inherit"
-                size="small"
-                onClick={handleClearFilters}
-                sx={{ fontWeight: 600, color: "#1e40af" }}
-              >
-                Limpiar Filtro
-              </Button>
-            }
-          >
-            Mostrando servicios: {clienteFilterName}
-          </Alert>
-        )}
-
-        <Box
-          sx={{
-            flex: 1,
-            maxHeight: "calc(100vh - 220px)",
-            overflow: "hidden",
-            bgcolor: "white",
-            border: "1px solid #e5e7eb",
-            boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
-          }}
-        >
-          <ServiciosList
-            servicios={servicios}
-            loading={loading}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onEdit={handleEditServicio}
-            onDelete={handleDeleteServicio}
-            onView={handleViewMore}
-            onCancel={handleCancelarServicio}
-          />
-        </Box>
-      </Box>
-
-      <Dialog
-        open={deleteDialogOpen}
-        onClose={() => setDeleteDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            border: "1px solid #e5e7eb",
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            borderBottom: "1px solid #e5e7eb",
-            pb: 2,
-          }}
-        >
-          <Box
-            sx={{
-              width: 4,
-              height: 32,
-              bgcolor: "#dc2626",
-              borderRadius: 1,
-            }}
-          />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: "#0f172a" }}>
-            Confirmar Eliminación
-          </Typography>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Typography sx={{ color: "#475569", mb: 1 }}>
-            ¿Estás seguro de que deseas eliminar el servicio <strong>#{servicioToDelete?.numero}</strong>?
-          </Typography>
-          <Typography variant="body2" sx={{ color: "#64748b" }}>
-            Esta acción marcará el servicio como inactivo pero conservará su historial.
-          </Typography>
-        </DialogContent>
-        <DialogActions sx={{ p: 2.5, gap: 1, borderTop: "1px solid #e5e7eb" }}>
-          <Button
-            onClick={() => setDeleteDialogOpen(false)}
-            variant="outlined"
-            sx={{
-              borderColor: "#e5e7eb",
-              color: "#475569",
+        <Dialog
+          open={cancelDialogOpen}
+          onClose={() => setCancelDialogOpen(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
               borderRadius: 2,
-              px: 3,
-              "&:hover": {
-                borderColor: "#cbd5e1",
-                bgcolor: "#f8fafc",
-              },
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={confirmDelete}
-            variant="contained"
-            sx={{
-              bgcolor: "#dc2626",
-              borderRadius: 2,
-              px: 3,
-              "&:hover": { bgcolor: "#b91c1c" },
-            }}
-          >
-            Confirmar Eliminación
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      <Dialog
-        open={cancelDialogOpen}
-        onClose={() => setCancelDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            border: "1px solid #e5e7eb",
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 1.5,
-            borderBottom: "1px solid #e5e7eb",
-            pb: 2,
+              border: "1px solid #e5e7eb",
+            },
           }}
         >
-          <Box
+          <DialogTitle
             sx={{
-              width: 4,
-              height: 32,
-              bgcolor: "#dc2626",
-              borderRadius: 1,
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              borderBottom: "1px solid #e5e7eb",
+              pb: 2,
             }}
-          />
-          <Typography variant="h6" sx={{ fontWeight: 600, color: "#0f172a" }}>
-            Cancelar Servicio
-          </Typography>
-        </DialogTitle>
-        <DialogContent sx={{ pt: 3 }}>
-          <Typography sx={{ color: "#475569", mb: 2 }}>
-            ¿Estás seguro de que deseas cancelar el servicio <strong>#{servicioToCancel?.numero}</strong>?
-          </Typography>
-          <TextField
-            fullWidth
-            label="Motivo de Cancelación"
-            value={motivoCancelacion}
-            onChange={(e) => setMotivoCancelacion(e.target.value)}
-            multiline
-            rows={3}
-            required
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                "& fieldset": {
-                  borderColor: "#e5e7eb",
+          >
+            <Box
+              sx={{
+                width: 4,
+                height: 32,
+                bgcolor: "#dc2626",
+                borderRadius: 1,
+              }}
+            />
+            <Typography variant="h6" sx={{ fontWeight: 600, color: "#0f172a" }}>
+              Cancelar Servicio
+            </Typography>
+          </DialogTitle>
+          <DialogContent sx={{ pt: 3 }}>
+            <Typography sx={{ color: "#475569", mb: 2 }}>
+              ¿Estás seguro de que deseas cancelar el servicio <strong>#{servicioToCancel?.numero}</strong>?
+            </Typography>
+            <TextField
+              fullWidth
+              label="Motivo de Cancelación"
+              value={motivoCancelacion}
+              onChange={(e) => setMotivoCancelacion(e.target.value)}
+              multiline
+              rows={3}
+              required
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  "& fieldset": {
+                    borderColor: "#e5e7eb",
+                  },
+                  "&:hover fieldset": {
+                    borderColor: "#cbd5e1",
+                  },
+                  "&.Mui-focused fieldset": {
+                    borderColor: "#dc2626",
+                    borderWidth: "1px",
+                  },
                 },
-                "&:hover fieldset": {
+              }}
+            />
+          </DialogContent>
+          <DialogActions sx={{ p: 2.5, gap: 1, borderTop: "1px solid #e5e7eb" }}>
+            <Button
+              onClick={() => setCancelDialogOpen(false)}
+              variant="outlined"
+              sx={{
+                borderColor: "#e5e7eb",
+                color: "#475569",
+                borderRadius: 2,
+                px: 3,
+                "&:hover": {
                   borderColor: "#cbd5e1",
+                  bgcolor: "#f8fafc",
                 },
-                "&.Mui-focused fieldset": {
-                  borderColor: "#dc2626",
-                  borderWidth: "1px",
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={confirmCancel}
+              variant="contained"
+              disabled={!motivoCancelacion.trim()}
+              sx={{
+                bgcolor: "#dc2626",
+                borderRadius: 2,
+                px: 3,
+                "&:hover": { bgcolor: "#b91c1c" },
+                "&:disabled": {
+                  bgcolor: "#cbd5e1",
+                  color: "#94a3b8",
                 },
-              },
+              }}
+            >
+              Confirmar Cancelación
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {detalleModalOpen && servicioDetalle && (
+          <ServicioDetalleModal
+            open={detalleModalOpen}
+            onClose={() => {
+              setDetalleModalOpen(false)
+              setServicioDetalle(null)
             }}
+            servicio={servicioDetalle}
           />
-        </DialogContent>
-        <DialogActions sx={{ p: 2.5, gap: 1, borderTop: "1px solid #e5e7eb" }}>
-          <Button
-            onClick={() => setCancelDialogOpen(false)}
-            variant="outlined"
-            sx={{
-              borderColor: "#e5e7eb",
-              color: "#475569",
-              borderRadius: 2,
-              px: 3,
-              "&:hover": {
-                borderColor: "#cbd5e1",
-                bgcolor: "#f8fafc",
-              },
-            }}
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={confirmCancel}
-            variant="contained"
-            disabled={!motivoCancelacion.trim()}
-            sx={{
-              bgcolor: "#dc2626",
-              borderRadius: 2,
-              px: 3,
-              "&:hover": { bgcolor: "#b91c1c" },
-              "&:disabled": {
-                bgcolor: "#cbd5e1",
-                color: "#94a3b8",
-              },
-            }}
-          >
-            Confirmar Cancelación
-          </Button>
-        </DialogActions>
-      </Dialog>
+        )}
 
-      {detalleModalOpen && servicioDetalle && (
-        <ServicioDetalleModal
-          open={detalleModalOpen}
-          onClose={() => {
-            setDetalleModalOpen(false)
-            setServicioDetalle(null)
-          }}
-          servicio={servicioDetalle}
-        />
-      )}
-
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert
+        <Snackbar
+          open={snackbar.open}
+          autoHideDuration={6000}
           onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-          sx={{ width: "100%" }}
+          anchorOrigin={{ vertical: "top", horizontal: "right" }}
         >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-    </Box>
+          <Alert
+            onClose={() => setSnackbar({ ...snackbar, open: false })}
+            severity={snackbar.severity}
+            sx={{ width: "100%" }}
+          >
+            {snackbar.message}
+          </Alert>
+        </Snackbar>
+      </Box>
+    </PermissionGuard>
   )
 }
 
