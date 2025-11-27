@@ -22,8 +22,12 @@ import { useClientes } from "../../hooks/useClientes.js"
 import ClientesList from "../../components/Clientes/ClientesList.jsx"
 import ClienteForm from "../../components/Clientes/ClienteForm.jsx"
 import ClienteDetalleModal from "../../components/Clientes/ClienteDetalleModal.jsx"
+import { useAuth } from "../../contexts/AuthContext.jsx"
+import { PermissionGuard } from "../../components/Auth/PermissionGuard.jsx"
 
 const ClientesPage = () => {
+  const { hasPermissionSlug } = useAuth()
+
   const {
     clientes,
     loading,
@@ -33,7 +37,7 @@ const ClientesPage = () => {
     createCliente,
     updateCliente,
     deleteCliente,
-    handlePageChange, // Usando el nuevo handler unificado
+    handlePageChange,
   } = useClientes()
 
   const [searchTerm, setSearchTerm] = useState("")
@@ -281,28 +285,30 @@ const ClientesPage = () => {
               Buscar
             </Button>
 
-            <Button
-              variant="contained"
-              startIcon={<AddIcon sx={{ fontSize: 18 }} />}
-              onClick={handleNewCliente}
-              sx={{
-                bgcolor: "#dc2626",
-                color: "white",
-                minWidth: { xs: "100%", sm: "auto" },
-                px: 2.5,
-                py: 0.75,
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                textTransform: "none",
-                boxShadow: "0 1px 2px 0 rgba(220, 38, 38, 0.15)",
-                "&:hover": {
-                  bgcolor: "#b91c1c",
-                  boxShadow: "0 4px 6px -1px rgba(220, 38, 38, 0.2)",
-                },
-              }}
-            >
-              Nuevo Cliente
-            </Button>
+            {hasPermissionSlug("create_cliente") && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon sx={{ fontSize: 18 }} />}
+                onClick={handleNewCliente}
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  minWidth: { xs: "100%", sm: "auto" },
+                  px: 2.5,
+                  py: 0.75,
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  boxShadow: "0 1px 2px 0 rgba(220, 38, 38, 0.15)",
+                  "&:hover": {
+                    bgcolor: "#b91c1c",
+                    boxShadow: "0 4px 6px -1px rgba(220, 38, 38, 0.2)",
+                  },
+                }}
+              >
+                Nuevo Cliente
+              </Button>
+            )}
           </Box>
         </Box>
       </Box>
@@ -324,15 +330,17 @@ const ClientesPage = () => {
             boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
           }}
         >
-          <ClientesList
-            clientes={clientes}
-            loading={loading}
-            pagination={pagination}
-            onPageChange={handlePageChange}
-            onEdit={handleEditCliente}
-            onDelete={handleDeleteCliente}
-            onViewMore={handleViewMore}
-          />
+          <PermissionGuard requiredPermission="view_clientes">
+            <ClientesList
+              clientes={clientes}
+              loading={loading}
+              pagination={pagination}
+              onPageChange={handlePageChange}
+              onEdit={handleEditCliente}
+              onDelete={handleDeleteCliente}
+              onViewMore={handleViewMore}
+            />
+          </PermissionGuard>
         </Box>
       </Box>
 

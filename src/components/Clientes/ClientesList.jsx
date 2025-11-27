@@ -1,25 +1,27 @@
 "use client"
+
+import { useAuth } from "../../contexts/AuthContext.jsx"
 import {
-  Table,
-  TableBody,
-  TableCell,
+  Box,
   TableContainer,
+  Table,
   TableHead,
   TableRow,
+  TableCell,
+  TableBody,
+  TablePagination,
   IconButton,
   Tooltip,
-  Box,
-  TablePagination,
 } from "@mui/material"
-import {
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
-  Phone as PhoneIcon,
-  Badge as BadgeIcon,
-} from "@mui/icons-material"
+import BadgeIcon from "@mui/icons-material/Badge"
+import PhoneIcon from "@mui/icons-material/Phone"
+import VisibilityIcon from "@mui/icons-material/Visibility"
+import EditIcon from "@mui/icons-material/Edit"
+import DeleteIcon from "@mui/icons-material/Delete"
 
 const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onDelete, onViewMore }) => {
+  const { hasPermissionSlug } = useAuth()
+
   const handleRowsPerPageChange = (event) => {
     const newLimit = Number.parseInt(event.target.value, 10)
     onPageChange(1, newLimit)
@@ -163,7 +165,7 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
                     opacity: cliente.activo ? 1 : 0.5,
                     cursor: esConsumidorFinal ? "default" : "pointer",
                   }}
-                  onClick={() => !esConsumidorFinal && onViewMore(cliente)}
+                  onClick={() => !esConsumidorFinal && hasPermissionSlug("view_detalle_cliente") && onViewMore(cliente)}
                 >
                   <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                     <span className="font-medium text-sm text-slate-900">
@@ -219,53 +221,59 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
                         sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <Tooltip title="Ver detalle">
-                          <IconButton
-                            onClick={() => onViewMore(cliente)}
-                            size="small"
-                            sx={{
-                              color: "#1976d2",
-                              p: 0.5,
-                              "&:hover": { bgcolor: "#e3f2fd" },
-                            }}
-                          >
-                            <VisibilityIcon sx={{ fontSize: 16 }} />
-                          </IconButton>
-                        </Tooltip>
+                        {hasPermissionSlug("view_detalle_cliente") && (
+                          <Tooltip title="Ver detalle">
+                            <IconButton
+                              onClick={() => onViewMore(cliente)}
+                              size="small"
+                              sx={{
+                                color: "#1976d2",
+                                p: 0.5,
+                                "&:hover": { bgcolor: "#e3f2fd" },
+                              }}
+                            >
+                              <VisibilityIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
 
-                        <Tooltip title="Editar">
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onEdit(cliente)
-                            }}
-                            size="small"
-                            sx={{
-                              color: "#dc2626",
-                              p: 0.5,
-                              "&:hover": { bgcolor: "#fee2e2" },
-                            }}
-                          >
-                            <EditIcon sx={{ fontSize: 16 }} />
-                          </IconButton>
-                        </Tooltip>
+                        {hasPermissionSlug("edit_cliente") && (
+                          <Tooltip title="Editar">
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onEdit(cliente)
+                              }}
+                              size="small"
+                              sx={{
+                                color: "#dc2626",
+                                p: 0.5,
+                                "&:hover": { bgcolor: "#fee2e2" },
+                              }}
+                            >
+                              <EditIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
 
-                        <Tooltip title="Eliminar">
-                          <IconButton
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onDelete(cliente)
-                            }}
-                            size="small"
-                            sx={{
-                              color: "#d32f2f",
-                              p: 0.5,
-                              "&:hover": { bgcolor: "#ffebee" },
-                            }}
-                          >
-                            <DeleteIcon sx={{ fontSize: 16 }} />
-                          </IconButton>
-                        </Tooltip>
+                        {hasPermissionSlug("delete_cliente") && (
+                          <Tooltip title="Eliminar">
+                            <IconButton
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onDelete(cliente)
+                              }}
+                              size="small"
+                              sx={{
+                                color: "#d32f2f",
+                                p: 0.5,
+                                "&:hover": { bgcolor: "#ffebee" },
+                              }}
+                            >
+                              <DeleteIcon sx={{ fontSize: 16 }} />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </Box>
                     )}
                   </TableCell>
