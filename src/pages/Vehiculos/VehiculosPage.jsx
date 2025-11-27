@@ -23,8 +23,12 @@ import clientesService from "../../services/clientesService"
 import VehiculoForm from "../../components/Vehiculos/VehiculoForm"
 import VehiculosList from "../../components/Vehiculos/VehiculosList"
 import logger from "../../utils/logger"
+import { useAuth } from "../../contexts/AuthContext"
+import PermissionGuard from "../../components/Auth/PermissionGuard"
 
 const VehiculosPage = () => {
+  const { hasPermissionSlug } = useAuth()
+
   const {
     vehiculos,
     loading,
@@ -321,28 +325,30 @@ const VehiculosPage = () => {
               Buscar
             </Button>
 
-            <Button
-              variant="contained"
-              startIcon={<AddIcon sx={{ fontSize: 18 }} />}
-              onClick={handleNewVehiculo}
-              sx={{
-                bgcolor: "#dc2626",
-                color: "white",
-                minWidth: { xs: "100%", sm: "auto" },
-                px: 2.5,
-                py: 0.75,
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                textTransform: "none",
-                boxShadow: "0 1px 2px 0 rgba(220, 38, 38, 0.15)",
-                "&:hover": {
-                  bgcolor: "#b91c1c",
-                  boxShadow: "0 4px 6px -1px rgba(220, 38, 38, 0.2)",
-                },
-              }}
-            >
-              Nuevo Vehículo
-            </Button>
+            {hasPermissionSlug("create_vehiculo") && (
+              <Button
+                variant="contained"
+                startIcon={<AddIcon sx={{ fontSize: 18 }} />}
+                onClick={handleNewVehiculo}
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  minWidth: { xs: "100%", sm: "auto" },
+                  px: 2.5,
+                  py: 0.75,
+                  fontSize: "0.875rem",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  boxShadow: "0 1px 2px 0 rgba(220, 38, 38, 0.15)",
+                  "&:hover": {
+                    bgcolor: "#b91c1c",
+                    boxShadow: "0 4px 6px -1px rgba(220, 38, 38, 0.2)",
+                  },
+                }}
+              >
+                Nuevo Vehículo
+              </Button>
+            )}
           </Box>
         </Box>
       </Box>
@@ -364,14 +370,16 @@ const VehiculosPage = () => {
             boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
           }}
         >
-          <VehiculosList
-            vehiculos={vehiculos}
-            loading={loading}
-            pagination={pagination}
-            onEdit={handleEditVehiculo}
-            onDelete={handleDeleteVehiculo}
-            onPageChange={handlePageChange}
-          />
+          <PermissionGuard requiredPermission="view_vehiculos">
+            <VehiculosList
+              vehiculos={vehiculos}
+              loading={loading}
+              pagination={pagination}
+              onEdit={handleEditVehiculo}
+              onDelete={handleDeleteVehiculo}
+              onPageChange={handlePageChange}
+            />
+          </PermissionGuard>
         </Box>
       </Box>
 

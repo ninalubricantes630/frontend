@@ -53,7 +53,14 @@ function App() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="clientes" element={<ClientesPage />} />
-          <Route path="vehiculos" element={<VehiculosPage />} />
+          <Route
+            path="vehiculos"
+            element={
+              <PermissionGuard requiredPermission="view_vehiculos">
+                <VehiculosPage />
+              </PermissionGuard>
+            }
+          />
           <Route
             path="servicios"
             element={

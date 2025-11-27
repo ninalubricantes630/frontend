@@ -1,4 +1,5 @@
 "use client"
+import { useAuth } from "../../contexts/AuthContext"
 import {
   Table,
   TableBody,
@@ -20,6 +21,8 @@ import {
 } from "@mui/icons-material"
 
 const VehiculosList = ({ vehiculos, loading, pagination, onEdit, onDelete, onPageChange }) => {
+  const { hasPermissionSlug } = useAuth()
+
   const handleChangePage = (event, newPage) => {
     onPageChange(newPage + 1)
   }
@@ -211,33 +214,37 @@ const VehiculosList = ({ vehiculos, loading, pagination, onEdit, onDelete, onPag
 
                 <TableCell align="right" sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                   <Box sx={{ display: "flex", gap: 0.5, justifyContent: "flex-end" }}>
-                    <Tooltip title="Editar">
-                      <IconButton
-                        onClick={() => onEdit(vehiculo)}
-                        size="small"
-                        sx={{
-                          color: "#dc2626",
-                          p: 0.5,
-                          "&:hover": { bgcolor: "#fee2e2" },
-                        }}
-                      >
-                        <EditIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                    </Tooltip>
+                    {hasPermissionSlug("edit_vehiculo") && (
+                      <Tooltip title="Editar">
+                        <IconButton
+                          onClick={() => onEdit(vehiculo)}
+                          size="small"
+                          sx={{
+                            color: "#dc2626",
+                            p: 0.5,
+                            "&:hover": { bgcolor: "#fee2e2" },
+                          }}
+                        >
+                          <EditIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
 
-                    <Tooltip title="Eliminar">
-                      <IconButton
-                        onClick={() => onDelete(vehiculo)}
-                        size="small"
-                        sx={{
-                          color: "#d32f2f",
-                          p: 0.5,
-                          "&:hover": { bgcolor: "#ffebee" },
-                        }}
-                      >
-                        <DeleteIcon sx={{ fontSize: 16 }} />
-                      </IconButton>
-                    </Tooltip>
+                    {hasPermissionSlug("delete_vehiculo") && (
+                      <Tooltip title="Eliminar">
+                        <IconButton
+                          onClick={() => onDelete(vehiculo)}
+                          size="small"
+                          sx={{
+                            color: "#d32f2f",
+                            p: 0.5,
+                            "&:hover": { bgcolor: "#ffebee" },
+                          }}
+                        >
+                          <DeleteIcon sx={{ fontSize: 16 }} />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </Box>
                 </TableCell>
               </TableRow>
