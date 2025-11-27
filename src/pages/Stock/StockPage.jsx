@@ -420,7 +420,7 @@ const StockPage = () => {
   }
 
   return (
-    <PermissionGuard requiredPermission="ver_stock">
+    <PermissionGuard requiredPermission="view_stock">
       <Box sx={{ height: "100vh", display: "flex", flexDirection: "column", bgcolor: "#f8fafc" }}>
         <Box
           sx={{
