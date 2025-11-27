@@ -15,7 +15,10 @@ import {
   CircularProgress,
   Alert,
   Divider,
+  Collapse,
+  IconButton,
 } from "@mui/material"
+import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material"
 import permisosService from "../../services/permisosService"
 
 const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
@@ -24,17 +27,31 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
   const [error, setError] = useState(null)
   const [permisosAgrupados, setPermisosAgrupados] = useState({})
   const [permisosSeleccionados, setPermisosSeleccionados] = useState(new Set())
+  const [modulosExpandidos, setModulosExpandidos] = useState({})
 
   // Mapa de etiquetas en español para los módulos
   const moduloLabels = {
-    dashboard: "📊 Panel Principal",
-    stock: "📦 Stock y Productos",
-    usuarios: "👥 Gestión de Usuarios",
-    ventas: "🛍️ Ventas",
-    servicios: "🔧 Servicios",
-    caja: "💰 Caja",
-    clientes: "👤 Clientes",
-    reportes: "📋 Reportes",
+    dashboard: "Panel Principal",
+    stock: "Stock y Productos",
+    usuarios: "Gestión de Usuarios",
+    ventas: "Ventas",
+    servicios: "Servicios",
+    caja: "Caja",
+    clientes: "Clientes",
+    reportes: "Reportes",
+    vehiculos: "Vehículos",
+  }
+
+  const moduloIcons = {
+    dashboard: "📊",
+    stock: "📦",
+    usuarios: "👥",
+    ventas: "🛍️",
+    servicios: "🔧",
+    caja: "💰",
+    clientes: "👤",
+    reportes: "📋",
+    vehiculos: "🚗",
   }
 
   useEffect(() => {
@@ -49,6 +66,12 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
       setError(null)
       const permisos = await permisosService.getPermisosUsuario(usuario.id)
       setPermisosAgrupados(permisos)
+
+      const expandidos = {}
+      Object.keys(permisos).forEach((modulo) => {
+        expandidos[modulo] = false
+      })
+      setModulosExpandidos(expandidos)
 
       // Obtener permisos seleccionados
       const seleccionados = new Set()
@@ -66,6 +89,13 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleToggleModulo = (modulo) => {
+    setModulosExpandidos((prev) => ({
+      ...prev,
+      [modulo]: !prev[modulo],
+    }))
   }
 
   const handleTogglePermiso = (permisoId) => {
@@ -103,7 +133,7 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
       PaperProps={{
         sx: {
           borderRadius: "12px",
-          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.08)",
         },
       }}
     >
@@ -111,20 +141,17 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
         sx={{
           bgcolor: "#dc2626",
           color: "white",
-          fontWeight: 700,
-          fontSize: "1.25rem",
-          p: 3,
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
+          fontWeight: 600,
+          fontSize: "1.125rem",
+          p: 2.5,
         }}
       >
-        🔐 Permisos de {usuario?.nombre}
+        Permisos de {usuario?.nombre}
       </DialogTitle>
 
-      <DialogContent sx={{ p: 3 }}>
+      <DialogContent sx={{ p: 3, bgcolor: "#fafafa" }}>
         {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
+          <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>
         )}
@@ -139,121 +166,141 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
               display: "grid",
               gridTemplateColumns: {
                 xs: "1fr",
-                sm: "1fr 1fr",
+                md: "repeat(2, 1fr)",
+                lg: "repeat(3, 1fr)",
               },
               gap: 2,
-              mt: 4
             }}
           >
-            {Object.entries(permisosAgrupados).map(([modulo, permisos]) => (
-              <Box
-                key={modulo}
-                sx={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: "8px",
-                  overflow: "hidden",
-                  bgcolor: "#fff",
-                  transition: "all 0.2s ease",
-                  "&:hover": {
-                    borderColor: "#dc2626",
-                    boxShadow: "0 4px 12px rgba(220, 38, 38, 0.08)",
-                  },
-                }}
-              >
-                {/* Encabezado del módulo */}
+            {Object.entries(permisosAgrupados).map(([modulo, permisos]) => {
+              const isExpanded = modulosExpandidos[modulo]
+              const permisosActivos = permisos.filter((p) => permisosSeleccionados.has(p.id)).length
+
+              return (
                 <Box
+                  key={modulo}
                   sx={{
-                    bgcolor: "#f9fafb",
-                    p: 2,
-                    borderBottom: "2px solid #e5e7eb",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    bgcolor: "#fff",
+                    transition: "all 0.2s ease",
+                    "&:hover": {
+                      borderColor: "#dc2626",
+                      boxShadow: "0 2px 8px rgba(220, 38, 38, 0.1)",
+                    },
                   }}
                 >
-                  <Typography
+                  <Box
+                    onClick={() => handleToggleModulo(modulo)}
                     sx={{
-                      fontWeight: 700,
-                      color: "#1f2937",
-                      fontSize: "1rem",
-                      flex: 1,
+                      bgcolor: isExpanded ? "#fef2f2" : "#fff",
+                      p: 2,
+                      borderBottom: isExpanded ? "1px solid #fee2e2" : "none",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1.5,
+                      cursor: "pointer",
+                      transition: "all 0.2s ease",
+                      "&:hover": {
+                        bgcolor: "#fef2f2",
+                      },
                     }}
                   >
-                    {moduloLabels[modulo] || modulo}
-                  </Typography>
-                  <Typography
-                    sx={{
-                      fontSize: "0.75rem",
-                      bgcolor: "#dc2626",
-                      color: "white",
-                      px: 1.5,
-                      py: 0.5,
-                      borderRadius: "12px",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {permisos.filter((p) => permisosSeleccionados.has(p.id)).length}/{permisos.length}
-                  </Typography>
-                </Box>
+                    <Typography sx={{ fontSize: "1.25rem" }}>{moduloIcons[modulo]}</Typography>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Typography
+                        sx={{
+                          fontWeight: 600,
+                          color: "#1f2937",
+                          fontSize: "0.875rem",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {moduloLabels[modulo] || modulo}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: "0.75rem",
+                          color: permisosActivos > 0 ? "#dc2626" : "#9ca3af",
+                          fontWeight: 500,
+                        }}
+                      >
+                        {permisosActivos}/{permisos.length} activos
+                      </Typography>
+                    </Box>
+                    <IconButton
+                      size="small"
+                      sx={{
+                        transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 0.2s ease",
+                        color: "#6b7280",
+                      }}
+                    >
+                      <ExpandMoreIcon />
+                    </IconButton>
+                  </Box>
 
-                {/* Permisos del módulo */}
-                <FormGroup sx={{ p: 2, gap: 1 }}>
-                  {permisos.map((permiso) => (
-                    <FormControlLabel
-                      key={permiso.id}
-                      control={
-                        <Checkbox
-                          checked={permisosSeleccionados.has(permiso.id)}
-                          onChange={() => handleTogglePermiso(permiso.id)}
-                          size="small"
+                  <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+                    <FormGroup sx={{ p: 2, gap: 0.5 }}>
+                      {permisos.map((permiso) => (
+                        <FormControlLabel
+                          key={permiso.id}
+                          control={
+                            <Checkbox
+                              checked={permisosSeleccionados.has(permiso.id)}
+                              onChange={() => handleTogglePermiso(permiso.id)}
+                              size="small"
+                              sx={{
+                                color: "#d1d5db",
+                                "&.Mui-checked": {
+                                  color: "#dc2626",
+                                },
+                              }}
+                            />
+                          }
+                          label={
+                            <Box>
+                              <Typography
+                                sx={{
+                                  fontSize: "0.8125rem",
+                                  fontWeight: 500,
+                                  color: permisosSeleccionados.has(permiso.id) ? "#1f2937" : "#6b7280",
+                                }}
+                              >
+                                {permiso.nombre}
+                              </Typography>
+                              {permiso.descripcion && (
+                                <Typography
+                                  sx={{
+                                    fontSize: "0.6875rem",
+                                    color: "#9ca3af",
+                                    mt: 0.25,
+                                  }}
+                                >
+                                  {permiso.descripcion}
+                                </Typography>
+                              )}
+                            </Box>
+                          }
                           sx={{
-                            color: "#d1d5db",
-                            "&.Mui-checked": {
-                              color: "#dc2626",
+                            m: 0,
+                            py: 1,
+                            px: 1.5,
+                            borderRadius: "6px",
+                            transition: "all 0.15s ease",
+                            backgroundColor: permisosSeleccionados.has(permiso.id) ? "#fef2f2" : "transparent",
+                            "&:hover": {
+                              backgroundColor: "#f9fafb",
                             },
-                            flexShrink: 0,
                           }}
                         />
-                      }
-                      label={
-                        <Box sx={{ ml: 1 }}>
-                          <Typography
-                            sx={{
-                              fontSize: "0.875rem",
-                              fontWeight: 500,
-                              color: permisosSeleccionados.has(permiso.id) ? "#1f2937" : "#6b7280",
-                              transition: "color 0.2s ease",
-                            }}
-                          >
-                            {permiso.nombre}
-                          </Typography>
-                          <Typography
-                            sx={{
-                              fontSize: "0.75rem",
-                              color: "#9ca3af",
-                              mt: 0.25,
-                            }}
-                          >
-                            {permiso.descripcion}
-                          </Typography>
-                        </Box>
-                      }
-                      sx={{
-                        m: 0,
-                        py: 1,
-                        px: 1,
-                        borderRadius: "6px",
-                        transition: "all 0.2s ease",
-                        backgroundColor: permisosSeleccionados.has(permiso.id) ? "#fef2f2" : "transparent",
-                        "&:hover": {
-                          backgroundColor: "#f9fafb",
-                        },
-                      }}
-                    />
-                  ))}
-                </FormGroup>
-              </Box>
-            ))}
+                      ))}
+                    </FormGroup>
+                  </Collapse>
+                </Box>
+              )
+            })}
           </Box>
         )}
       </DialogContent>
@@ -262,11 +309,11 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
 
       <DialogActions
         sx={{
-          p: 3,
+          p: 2.5,
           display: "flex",
           gap: 1.5,
           justifyContent: "flex-end",
-          bgcolor: "#fafafa",
+          bgcolor: "#fff",
         }}
       >
         <Button
@@ -276,6 +323,8 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
             color: "#6b7280",
             borderColor: "#e5e7eb",
             px: 3,
+            py: 0.75,
+            fontSize: "0.875rem",
             "&:hover": {
               borderColor: "#d1d5db",
               bgcolor: "#f9fafb",
@@ -294,6 +343,8 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
             bgcolor: "#dc2626",
             color: "white",
             px: 3,
+            py: 0.75,
+            fontSize: "0.875rem",
             fontWeight: 600,
             "&:hover": {
               bgcolor: "#b91c1c",
@@ -306,7 +357,7 @@ const PermisosModal = ({ open, usuario, onClose, onSuccess }) => {
           variant="contained"
           disabled={loading || saving}
         >
-          {saving ? "Guardando..." : "Guardar Permisos"}
+          {saving ? "Guardando..." : "Guardar"}
         </Button>
       </DialogActions>
     </Dialog>
