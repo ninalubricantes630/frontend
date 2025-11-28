@@ -65,7 +65,7 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
           categoria_id: producto.categoria_id || "",
           fabricante: producto.fabricante || "",
           precio: producto.precio || "",
-          stock: "", // No editable
+          stock: producto.stock || "", // No editable
           stock_minimo: producto.stock_minimo || "",
           sucursal_id: producto.sucursal_id || "",
           unidad_medida: producto.unidad_medida || "unidad",
@@ -98,7 +98,8 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
       setFormData((prev) => ({
         ...prev,
         [name]: value,
-        stock: 0, // Poner stock en cero cuando se cambia unidad
+        // Mantener el stock actual del producto
+        stock: producto?.stock || 0,
       }))
     } else {
       setFormData((prev) => ({
@@ -548,10 +549,11 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
                     {errors.unidad_medida && <FormHelperText>{errors.unidad_medida}</FormHelperText>}
                   </FormControl>
                   {isEditing && unidadMedidaCambiada && (
-                    <Alert severity="error" sx={{ mt: 1.5, borderRadius: 1.5 }}>
+                    <Alert severity="warning" sx={{ mt: 1.5, borderRadius: 1.5 }}>
                       <Typography variant="caption">
-                        Unidad de medida modificada. El stock ha sido puesto en cero para que lo ingreses correctamente
-                        con la nueva unidad.
+                        Unidad de medida modificada. El stock actual de{" "}
+                        {Number.parseFloat(producto?.stock || 0).toFixed(formData.unidad_medida === "litro" ? 3 : 0)} se
+                        mantendrá con la nueva unidad ({formData.unidad_medida}).
                       </Typography>
                     </Alert>
                   )}
