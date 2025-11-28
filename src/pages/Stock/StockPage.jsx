@@ -26,6 +26,7 @@ import {
   CloudUpload as UploadIcon,
   FilterList as FilterListIcon,
   ExpandLess as ExpandLessIcon,
+  FileDownload as FileDownloadIcon,
 } from "@mui/icons-material"
 import ProductosList from "../../components/Stock/ProductosList"
 import ProductoForm from "../../components/Stock/ProductoForm"
@@ -40,6 +41,7 @@ import { useAuth } from "../../contexts/AuthContext"
 import PermissionGuard from "../../components/Auth/PermissionGuard"
 
 const StockPage = () => {
+  const { hasPermissionSlug } = useAuth()
   const { productos, loading, pagination, loadProductos, createProducto, updateProducto, deleteProducto } =
     useProductos()
   const { categorias, loadCategorias } = useCategorias()
@@ -354,6 +356,24 @@ const StockPage = () => {
     }
   }
 
+  const handleExportClick = async () => {
+    try {
+      await productosService.exportarExcel()
+      setSnackbar({
+        open: true,
+        message: "Exportación completada correctamente",
+        severity: "success",
+      })
+    } catch (error) {
+      console.error("Error al exportar productos:", error)
+      setSnackbar({
+        open: true,
+        message: error.message || "Error al exportar productos",
+        severity: "error",
+      })
+    }
+  }
+
   const handlePageChange = (page, newLimit = null) => {
     if (!user?.sucursales || user.sucursales.length === 0) return
 
@@ -571,27 +591,52 @@ const StockPage = () => {
               </Button>
 
               <Button
-                variant="contained"
-                startIcon={<AddIcon sx={{ fontSize: 18 }} />}
-                onClick={() => handleOpenForm()}
+                variant="outlined"
+                startIcon={<FileDownloadIcon sx={{ fontSize: 18 }} />}
+                onClick={handleExportClick}
                 sx={{
-                  bgcolor: "#dc2626",
-                  color: "white",
                   minWidth: { xs: "100%", sm: "auto" },
                   px: 2.5,
                   py: 0.75,
                   fontSize: "0.875rem",
-                  fontWeight: 600,
+                  fontWeight: 500,
+                  borderColor: "#3b82f6",
+                  color: "#3b82f6",
+                  bgcolor: "#eff6ff",
                   textTransform: "none",
-                  boxShadow: "0 1px 2px 0 rgba(220, 38, 38, 0.15)",
                   "&:hover": {
-                    bgcolor: "#b91c1c",
-                    boxShadow: "0 4px 6px -1px rgba(220, 38, 38, 0.2)",
+                    borderColor: "#2563eb",
+                    bgcolor: "#dbeafe",
                   },
                 }}
               >
-                Nuevo Producto
+                Exportar Excel
               </Button>
+
+              {hasPermissionSlug("create_producto") && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon sx={{ fontSize: 18 }} />}
+                  onClick={() => handleOpenForm()}
+                  sx={{
+                    bgcolor: "#dc2626",
+                    color: "white",
+                    minWidth: { xs: "100%", sm: "auto" },
+                    px: 2.5,
+                    py: 0.75,
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    textTransform: "none",
+                    boxShadow: "0 1px 2px 0 rgba(220, 38, 38, 0.15)",
+                    "&:hover": {
+                      bgcolor: "#b91c1c",
+                      boxShadow: "0 4px 6px -1px rgba(220, 38, 38, 0.2)",
+                    },
+                  }}
+                >
+                  Nuevo Producto
+                </Button>
+              )}
             </Box>
           </Box>
 
