@@ -98,15 +98,15 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
       setFormData((prev) => ({
         ...prev,
         [name]: value,
-        // Mantener el stock actual del producto
-        stock: producto?.stock || 0,
+        // Ya no reseteamos el stock
       }))
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }))
+      return
     }
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }))
 
     if (errors[name]) {
       setErrors((prev) => ({
