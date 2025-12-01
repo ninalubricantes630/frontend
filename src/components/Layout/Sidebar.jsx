@@ -164,7 +164,7 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
               fontSize: "1.1rem",
             }}
           >
-            M
+            N
           </Avatar>
           <Box>
             <Typography variant="h6" sx={{ fontWeight: "bold", color: "white", fontSize: "1.1rem" }}>

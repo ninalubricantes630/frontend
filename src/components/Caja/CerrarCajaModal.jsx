@@ -182,9 +182,6 @@ export default function CerrarCajaModal({ open, onClose, onCerrarCaja, sesionAct
           <BlockIcon sx={{ color: "#dc2626", fontSize: 24 }} />
           <Box>
             <Box sx={{ fontWeight: 600, fontSize: "1.1rem" }}>Cerrar Caja</Box>
-            <Typography variant="caption" sx={{ color: "#64748b" }}>
-              Complete el cierre de la sesión de caja
-            </Typography>
           </Box>
         </Box>
         <IconButton onClick={handleClose} disabled={loading} sx={{ mr: 1 }}>
