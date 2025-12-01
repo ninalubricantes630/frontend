@@ -443,7 +443,7 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
                       </TableCell>
                       <TableCell sx={{ py: 1 }}>
                         <Typography variant="body2" sx={{ fontSize: "0.813rem" }}>
-                          {mov.descripcion}
+                          {mov.concepto}
                         </Typography>
                       </TableCell>
                       <TableCell sx={{ py: 1 }}>
@@ -474,7 +474,7 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
                       </TableCell>
                       <TableCell sx={{ py: 1 }}>
                         <Typography variant="body2" sx={{ fontSize: "0.75rem", color: "#64748b" }}>
-                          {formatDate(mov.fecha)}
+                          {formatDate(mov.created_at)}
                         </Typography>
                       </TableCell>
                     </TableRow>
