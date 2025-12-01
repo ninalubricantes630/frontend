@@ -191,7 +191,6 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
       id: currentItem.id || Date.now(),
     }
 
-
     // Actualizar formData con el item
     setFormData((prev) => ({
       ...prev,
@@ -286,6 +285,7 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
       cliente_id: formData.clienteId,
       vehiculo_id: formData.vehiculoId,
       sucursal_id: 1,
+      descripcion: formData.descripcion || "",
       empleados: formData.empleados || [],
       observaciones: formData.observaciones,
       items: itemsConTotal,
