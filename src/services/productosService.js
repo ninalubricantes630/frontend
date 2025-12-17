@@ -54,20 +54,19 @@ export const productosService = {
 
   exportarExcel: async (params = {}) => {
     try {
-      const response = await api.get("/productos/exportar/excel", {
+      console.log("[v0] Iniciando exportación con params:", params)
+
+      // El interceptor de axios ya devuelve response.data cuando es blob
+      // Por lo tanto, blobData ES el blob directamente
+      const blobData = await api.get("/productos/exportar/excel", {
         params,
         responseType: "blob",
-        transformResponse: [(data) => data], // Evitar transformación automática
       })
 
-      console.log("[v0] Respuesta de exportación:", response)
+      console.log("[v0] Blob recibido:", blobData)
 
-      // Crear blob desde la respuesta
-      const blob = new Blob([response.data], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      })
-
-      const url = window.URL.createObjectURL(blob)
+      // Crear URL del blob
+      const url = window.URL.createObjectURL(blobData)
       const link = document.createElement("a")
       link.href = url
 
@@ -83,6 +82,7 @@ export const productosService = {
       link.parentNode.removeChild(link)
       window.URL.revokeObjectURL(url)
 
+      console.log("[v0] Archivo descargado exitosamente")
       return { success: true }
     } catch (error) {
       console.error("[v0] Error al exportar productos:", error)
