@@ -106,6 +106,19 @@ const VehiculosList = ({ vehiculos, loading, pagination, onEdit, onDelete, onPag
                   textTransform: "uppercase",
                 }}
               >
+                Sucursal
+              </TableCell>
+              <TableCell
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  py: 1.75,
+                  letterSpacing: "0.025em",
+                  textTransform: "uppercase",
+                }}
+              >
                 Marca/Modelo
               </TableCell>
               <TableCell
@@ -178,6 +191,21 @@ const VehiculosList = ({ vehiculos, loading, pagination, onEdit, onDelete, onPag
 
                 <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                   <span className="text-xs text-slate-700">{vehiculo.cliente_nombre || "Cliente no encontrado"}</span>
+                </TableCell>
+
+                <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
+                  <Chip
+                    label={vehiculo.sucursal_nombre || "Sin sucursal"}
+                    size="small"
+                    sx={{
+                      bgcolor: "#fef3c7",
+                      color: "#92400e",
+                      fontWeight: 500,
+                      fontSize: "0.6875rem",
+                      height: 22,
+                      "& .MuiChip-label": { px: 1 },
+                    }}
+                  />
                 </TableCell>
 
                 <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>

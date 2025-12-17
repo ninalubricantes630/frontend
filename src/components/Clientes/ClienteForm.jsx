@@ -16,6 +16,11 @@ import {
   IconButton,
   FormControlLabel,
   Switch,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormHelperText,
 } from "@mui/material"
 import {
   Close as CloseIcon,
@@ -23,7 +28,9 @@ import {
   Phone as PhoneIcon,
   LocationOn as LocationOnIcon,
   AccountBalance as AccountBalanceIcon,
+  Store as StoreIcon,
 } from "@mui/icons-material"
+import { useSucursales } from "../../hooks/useSucursales"
 
 const clienteSchema = yup.object({
   nombre: yup
@@ -43,11 +50,14 @@ const clienteSchema = yup.object({
     .nullable()
     .transform((value, originalValue) => (originalValue === "" ? null : value))
     .min(0, "El límite de crédito no puede ser negativo"),
+  sucursal_id: yup.string().nullable(),
 })
 
 const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false }) => {
   const isEditing = Boolean(cliente)
   const [tieneCuentaCorriente, setTieneCuentaCorriente] = useState(false)
+
+  const { sucursales, loadSucursales } = useSucursales()
 
   const {
     register,
@@ -66,6 +76,7 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
       direccion: "",
       tiene_cuenta_corriente: false,
       limite_credito: 0,
+      sucursal_id: "",
     },
   })
 
@@ -77,6 +88,7 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
 
   useEffect(() => {
     if (open) {
+      loadSucursales()
       reset({
         nombre: cliente?.nombre || "",
         apellido: cliente?.apellido || "",
@@ -85,10 +97,11 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
         direccion: cliente?.direccion || "",
         tiene_cuenta_corriente: cliente?.tiene_cuenta_corriente || false,
         limite_credito: cliente?.limite_credito || 0,
+        sucursal_id: cliente?.sucursal_id || "",
       })
       setTieneCuentaCorriente(cliente?.tiene_cuenta_corriente || false)
     }
-  }, [open, cliente, reset])
+  }, [open, cliente, reset, loadSucursales])
 
   const handleFormSubmit = (data) => {
     onSubmit(data)
@@ -103,6 +116,7 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
       direccion: "",
       tiene_cuenta_corriente: false,
       limite_credito: 0,
+      sucursal_id: "",
     })
     setTieneCuentaCorriente(false)
     onClose()
@@ -163,7 +177,7 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
         <Box component="form" mt={2} onSubmit={handleSubmit(handleFormSubmit)}>
           <Grid container spacing={3}>
             {/* Columna Izquierda */}
-            <Grid item xs={12} md={6} >
+            <Grid item xs={12} md={6}>
               {/* Información Personal */}
               <Box sx={{ mb: 3 }}>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
@@ -296,6 +310,49 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
                   />
                 </Box>
               </Box>
+
+              <Box>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <StoreIcon sx={{ fontSize: 18, color: "#ff9800" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Sucursal
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <FormControl fullWidth size="small" error={!!errors.sucursal_id}>
+                    <InputLabel>Sucursal</InputLabel>
+                    <Select
+                      {...register("sucursal_id")}
+                      label="Sucursal"
+                      defaultValue=""
+                      sx={{
+                        borderRadius: 1.5,
+                        backgroundColor: "#fafafa",
+                        "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                          borderColor: "#dc2626",
+                        },
+                      }}
+                    >
+                      <MenuItem value="">
+                        <em>Sin sucursal</em>
+                      </MenuItem>
+                      {sucursales.map((sucursal) => (
+                        <MenuItem key={sucursal.id} value={sucursal.id}>
+                          {sucursal.nombre}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {errors.sucursal_id && <FormHelperText>{errors.sucursal_id.message}</FormHelperText>}
+                  </FormControl>
+                </Box>
+              </Box>
             </Grid>
 
             {/* Columna Derecha */}
@@ -345,7 +402,7 @@ const ClienteForm = ({ open, onClose, onSubmit, cliente = null, loading = false 
               {/* Cuenta Corriente */}
               <Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-                  <AccountBalanceIcon sx={{ fontSize: 18, color: "#ff9800" }} />
+                  <AccountBalanceIcon sx={{ fontSize: 18, color: "#9c27b0" }} />
                   <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
                     Cuenta Corriente
                   </Typography>

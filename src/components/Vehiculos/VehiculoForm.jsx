@@ -16,10 +16,19 @@ import {
   IconButton,
   Autocomplete,
   CircularProgress,
+  MenuItem,
 } from "@mui/material"
-import { Close as CloseIcon, DirectionsCar, Person as PersonIcon, Build as BuildIcon } from "@mui/icons-material"
+import {
+  Close as CloseIcon,
+  DirectionsCar,
+  Person as PersonIcon,
+  Build as BuildIcon,
+  Business as BusinessIcon,
+} from "@mui/icons-material"
 import { NumericFormat } from "react-number-format"
 import { clientesService } from "../../services/clientesService"
+import { useSucursales } from "../../hooks/useSucursales"
+import { useAuth } from "../../contexts/AuthContext"
 import logger from "../../utils/logger"
 
 const vehiculoSchema = yup.object({
@@ -38,9 +47,12 @@ const vehiculoSchema = yup.object({
     .max(new Date().getFullYear() + 1, "Año máximo: " + (new Date().getFullYear() + 1)),
   kilometraje: yup.number().required("El kilometraje es obligatorio").min(0, "El kilometraje no puede ser negativo"),
   observaciones: yup.string(),
+  sucursal_id: yup.string().required("La sucursal es obligatoria"),
 })
 
 const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = false }) => {
+  const { user } = useAuth()
+  const { sucursales, loadSucursales } = useSucursales()
   const [clientes, setClientes] = useState([])
   const [loadingClientes, setLoadingClientes] = useState(false)
   const [selectedCliente, setSelectedCliente] = useState(null)
@@ -63,6 +75,7 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
       año: vehiculo?.año || new Date().getFullYear(),
       kilometraje: vehiculo?.kilometraje || 0,
       observaciones: vehiculo?.observaciones || "",
+      sucursal_id: vehiculo?.sucursal_id || "",
     },
   })
 
@@ -76,16 +89,12 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
 
         let clientesData = []
 
-        // Maneja diferentes estructuras de respuesta
         if (Array.isArray(result)) {
           clientesData = result
         } else if (result && result.data) {
-          // Si result.data es un array, úsalo directamente
           if (Array.isArray(result.data)) {
             clientesData = result.data
-          }
-          // Si result.data tiene una propiedad data (estructura anidada), úsala
-          else if (result.data.data && Array.isArray(result.data.data)) {
+          } else if (result.data.data && Array.isArray(result.data.data)) {
             clientesData = result.data.data
           }
         }
@@ -103,8 +112,17 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
 
     if (open) {
       loadClientes()
+      loadSucursales()
     }
   }, [open])
+
+  useEffect(() => {
+    if (open && !vehiculo && user?.sucursales && user.sucursales.length === 1) {
+      setValue("sucursal_id", user.sucursales[0].id)
+    } else if (open && !vehiculo && user?.sucursal_principal_id) {
+      setValue("sucursal_id", user.sucursal_principal_id)
+    }
+  }, [open, user, vehiculo, setValue])
 
   useEffect(() => {
     if (vehiculo) {
@@ -116,12 +134,16 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
         año: vehiculo.año || new Date().getFullYear(),
         kilometraje: vehiculo.kilometraje || 0,
         observaciones: vehiculo.observaciones || "",
+        sucursal_id: vehiculo.sucursal_id || "",
       })
       const cliente = clientes.find((c) => c.id === vehiculo.cliente_id)
       if (cliente) {
         setSelectedCliente(cliente)
       }
     } else {
+      const defaultSucursalId =
+        user?.sucursales?.length === 1 ? user.sucursales[0].id : user?.sucursal_principal_id || ""
+
       reset({
         clienteId: "",
         patente: "",
@@ -130,10 +152,11 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
         año: new Date().getFullYear(),
         kilometraje: 0,
         observaciones: "",
+        sucursal_id: defaultSucursalId,
       })
       setSelectedCliente(null)
     }
-  }, [vehiculo, reset, clientes])
+  }, [vehiculo, reset, clientes, user])
 
   const handleFormSubmit = (data) => {
     logger.debug("Datos del formulario antes de enviar", data)
@@ -146,6 +169,7 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
       año: Number.parseInt(data.año),
       kilometraje: Number.parseInt(data.kilometraje),
       observaciones: data.observaciones || "",
+      sucursal_id: data.sucursal_id,
     }
 
     logger.debug("Datos transformados para enviar", transformedData)
@@ -286,6 +310,54 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
                     )}
                     noOptionsText="No se encontraron clientes"
                   />
+                </Box>
+              </Box>
+
+              {/* Sucursal */}
+              <Box sx={{ mb: 3 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
+                  <BusinessIcon sx={{ fontSize: 18, color: "#f59e0b" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151" }}>
+                    Sucursal
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    backgroundColor: "#fff",
+                    borderRadius: 1.5,
+                    p: 2.5,
+                    border: "1px solid #e5e7eb",
+                  }}
+                >
+                  <TextField
+                    {...register("sucursal_id")}
+                    select
+                    label="Sucursal *"
+                    fullWidth
+                    size="small"
+                    error={!!errors.sucursal_id}
+                    helperText={errors.sucursal_id?.message}
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 1.5,
+                        backgroundColor: "#fafafa",
+                        "&.Mui-focused fieldset": {
+                          borderColor: "#dc2626",
+                        },
+                      },
+                      "& .MuiInputLabel-root.Mui-focused": {
+                        color: "#dc2626",
+                      },
+                    }}
+                  >
+                    {sucursales
+                      .filter((s) => user?.sucursales?.some((us) => us.id === s.id))
+                      .map((sucursal) => (
+                        <MenuItem key={sucursal.id} value={sucursal.id}>
+                          {sucursal.nombre}
+                        </MenuItem>
+                      ))}
+                  </TextField>
                 </Box>
               </Box>
 
@@ -567,7 +639,7 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
             },
           }}
         >
-          {loading ? "Guardando..." : isEditing ? "Actualizar" : "Crear Vehículo"}
+          {loading ? "Guardando..." : isEditing ? "Actualizar" : "Crear"}
         </Button>
       </DialogActions>
     </Dialog>

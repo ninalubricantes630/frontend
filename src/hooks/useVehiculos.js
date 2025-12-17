@@ -25,14 +25,28 @@ export const useVehiculos = () => {
 
   const loadVehiculos = useCallback(
     async (params = {}) => {
-      const { page = 1, limit = 10, search = "", searchCriteria = "patente" } = params
+      const {
+        page = 1,
+        limit = 10,
+        search = "",
+        searchCriteria = "patente",
+        sucursal_id = "",
+        sucursales_ids = "",
+      } = params
 
       setLoading(true)
       setError(null)
       setCurrentFilters({ search, searchCriteria })
 
       try {
-        const response = await vehiculosService.getAll({ page, limit, search, searchCriteria })
+        const response = await vehiculosService.getAll({
+          page,
+          limit,
+          search,
+          searchCriteria,
+          sucursal_id,
+          sucursales_ids,
+        })
 
         if (!response?.data) {
           setVehiculos([])
@@ -42,7 +56,6 @@ export const useVehiculos = () => {
 
         const vehiculosData = response.data.vehiculos || []
         const paginationData = response.data.pagination || {}
-
 
         setVehiculos(vehiculosData)
         setPagination({
@@ -79,7 +92,6 @@ export const useVehiculos = () => {
         const vehiculosData = response.data || response || []
         setVehiculos(vehiculosData)
 
-        // Reset pagination for client-specific view
         setPagination({
           total: vehiculosData.length,
           totalPages: 1,
@@ -174,7 +186,6 @@ export const useVehiculos = () => {
       const limit = newLimit !== undefined ? newLimit : pagination.limit
       const page = newLimit !== undefined ? 1 : newPage
 
-
       loadVehiculos({
         page,
         limit,
@@ -209,7 +220,7 @@ export const useVehiculos = () => {
     createVehiculo,
     updateVehiculo,
     deleteVehiculo,
-    handlePageChange, // Exportando handler unificado
+    handlePageChange,
   }
 }
 

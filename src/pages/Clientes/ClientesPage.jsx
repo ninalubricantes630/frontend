@@ -16,9 +16,18 @@ import {
   FormControl,
   Select,
   MenuItem,
+  Collapse,
+  Chip,
 } from "@mui/material"
-import { Add as AddIcon, Search as SearchIcon, Close as CloseIcon } from "@mui/icons-material"
+import {
+  Add as AddIcon,
+  Search as SearchIcon,
+  Close as CloseIcon,
+  FilterList as FilterListIcon,
+  ExpandLess as ExpandLessIcon,
+} from "@mui/icons-material"
 import { useClientes } from "../../hooks/useClientes.js"
+import { useSucursales } from "../../hooks/useSucursales"
 import ClientesList from "../../components/Clientes/ClientesList.jsx"
 import ClienteForm from "../../components/Clientes/ClienteForm.jsx"
 import ClienteDetalleModal from "../../components/Clientes/ClienteDetalleModal.jsx"
@@ -26,7 +35,7 @@ import { useAuth } from "../../contexts/AuthContext.jsx"
 import PermissionGuard from "../../components/Auth/PermissionGuard"
 
 const ClientesPage = () => {
-  const { hasPermissionSlug } = useAuth()
+  const { hasPermissionSlug, user } = useAuth()
 
   const {
     clientes,
@@ -40,6 +49,8 @@ const ClientesPage = () => {
     handlePageChange,
   } = useClientes()
 
+  const { sucursales, loadSucursales } = useSucursales()
+
   const [searchTerm, setSearchTerm] = useState("")
   const [searchCriteria, setSearchCriteria] = useState("nombre")
   const [formOpen, setFormOpen] = useState(false)
@@ -50,18 +61,94 @@ const ClientesPage = () => {
   const [detalleModalOpen, setDetalleModalOpen] = useState(false)
   const [clienteDetalle, setClienteDetalle] = useState(null)
 
+  const [showFilters, setShowFilters] = useState(false)
+  const [filters, setFilters] = useState({
+    sucursal_id: "",
+  })
+  const [usuarioTieneMultiplesSucursales, setUsuarioTieneMultiplesSucursales] = useState(false)
+
   useEffect(() => {
-    loadClientes()
+    loadSucursales()
   }, [])
 
+  useEffect(() => {
+    if (user?.sucursales && user.sucursales.length > 0) {
+      if (user.sucursales.length === 1) {
+        setFilters((prev) => ({
+          ...prev,
+          sucursal_id: user.sucursales[0].id,
+        }))
+        setUsuarioTieneMultiplesSucursales(false)
+      } else {
+        setUsuarioTieneMultiplesSucursales(true)
+      }
+    }
+  }, [user])
+
+  useEffect(() => {
+    if (!user?.sucursales || user.sucursales.length === 0) return
+
+    const timeoutId = setTimeout(() => {
+      handleSearch()
+    }, 1000)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, filters, user])
+
   const handleSearch = () => {
-    loadClientes(1, pagination.limit, searchTerm, searchCriteria)
+    if (!user?.sucursales || user.sucursales.length === 0) return
+
+    let sucursal_id = ""
+    let sucursales_ids = ""
+
+    if (filters.sucursal_id) {
+      sucursal_id = filters.sucursal_id
+    } else if (user.sucursales.length === 1) {
+      sucursal_id = user.sucursales[0].id
+    } else {
+      sucursales_ids = user.sucursales.map((s) => s.id).join(",")
+    }
+
+    loadClientes(1, pagination.limit, searchTerm, searchCriteria, sucursal_id, sucursales_ids)
   }
 
   const handleClearFilters = () => {
     setSearchTerm("")
     setSearchCriteria("nombre")
-    loadClientes(1, pagination.limit, "", "")
+
+    const newFilters = { sucursal_id: "" }
+    if (user?.sucursales && user.sucursales.length === 1) {
+      newFilters.sucursal_id = user.sucursales[0].id
+    }
+    setFilters(newFilters)
+
+    let sucursal_id = ""
+    let sucursales_ids = ""
+
+    if (user?.sucursales && user.sucursales.length === 1) {
+      sucursal_id = user.sucursales[0].id
+    } else if (user?.sucursales && user.sucursales.length > 1) {
+      sucursales_ids = user.sucursales.map((s) => s.id).join(",")
+    }
+
+    loadClientes(1, pagination.limit, "", "", sucursal_id, sucursales_ids)
+  }
+
+  const handleFilterChange = (field, value) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
+  const toggleFilters = () => {
+    setShowFilters((prev) => !prev)
+  }
+
+  const activeFiltersCount = () => {
+    let count = 0
+    if (usuarioTieneMultiplesSucursales && filters.sucursal_id) count++
+    return count
   }
 
   const handleNewCliente = () => {
@@ -124,7 +211,7 @@ const ClientesPage = () => {
         })
         setFormOpen(false)
         setTimeout(() => {
-          loadClientes(pagination.currentPage, pagination.limit, searchTerm, searchCriteria)
+          handleSearch()
         }, 500)
       } else {
         setSnackbar({
@@ -263,6 +350,31 @@ const ClientesPage = () => {
               }}
             />
 
+            {usuarioTieneMultiplesSucursales && (
+              <Button
+                variant="outlined"
+                startIcon={showFilters ? <ExpandLessIcon /> : <FilterListIcon />}
+                onClick={toggleFilters}
+                sx={{
+                  minWidth: { xs: "100%", sm: "auto" },
+                  px: 2.5,
+                  py: 0.75,
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  borderColor: "#e5e7eb",
+                  color: "#475569",
+                  bgcolor: "#f8fafc",
+                  textTransform: "none",
+                  "&:hover": {
+                    borderColor: "#cbd5e1",
+                    bgcolor: "white",
+                  },
+                }}
+              >
+                Filtros {activeFiltersCount() > 0 && `(${activeFiltersCount()})`}
+              </Button>
+            )}
+
             <Button
               variant="outlined"
               onClick={handleSearch}
@@ -311,6 +423,77 @@ const ClientesPage = () => {
             )}
           </Box>
         </Box>
+
+        {usuarioTieneMultiplesSucursales && (
+          <Collapse in={showFilters}>
+            <Box
+              sx={{
+                mt: 2,
+                p: 2,
+                bgcolor: "#f8fafc",
+                borderRadius: 1.5,
+                border: "1px solid #e5e7eb",
+              }}
+            >
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#374151", mb: 1.5 }}>
+                Filtrar por Sucursal
+              </Typography>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap", alignItems: "center" }}>
+                <FormControl size="small" sx={{ minWidth: 200 }}>
+                  <Select
+                    value={filters.sucursal_id}
+                    onChange={(e) => handleFilterChange("sucursal_id", e.target.value)}
+                    displayEmpty
+                    sx={{
+                      bgcolor: "white",
+                      fontSize: "0.875rem",
+                      "& .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#e5e7eb",
+                      },
+                      "&:hover .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#cbd5e1",
+                      },
+                      "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                        borderColor: "#dc2626",
+                        borderWidth: "1px",
+                      },
+                    }}
+                  >
+                    <MenuItem value="">
+                      <em>Todas las sucursales</em>
+                    </MenuItem>
+                    {user?.sucursales?.map((sucursal) => (
+                      <MenuItem key={sucursal.id} value={sucursal.id}>
+                        {sucursal.nombre}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                {filters.sucursal_id && (
+                  <Chip
+                    label={
+                      sucursales.find((s) => s.id === Number.parseInt(filters.sucursal_id))?.nombre ||
+                      "Sucursal seleccionada"
+                    }
+                    onDelete={() => handleFilterChange("sucursal_id", "")}
+                    size="small"
+                    sx={{
+                      bgcolor: "#dc2626",
+                      color: "white",
+                      fontWeight: 500,
+                      "& .MuiChip-deleteIcon": {
+                        color: "white",
+                        "&:hover": {
+                          color: "#fee2e2",
+                        },
+                      },
+                    }}
+                  />
+                )}
+              </Box>
+            </Box>
+          </Collapse>
+        )}
       </Box>
 
       <Box sx={{ flex: 1, display: "flex", flexDirection: "column", py: 2, overflow: "hidden" }}>

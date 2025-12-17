@@ -18,21 +18,28 @@ export const useClientes = () => {
   const [currentFilters, setCurrentFilters] = useState({
     search: "",
     searchBy: "",
+    sucursal_id: "",
+    sucursales_ids: "",
   })
 
   const { showToast } = useToast()
   const errorHandler = useStandardizedErrorHandler(showToast)
 
   const loadClientes = useCallback(
-    async (page = 1, limit = 10, search = "", searchBy = "") => {
+    async (page = 1, limit = 10, search = "", searchBy = "", sucursal_id = "", sucursales_ids = "") => {
       setLoading(true)
       setError(null)
-      setCurrentFilters({ search, searchBy })
-
+      setCurrentFilters({ search, searchBy, sucursal_id, sucursales_ids })
 
       try {
-        const response = await clientesService.getClientes({ page, limit, search, searchBy })
-
+        const response = await clientesService.getClientes({
+          page,
+          limit,
+          search,
+          searchBy,
+          sucursal_id,
+          sucursales_ids,
+        })
 
         if (!response || !response.data) {
           setClientes([])
@@ -42,7 +49,6 @@ export const useClientes = () => {
 
         const clientesData = response.data.data || []
         const paginationData = response.data.pagination || {}
-
 
         setClientes(clientesData)
         setPagination({
@@ -66,10 +72,10 @@ export const useClientes = () => {
 
   const fetchClientes = useCallback(
     async (params = {}) => {
-      const { search = "", limit = 10, page = 1, searchBy = "" } = params
+      const { search = "", limit = 10, page = 1, searchBy = "", sucursal_id = "", sucursales_ids = "" } = params
 
       try {
-        const result = await clientesService.getClientes({ page, limit, search, searchBy })
+        const result = await clientesService.getClientes({ page, limit, search, searchBy, sucursal_id, sucursales_ids })
         return result
       } catch (err) {
         const { userMessage } = errorHandler.handleApiError(err, "buscar clientes")
@@ -88,7 +94,14 @@ export const useClientes = () => {
 
         errorHandler.handleSuccess("Cliente creado exitosamente", "crear cliente")
 
-        await loadClientes(pagination.page, pagination.limit, currentFilters.search, currentFilters.searchBy)
+        await loadClientes(
+          pagination.page,
+          pagination.limit,
+          currentFilters.search,
+          currentFilters.searchBy,
+          currentFilters.sucursal_id,
+          currentFilters.sucursales_ids,
+        )
 
         return { success: true, data: newCliente }
       } catch (err) {
@@ -149,11 +162,23 @@ export const useClientes = () => {
   const handlePageChange = useCallback(
     (newPage, newLimit) => {
       if (newLimit !== undefined && newLimit !== pagination.limit) {
-        // Si cambia el límite, volver a página 1
-        loadClientes(1, newLimit, currentFilters.search, currentFilters.searchBy)
+        loadClientes(
+          1,
+          newLimit,
+          currentFilters.search,
+          currentFilters.searchBy,
+          currentFilters.sucursal_id,
+          currentFilters.sucursales_ids,
+        )
       } else {
-        // Solo cambió la página
-        loadClientes(newPage, pagination.limit, currentFilters.search, currentFilters.searchBy)
+        loadClientes(
+          newPage,
+          pagination.limit,
+          currentFilters.search,
+          currentFilters.searchBy,
+          currentFilters.sucursal_id,
+          currentFilters.sucursales_ids,
+        )
       }
     },
     [loadClientes, pagination.limit, currentFilters],

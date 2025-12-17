@@ -12,6 +12,7 @@ import {
   TablePagination,
   IconButton,
   Tooltip,
+  Chip,
 } from "@mui/material"
 import BadgeIcon from "@mui/icons-material/Badge"
 import PhoneIcon from "@mui/icons-material/Phone"
@@ -135,6 +136,19 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
                   textTransform: "uppercase",
                 }}
               >
+                Sucursal
+              </TableCell>
+              <TableCell
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  fontWeight: 700,
+                  fontSize: "0.75rem",
+                  py: 1.75,
+                  letterSpacing: "0.025em",
+                  textTransform: "uppercase",
+                }}
+              >
                 Cuenta Corriente
               </TableCell>
               <TableCell
@@ -198,6 +212,25 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
                   <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                     {cliente.direccion ? (
                       <span className="text-xs text-slate-700 line-clamp-2">{cliente.direccion}</span>
+                    ) : (
+                      <span className="text-xs text-gray-400">-</span>
+                    )}
+                  </TableCell>
+
+                  <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
+                    {cliente.sucursal_nombre ? (
+                      <Chip
+                        label={cliente.sucursal_nombre}
+                        size="small"
+                        sx={{
+                          bgcolor: "#f1f5f9",
+                          color: "#475569",
+                          fontWeight: 500,
+                          fontSize: "0.6875rem",
+                          height: 22,
+                          "& .MuiChip-label": { px: 1 },
+                        }}
+                      />
                     ) : (
                       <span className="text-xs text-gray-400">-</span>
                     )}
