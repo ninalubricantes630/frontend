@@ -57,6 +57,7 @@ const StockPage = () => {
   })
   const [priceRange, setPriceRange] = useState([0, 100000])
   const [usuarioTieneMultiplesSucursales, setUsuarioTieneMultiplesSucursales] = useState(false)
+  const [sucursalFilter, setSucursalFilter] = useState("") // Nuevo estado para el filtro de sucursales
 
   const [openForm, setOpenForm] = useState(false)
   const [openMovimiento, setOpenMovimiento] = useState(false)
@@ -161,6 +162,7 @@ const StockPage = () => {
 
     setFilters(newFilters)
     setPriceRange([0, 100000])
+    setSucursalFilter("") // Limpiar el filtro de sucursales
 
     const params = {}
     if (user?.sucursales && user.sucursales.length === 1) {
@@ -358,7 +360,24 @@ const StockPage = () => {
 
   const handleExportClick = async () => {
     try {
-      await productosService.exportarExcel()
+      // Preparar parámetros de filtro según el estado actual
+      const params = {}
+
+      // Si el usuario tiene múltiples sucursales y hay un filtro activo
+      if (sucursales.length > 1) {
+        if (sucursalFilter === "todas") {
+          // Exportar todas las sucursales del usuario
+          params.sucursales_ids = sucursales.map((s) => s.id).join(",")
+        } else if (sucursalFilter) {
+          // Exportar solo la sucursal seleccionada
+          params.sucursal_id = sucursalFilter
+        }
+      } else if (sucursales.length === 1) {
+        // Usuario con una sola sucursal
+        params.sucursal_id = sucursales[0].id
+      }
+
+      await productosService.exportarExcel(params)
       setSnackbar({
         open: true,
         message: "Exportación completada correctamente",
@@ -682,13 +701,16 @@ const StockPage = () => {
                       <Select
                         value={filters.sucursal_id}
                         label="Sucursal"
-                        onChange={(e) => handleFilterChange("sucursal_id", e.target.value)}
+                        onChange={(e) => {
+                          handleFilterChange("sucursal_id", e.target.value)
+                          setSucursalFilter(e.target.value)
+                        }}
                         sx={{
                           bgcolor: "white",
                           fontSize: "0.875rem",
                         }}
                       >
-                        <MenuItem value="">
+                        <MenuItem value="todas">
                           <em>Todas mis sucursales</em>
                         </MenuItem>
                         {user.sucursales.map((suc) => (
