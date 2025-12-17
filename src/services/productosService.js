@@ -56,10 +56,18 @@ export const productosService = {
     try {
       const response = await api.get("/productos/exportar/excel", {
         params,
-        responseType: "blob", // Importante para recibir el archivo
+        responseType: "blob",
+        transformResponse: [(data) => data], // Evitar transformación automática
       })
 
-      const url = window.URL.createObjectURL(new Blob([response.data]))
+      console.log("[v0] Respuesta de exportación:", response)
+
+      // Crear blob desde la respuesta
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      })
+
+      const url = window.URL.createObjectURL(blob)
       const link = document.createElement("a")
       link.href = url
 
@@ -78,7 +86,7 @@ export const productosService = {
       return { success: true }
     } catch (error) {
       console.error("[v0] Error al exportar productos:", error)
-      throw error.response?.data || error
+      throw error
     }
   },
 
