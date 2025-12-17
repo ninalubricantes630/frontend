@@ -59,18 +59,13 @@ export const productosService = {
         responseType: "blob", // Importante para recibir el archivo
       })
 
-      // Crear un enlace temporal para descargar el archivo
       const url = window.URL.createObjectURL(new Blob([response.data]))
       const link = document.createElement("a")
       link.href = url
 
-      // Obtener el nombre del archivo del header o usar uno por defecto
-      const contentDisposition = response.headers["content-disposition"]
-      let fileName = "productos.xlsx"
-      if (contentDisposition) {
-        const fileNameMatch = contentDisposition.match(/filename="?(.+)"?/)
-        if (fileNameMatch.length === 2) fileName = fileNameMatch[1]
-      }
+      // Generar nombre del archivo con la fecha actual
+      const fecha = new Date().toISOString().split("T")[0]
+      const fileName = `productos_${fecha}.xlsx`
 
       link.setAttribute("download", fileName)
       document.body.appendChild(link)
@@ -82,6 +77,7 @@ export const productosService = {
 
       return { success: true }
     } catch (error) {
+      console.error("[v0] Error al exportar productos:", error)
       throw error.response?.data || error
     }
   },
