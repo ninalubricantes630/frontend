@@ -10,6 +10,7 @@ import CantidadModal from "../../components/Ventas/CantidadModal"
 import PagoModal from "../../components/Ventas/PagoModal"
 import InteresModal from "../../components/Ventas/InteresModal"
 import DescuentoModal from "../../components/Ventas/DescuentoModal"
+import SucursalSelector from "../../components/Ventas/SucursalSelector"
 import { useVentas } from "../../hooks/useVentas"
 import { useProductos } from "../../hooks/useProductos"
 import { useAuth } from "../../contexts/AuthContext"
@@ -407,6 +408,30 @@ export default function VentasPage() {
     setShowCantidadModal(true)
   }
 
+  const handleCambiarSucursal = (nuevaSucursal) => {
+    if (carrito.length > 0) {
+      const confirmar = window.confirm(
+        `¿Estás seguro de que deseas cambiar a la sucursal "${nuevaSucursal.nombre}"?\n\nEsto limpiará el carrito actual ya que los productos pertenecen a otra sucursal.`,
+      )
+
+      if (!confirmar) {
+        return
+      }
+
+      setCarrito([])
+      setDescuento(null)
+      setInteres(null)
+      showNotification(`Carrito limpiado. Ahora puedes agregar productos de "${nuevaSucursal.nombre}"`, "info")
+    }
+
+    setSucursalVenta(nuevaSucursal)
+
+    setSearchTerm("")
+    setPage(1)
+
+    showNotification(`Sucursal cambiada a "${nuevaSucursal.nombre}"`, "success")
+  }
+
   if (authLoading || (user && user.sucursales === undefined)) {
     return (
       <PermissionGuard requiredPermission="create_venta">
@@ -473,20 +498,29 @@ export default function VentasPage() {
               Punto de Venta
             </Typography>
           </Box>
-          {sucursalVenta && (
-            <Chip
-              icon={<StoreIcon sx={{ fontSize: 16 }} />}
-              label={sucursalVenta.nombre}
-              sx={{
-                bgcolor: "#dc2626",
-                color: "white",
-                fontWeight: 500,
-                height: 32,
-                "& .MuiChip-icon": {
-                  color: "white",
-                },
-              }}
+          {sucursalVenta && user?.sucursales && user.sucursales.length > 1 ? (
+            <SucursalSelector
+              sucursales={user.sucursales}
+              sucursalSeleccionada={sucursalVenta}
+              onSelectSucursal={handleCambiarSucursal}
+              disabled={false}
             />
+          ) : (
+            sucursalVenta && (
+              <Chip
+                icon={<StoreIcon sx={{ fontSize: 16 }} />}
+                label={sucursalVenta.nombre}
+                sx={{
+                  bgcolor: "#dc2626",
+                  color: "white",
+                  fontWeight: 500,
+                  height: 32,
+                  "& .MuiChip-icon": {
+                    color: "white",
+                  },
+                }}
+              />
+            )
           )}
         </Box>
 
