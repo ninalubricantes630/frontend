@@ -48,6 +48,7 @@ export default function PagoModalServicio({
   servicioData,
   descuento,
   interes,
+  sucursalId: sucursalProp,
 }) {
   const [metodoPago, setMetodoPago] = useState("efectivo")
   const [montoPagado, setMontoPagado] = useState("")
@@ -65,7 +66,7 @@ export default function PagoModalServicio({
   const [totalConInteresTarjeta, setTotalConInteresTarjeta] = useState(total)
 
   const { user } = useAuth()
-  const sucursalId = user?.sucursal_id
+  const sucursalId = sucursalProp
 
   useEffect(() => {
     if (isOpen) {

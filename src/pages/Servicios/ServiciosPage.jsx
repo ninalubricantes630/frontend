@@ -1242,6 +1242,7 @@ const ServiciosPage = () => {
           }}
           descuento={descuento}
           interes={interes}
+          sucursalId={selectedSucursal?.id || formData.sucursalId}
         />
 
         <DescuentoModalServicio
