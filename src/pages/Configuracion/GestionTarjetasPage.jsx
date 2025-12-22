@@ -317,6 +317,19 @@ const GestionTarjetasPage = () => {
                         textTransform: "uppercase",
                       }}
                     >
+                      Sucursal
+                    </TableCell>
+                    <TableCell
+                      sx={{
+                        bgcolor: "#dc2626",
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: "0.75rem",
+                        py: 1.75,
+                        letterSpacing: "0.025em",
+                        textTransform: "uppercase",
+                      }}
+                    >
                       Cuotas
                     </TableCell>
                     <TableCell
@@ -351,7 +364,7 @@ const GestionTarjetasPage = () => {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={5} sx={{ textAlign: "center", py: 4 }}>
+                      <TableCell colSpan={6} sx={{ textAlign: "center", py: 4 }}>
                         <span className="text-gray-500 text-sm">Cargando tarjetas...</span>
                       </TableCell>
                     </TableRow>
@@ -369,6 +382,28 @@ const GestionTarjetasPage = () => {
                         <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                           {tarjeta.descripcion ? (
                             <span className="text-xs text-slate-700">{tarjeta.descripcion}</span>
+                          ) : (
+                            <span className="text-xs text-gray-400">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
+                          {tarjeta.sucursales_nombres ? (
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                              {tarjeta.sucursales_nombres.split(", ").map((sucursal, idx) => (
+                                <Chip
+                                  key={idx}
+                                  label={sucursal}
+                                  size="small"
+                                  sx={{
+                                    bgcolor: "#fef3c7",
+                                    color: "#92400e",
+                                    fontSize: "0.7rem",
+                                    fontWeight: 600,
+                                    height: "22px",
+                                  }}
+                                />
+                              ))}
+                            </Box>
                           ) : (
                             <span className="text-xs text-gray-400">-</span>
                           )}
@@ -434,7 +469,7 @@ const GestionTarjetasPage = () => {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} sx={{ textAlign: "center", py: 4 }}>
+                      <TableCell colSpan={6} sx={{ textAlign: "center", py: 4 }}>
                         <Box
                           sx={{
                             display: "flex",
