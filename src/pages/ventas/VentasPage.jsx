@@ -626,6 +626,7 @@ export default function VentasPage() {
           interes={interes}
           total={calcularTotal()}
           onConfirm={handleConfirmarVenta}
+          sucursalVenta={sucursalVenta}
         />
 
         <Snackbar

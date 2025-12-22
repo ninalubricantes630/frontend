@@ -40,7 +40,7 @@ const METODOS_PAGO = [
   { value: "cuenta_corriente", label: "Cuenta Corriente", icon: <PersonIcon /> },
 ]
 
-export default function PagoModal({ open, onClose, subtotal, descuento, interes, total, onConfirm }) {
+export default function PagoModal({ open, onClose, subtotal, descuento, interes, total, onConfirm, sucursalVenta }) {
   const [metodoPago, setMetodoPago] = useState("efectivo")
   const [montoPagado, setMontoPagado] = useState("")
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null)
@@ -57,7 +57,8 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
   const [totalConInteresTarjeta, setTotalConInteresTarjeta] = useState(total)
 
   const { user } = useAuth()
-  const sucursalId = user?.sucursal_id
+
+  const sucursalId = sucursalVenta?.id
 
   useEffect(() => {
     if (open) {
@@ -70,9 +71,11 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
       setCuotasSeleccionadas(null)
       setInteresTarjeta(0)
       setTotalConInteresTarjeta(total)
-      cargarTarjetas()
+      if (sucursalId) {
+        cargarTarjetas()
+      }
     }
-  }, [open, total])
+  }, [open, total, sucursalId])
 
   useEffect(() => {
     if (metodoPago === "tarjeta_credito" && !tarjetas.length && !loadingTarjetas) {
