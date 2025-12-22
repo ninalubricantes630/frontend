@@ -33,6 +33,7 @@ import {
 } from "@mui/icons-material"
 import { useTarjetas } from "../../hooks/useTarjetas"
 import TarjetaForm from "../../components/Tarjetas/TarjetasForm"
+import tarjetasService from "../../services/tarjetasService"
 
 const GestionTarjetasPage = () => {
   const { tarjetas, loading, pagination, loadTarjetas, createTarjeta, updateTarjeta, deleteTarjeta, handlePageChange } =
@@ -73,9 +74,17 @@ const GestionTarjetasPage = () => {
     loadTarjetas({ page: 1, limit: pagination.limit })
   }
 
-  const handleOpenDialog = (tarjeta = null) => {
+  const handleOpenDialog = async (tarjeta = null) => {
+    // CHANGE: If editing, fetch the complete card data with branch info from the first installment
     if (tarjeta) {
-      setEditingTarjeta(tarjeta)
+      try {
+        const fullTarjeta = await tarjetasService.getById(tarjeta.id)
+        setEditingTarjeta(fullTarjeta)
+      } catch (error) {
+        console.error("Error al cargar tarjeta:", error)
+        showNotification("Error al cargar los datos de la tarjeta", "error")
+        return
+      }
     } else {
       setEditingTarjeta(null)
     }

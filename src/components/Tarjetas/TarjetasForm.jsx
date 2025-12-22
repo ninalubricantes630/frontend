@@ -48,10 +48,14 @@ export default function TarjetaForm({ initialData = null, onSubmit, loading = fa
 
   useEffect(() => {
     if (initialData) {
+      const sucursalIdFromData =
+        initialData.sucursal_id ||
+        (initialData.cuotas && initialData.cuotas.length > 0 ? initialData.cuotas[0].sucursal_id : null)
+
       setFormData({
         nombre: initialData.nombre || "",
         descripcion: initialData.descripcion || "",
-        sucursal_id: initialData.sucursal_id || user?.sucursal_id || "",
+        sucursal_id: sucursalIdFromData || user?.sucursal_id || "",
         cuotas: Array(12)
           .fill(null)
           .map((_, i) => {
