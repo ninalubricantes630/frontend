@@ -2,8 +2,12 @@
 
 import { useState, useCallback } from "react"
 import tarjetasService from "../services/tarjetasService"
+import { useAuth } from "../contexts/AuthContext"
 
 export const useTarjetas = () => {
+  const { user } = useAuth()
+  const sucursalId = user?.sucursal_id
+
   const [tarjetas, setTarjetas] = useState([])
   const [loading, setLoading] = useState(false)
   const [pagination, setPagination] = useState({
@@ -13,26 +17,29 @@ export const useTarjetas = () => {
     totalPages: 0,
   })
 
-  const loadTarjetas = useCallback(async (params = {}) => {
-    setLoading(true)
-    try {
-      const response = await tarjetasService.getAll(params)
+  const loadTarjetas = useCallback(
+    async (params = {}) => {
+      setLoading(true)
+      try {
+        const requestParams = sucursalId ? { ...params, sucursal_id: sucursalId } : params
+        const response = await tarjetasService.getAll(requestParams)
 
-
-      setTarjetas(response.data?.tarjetas || [])
-      setPagination({
-        page: response.data?.pagination?.page || 1,
-        limit: response.data?.pagination?.limit || 10,
-        total: response.data?.pagination?.total || 0,
-        totalPages: response.data?.pagination?.totalPages || 0,
-      })
-    } catch (error) {
-      console.error("Error al cargar tarjetas:", error)
-      throw error
-    } finally {
-      setLoading(false)
-    }
-  }, [])
+        setTarjetas(response.data?.tarjetas || [])
+        setPagination({
+          page: response.data?.pagination?.page || 1,
+          limit: response.data?.pagination?.limit || 10,
+          total: response.data?.pagination?.total || 0,
+          totalPages: response.data?.pagination?.totalPages || 0,
+        })
+      } catch (error) {
+        console.error("Error al cargar tarjetas:", error)
+        throw error
+      } finally {
+        setLoading(false)
+      }
+    },
+    [sucursalId],
+  )
 
   const handlePageChange = useCallback(
     (page, limit) => {

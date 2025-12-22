@@ -8,8 +8,9 @@ export const tarjetasService = {
   },
 
   // Obtener tarjeta por ID
-  getById: async (id) => {
-    const response = await api.get(`/tarjetas/${id}`)
+  getById: async (id, sucursal_id = null) => {
+    const params = sucursal_id ? { sucursal_id } : {}
+    const response = await api.get(`/tarjetas/${id}`, { params })
     return response.data
   },
 
@@ -31,15 +32,23 @@ export const tarjetasService = {
     return response.data
   },
 
-  // Obtener tarjetas disponibles para ventas
-  getTarjetasParaVenta: async () => {
-    const response = await api.get("/tarjetas/venta/todas")
+  getTarjetasParaVenta: async (sucursal_id) => {
+    if (!sucursal_id) {
+      throw new Error("sucursal_id es requerido para obtener tarjetas")
+    }
+    const response = await api.get("/tarjetas/venta/todas", {
+      params: { sucursal_id },
+    })
     return response.data
   },
 
-  // Obtener cuotas disponibles de una tarjeta
-  getCuotasPorTarjeta: async (tarjetaId) => {
-    const response = await api.get(`/tarjetas/venta/${tarjetaId}/cuotas`)
+  getCuotasPorTarjeta: async (tarjetaId, sucursal_id) => {
+    if (!sucursal_id) {
+      throw new Error("sucursal_id es requerido para obtener cuotas")
+    }
+    const response = await api.get(`/tarjetas/venta/${tarjetaId}/cuotas`, {
+      params: { sucursal_id },
+    })
     return response.data
   },
 }

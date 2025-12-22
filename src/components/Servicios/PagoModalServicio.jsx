@@ -30,6 +30,7 @@ import {
 import ClienteSelector from "../Ventas/ClienteSelector"
 import { formatCurrency, formatPriceInput, parsePriceInput } from "../../utils/formatters"
 import tarjetasService from "../../services/tarjetasService"
+import { useAuth } from "../../contexts/AuthContext"
 
 const METODOS_PAGO = [
   { value: "efectivo", label: "Efectivo", icon: <PaymentIcon /> },
@@ -62,6 +63,9 @@ export default function PagoModalServicio({
   const [loadingTarjetas, setLoadingTarjetas] = useState(false)
   const [interesTarjeta, setInteresTarjeta] = useState(0)
   const [totalConInteresTarjeta, setTotalConInteresTarjeta] = useState(total)
+
+  const { user } = useAuth()
+  const sucursalId = user?.sucursal_id
 
   useEffect(() => {
     if (isOpen) {
@@ -113,7 +117,11 @@ export default function PagoModalServicio({
   const cargarTarjetas = async () => {
     try {
       setLoadingTarjetas(true)
-      const data = await tarjetasService.getTarjetasParaVenta()
+      if (!sucursalId) {
+        setError("No se pudo determinar la sucursal del usuario")
+        return
+      }
+      const data = await tarjetasService.getTarjetasParaVenta(sucursalId)
       setTarjetas(data || [])
     } catch (err) {
       console.error("[v0] Error loading credit cards:", err)
@@ -125,7 +133,11 @@ export default function PagoModalServicio({
 
   const cargarCuotas = async (tarjeta_id) => {
     try {
-      const data = await tarjetasService.getCuotasPorTarjeta(tarjeta_id)
+      if (!sucursalId) {
+        setError("No se pudo determinar la sucursal del usuario")
+        return
+      }
+      const data = await tarjetasService.getCuotasPorTarjeta(tarjeta_id, sucursalId)
       setCuotas(data || [])
       setCuotasSeleccionadas(null)
     } catch (err) {

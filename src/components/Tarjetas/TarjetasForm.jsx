@@ -12,13 +12,21 @@ import {
   Typography,
   InputAdornment,
   Checkbox,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material"
-import { CreditCard as CreditCardIcon } from "@mui/icons-material"
+import { CreditCard as CreditCardIcon, Store as StoreIcon } from "@mui/icons-material"
+import { useAuth } from "../../contexts/AuthContext"
 
 export default function TarjetaForm({ initialData = null, onSubmit, loading = false }) {
+  const { user } = useAuth()
+
   const [formData, setFormData] = useState({
     nombre: "",
     descripcion: "",
+    sucursal_id: user?.sucursal_id || "",
     cuotas: Array(12)
       .fill(null)
       .map((_, i) => ({
@@ -30,12 +38,20 @@ export default function TarjetaForm({ initialData = null, onSubmit, loading = fa
 
   const [errors, setErrors] = useState({})
   const interestRefs = useRef({})
+  const [sucursales, setSucursales] = useState([])
+
+  useEffect(() => {
+    if (user?.sucursales) {
+      setSucursales(user.sucursales)
+    }
+  }, [user])
 
   useEffect(() => {
     if (initialData) {
       setFormData({
         nombre: initialData.nombre || "",
         descripcion: initialData.descripcion || "",
+        sucursal_id: initialData.sucursal_id || user?.sucursal_id || "",
         cuotas: Array(12)
           .fill(null)
           .map((_, i) => {
@@ -48,7 +64,7 @@ export default function TarjetaForm({ initialData = null, onSubmit, loading = fa
           }),
       })
     }
-  }, [initialData])
+  }, [initialData, user])
 
   const handleNombreChange = (e) => {
     setFormData({ ...formData, nombre: e.target.value })
@@ -57,6 +73,11 @@ export default function TarjetaForm({ initialData = null, onSubmit, loading = fa
 
   const handleDescripcionChange = (e) => {
     setFormData({ ...formData, descripcion: e.target.value })
+  }
+
+  const handleSucursalChange = (e) => {
+    setFormData({ ...formData, sucursal_id: e.target.value })
+    if (errors.sucursal_id) setErrors({ ...errors, sucursal_id: null })
   }
 
   const handleCuotaChange = (index, field, value) => {
@@ -80,6 +101,10 @@ export default function TarjetaForm({ initialData = null, onSubmit, loading = fa
 
     if (!formData.nombre.trim()) {
       newErrors.nombre = "El nombre de la tarjeta es requerido"
+    }
+
+    if (!formData.sucursal_id) {
+      newErrors.sucursal_id = "Debe seleccionar una sucursal"
     }
 
     const cuotasActivas = formData.cuotas.filter((c) => c.activo)
@@ -110,6 +135,7 @@ export default function TarjetaForm({ initialData = null, onSubmit, loading = fa
       const datosEnvio = {
         nombre: formData.nombre.trim(),
         descripcion: formData.descripcion.trim() || null,
+        sucursal_id: formData.sucursal_id,
         cuotas: formData.cuotas
           .filter((c) => c.activo)
           .map((c) => ({
@@ -172,6 +198,42 @@ export default function TarjetaForm({ initialData = null, onSubmit, loading = fa
               },
             }}
           />
+        </Grid>
+
+        <Grid item xs={12}>
+          <FormControl
+            fullWidth
+            error={!!errors.sucursal_id}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                height: 48,
+                "&.Mui-focused fieldset": { borderColor: "#dc2626" },
+              },
+            }}
+          >
+            <InputLabel>Sucursal</InputLabel>
+            <Select
+              value={formData.sucursal_id}
+              onChange={handleSucursalChange}
+              label="Sucursal"
+              startAdornment={
+                <InputAdornment position="start">
+                  <StoreIcon sx={{ color: "#64748b", ml: 1 }} />
+                </InputAdornment>
+              }
+            >
+              {sucursales.map((sucursal) => (
+                <MenuItem key={sucursal.id} value={sucursal.id}>
+                  {sucursal.nombre}
+                </MenuItem>
+              ))}
+            </Select>
+            {errors.sucursal_id && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.75 }}>
+                {errors.sucursal_id}
+              </Typography>
+            )}
+          </FormControl>
         </Grid>
 
         {/* Configuración de cuotas */}
