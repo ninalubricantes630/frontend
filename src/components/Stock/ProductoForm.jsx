@@ -178,12 +178,12 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
       newErrors.unidad_medida = "La unidad de medida es requerida"
     }
 
-    if (!isEditing && formData.stock) {
+    if (!isEditing && formData.stock !== "" && formData.stock !== null && formData.stock !== undefined) {
       const stockNum = Number.parseFloat(formData.stock)
       if (isNaN(stockNum) || stockNum < 0) {
         newErrors.stock = "El stock no puede ser negativo"
       }
-      if (formData.unidad_medida === "unidad" && !Number.isInteger(stockNum)) {
+      if (formData.unidad_medida === "unidad" && stockNum !== "" && !Number.isInteger(stockNum)) {
         newErrors.stock = "El stock para productos de unidad debe ser un número entero"
       }
     }

@@ -59,19 +59,19 @@ const ProductoSelector = ({
   }
 
   const handleProductoClick = (producto) => {
-    if (producto.stock > 0 && producto.activo) {
+    if (producto.activo) {
       onSelectProducto(producto)
     }
   }
 
   const getStockColor = (stock) => {
-    if (stock === 0) return "error"
+    if (stock <= 0) return "error"
     if (stock < 10) return "warning"
     return "success"
   }
 
   const isProductoDeshabilitado = (producto) => {
-    if (producto.stock === 0 || !producto.activo) return true
+    if (!producto.activo) return true
 
     if (usuarioTieneMultiplesSucursales && sucursalVenta) {
       return producto.sucursal_id !== sucursalVenta.id
@@ -189,6 +189,7 @@ const ProductoSelector = ({
                 const deshabilitado = isProductoDeshabilitado(producto)
                 const noEsSucursalVenta =
                   usuarioTieneMultiplesSucursales && sucursalVenta && producto.sucursal_id !== sucursalVenta.id
+                const stockBajoONegativo = producto.stock <= 0
 
                 return (
                   <ListItem
@@ -239,6 +240,25 @@ const ProductoSelector = ({
                           }}
                         >
                           Solo visible - No disponible para esta venta
+                        </Typography>
+                      )}
+
+                      {stockBajoONegativo && !noEsSucursalVenta && (
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: "#dc2626",
+                            fontWeight: 500,
+                            display: "block",
+                            mb: 0.5,
+                            bgcolor: "#fef2f2",
+                            px: 1,
+                            py: 0.3,
+                            borderRadius: 0.5,
+                            fontSize: "0.75rem",
+                          }}
+                        >
+                          Stock {producto.stock < 0 ? "negativo" : "agotado"} - El stock quedará en negativo
                         </Typography>
                       )}
 

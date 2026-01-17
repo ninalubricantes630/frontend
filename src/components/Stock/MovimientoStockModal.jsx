@@ -44,13 +44,18 @@ const createMovimientoSchema = (unidadMedida) => {
       .number()
       .typeError("La cantidad debe ser un número")
       .required("La cantidad es obligatoria")
-      .positive("La cantidad debe ser mayor a 0")
-      .test("is-valid-number", (value) => {
+      .min(0, "La cantidad debe ser mayor o igual a 0")
+      .test("is-valid-number", (value, context) => {
         if (value === undefined || value === null) return false
-        if (isLitro) {
-          return value > 0
+        // Para entrada y salida, la cantidad debe ser mayor a 0
+        const tipo = context.parent.tipo
+        if ((tipo === "entrada" || tipo === "salida") && value <= 0) {
+          return context.createError({ message: "La cantidad debe ser mayor a 0 para entrada/salida" })
         }
-        return Number.isInteger(value) && value > 0
+        if (isLitro) {
+          return value >= 0
+        }
+        return Number.isInteger(value) && value >= 0
       })
       .test("integer-for-units", "La cantidad debe ser un número entero", (value) => {
         if (isLitro || value === undefined || value === null) return true
@@ -140,7 +145,7 @@ const MovimientoStockModal = ({ open, onClose, onSubmit, producto, loading = fal
   }
 
   const calcularNuevoStock = () => {
-    if (!cantidad || !producto) return producto?.stock || 0
+    if (cantidad === "" || cantidad === undefined || cantidad === null || !producto) return producto?.stock || 0
 
     const cantidadNum = Number.parseFloat(cantidad)
     const stockActual = Number.parseFloat(producto.stock) || 0
@@ -168,6 +173,9 @@ const MovimientoStockModal = ({ open, onClose, onSubmit, producto, loading = fal
   }
 
   if (!producto) return null
+
+  const nuevoStockCalculado = calcularNuevoStock()
+  const stockSeraNegativo = nuevoStockCalculado < 0
 
   return (
     <Dialog
@@ -318,7 +326,8 @@ const MovimientoStockModal = ({ open, onClose, onSubmit, producto, loading = fal
                       {tipoMovimiento === "entrada" &&
                         `Suma ${getUnidadLabel()} al stock actual (compras, devoluciones)`}
                       {tipoMovimiento === "salida" && `Resta ${getUnidadLabel()} del stock actual (ventas, pérdidas)`}
-                      {tipoMovimiento === "ajuste" && "Establece el stock a un valor exacto (inventario, correcciones)"}
+                      {tipoMovimiento === "ajuste" &&
+                        "Establece el stock a un valor exacto (inventario, correcciones). Puede ser 0."}
                     </Typography>
                   </Box>
                 </Box>
@@ -349,7 +358,7 @@ const MovimientoStockModal = ({ open, onClose, onSubmit, producto, loading = fal
                       <NumericFormat
                         value={value}
                         onValueChange={(values) => {
-                          onChange(values.floatValue || "")
+                          onChange(values.floatValue !== undefined ? values.floatValue : "")
                         }}
                         customInput={TextField}
                         thousandSeparator={isLitro ? "." : ""}
@@ -363,9 +372,12 @@ const MovimientoStockModal = ({ open, onClose, onSubmit, producto, loading = fal
                         error={!!errors.cantidad}
                         helperText={
                           errors.cantidad?.message ||
-                          (isLitro ? "Puedes usar decimales (ej: 2,5)" : "Solo números enteros")
+                          (isLitro ? "Puedes usar decimales (ej: 2,5)" : "Solo números enteros") +
+                            (tipoMovimiento === "ajuste" ? " - Puede ser 0" : "")
                         }
-                        placeholder={tipoMovimiento === "ajuste" ? "Ingresa el stock exacto" : "Ingresa la cantidad"}
+                        placeholder={
+                          tipoMovimiento === "ajuste" ? "Ingresa el stock exacto (puede ser 0)" : "Ingresa la cantidad"
+                        }
                         InputProps={{
                           endAdornment: <InputAdornment position="end">{getUnidadLabel()}</InputAdornment>,
                         }}
@@ -385,28 +397,29 @@ const MovimientoStockModal = ({ open, onClose, onSubmit, producto, loading = fal
                     )}
                   />
 
-                  {cantidad && (
+                  {cantidad !== "" && cantidad !== undefined && cantidad !== null && (
                     <Box
                       sx={{
                         mt: 2,
                         p: 1.5,
-                        backgroundColor: calcularNuevoStock() < 0 ? "#fee2e2" : "#dcfce7",
-                        border: `1px solid ${calcularNuevoStock() < 0 ? "#fecaca" : "#bbf7d0"}`,
+                        backgroundColor: stockSeraNegativo ? "#fef3c7" : "#dcfce7",
+                        border: `1px solid ${stockSeraNegativo ? "#fcd34d" : "#bbf7d0"}`,
                         borderRadius: 1,
                       }}
                     >
                       <Typography
                         variant="body2"
                         sx={{
-                          color: calcularNuevoStock() < 0 ? "#991b1b" : "#166534",
+                          color: stockSeraNegativo ? "#92400e" : "#166534",
                           fontSize: "0.8125rem",
                           fontWeight: 500,
                         }}
                       >
                         Nuevo stock:{" "}
                         <strong>
-                          {formatStockValue(calcularNuevoStock())} {getUnidadLabel()}
+                          {formatStockValue(nuevoStockCalculado)} {getUnidadLabel()}
                         </strong>
+                        {stockSeraNegativo && " (Stock negativo)"}
                       </Typography>
                     </Box>
                   )}
@@ -492,7 +505,7 @@ const MovimientoStockModal = ({ open, onClose, onSubmit, producto, loading = fal
           onClick={handleSubmit(handleFormSubmit)}
           variant="contained"
           size="medium"
-          disabled={Boolean(loading || (cantidad && calcularNuevoStock() < 0))}
+          disabled={loading}
           sx={{
             backgroundColor: "#dc2626",
             borderRadius: 1.5,

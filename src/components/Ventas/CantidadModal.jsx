@@ -12,16 +12,14 @@ const CantidadModal = ({ open, onClose, producto, onConfirm, isEditing = false }
   const [cantidad, setCantidad] = useState(isLitro ? 1 : 1)
   const cantidadInputRef = useRef(null)
 
-  const botonesRapidos = isLitro 
-    ? [0.5, 1, 1.5, 2, 2.5, 3, 3.5]
-    : [1, 3, 5, 7, 10]
+  const botonesRapidos = isLitro ? [0.5, 1, 1.5, 2, 2.5, 3, 3.5] : [1, 3, 5, 7, 10]
 
   useEffect(() => {
     if (open) {
       setCantidad(isLitro ? 1 : 1)
       setTimeout(() => {
         if (cantidadInputRef.current) {
-          const inputElement = cantidadInputRef.current.querySelector('input')
+          const inputElement = cantidadInputRef.current.querySelector("input")
           if (inputElement) {
             inputElement.focus()
             inputElement.select()
@@ -32,7 +30,7 @@ const CantidadModal = ({ open, onClose, producto, onConfirm, isEditing = false }
   }, [open, isLitro])
 
   const handleCantidadChange = (newValue) => {
-    if (newValue <= producto.stock) {
+    if (newValue > 0) {
       setCantidad(newValue)
     }
   }
@@ -40,42 +38,36 @@ const CantidadModal = ({ open, onClose, producto, onConfirm, isEditing = false }
   const handleIncrement = () => {
     const increment = isLitro ? 0.5 : 1
     const newValue = cantidad + increment
-
-    if (newValue <= producto.stock) {
-      setCantidad(newValue)
-    }
+    setCantidad(newValue)
   }
 
   const handleDecrement = () => {
     const decrement = isLitro ? 0.5 : 1
     const newValue = Math.max(isLitro ? 0.001 : 1, cantidad - decrement)
-
     setCantidad(newValue)
   }
 
   const handleCantidadRapida = (valor) => {
-    if (valor <= producto.stock) {
-      setCantidad(valor)
-      setTimeout(() => {
-        if (cantidadInputRef.current) {
-          const inputElement = cantidadInputRef.current.querySelector('input')
-          if (inputElement) {
-            inputElement.focus()
-          }
+    setCantidad(valor)
+    setTimeout(() => {
+      if (cantidadInputRef.current) {
+        const inputElement = cantidadInputRef.current.querySelector("input")
+        if (inputElement) {
+          inputElement.focus()
         }
-      }, 50)
-    }
+      }
+    }, 50)
   }
 
   const handleConfirm = () => {
-    if (cantidad > 0 && cantidad <= producto.stock) {
+    if (cantidad > 0) {
       onConfirm(cantidad)
       onClose()
     }
   }
 
   const handleKeyPress = (e) => {
-    if (e.key === "Enter" && cantidad > 0 && cantidad <= producto.stock) {
+    if (e.key === "Enter" && cantidad > 0) {
       e.preventDefault()
       e.stopPropagation()
       handleConfirm()
@@ -85,6 +77,8 @@ const CantidadModal = ({ open, onClose, producto, onConfirm, isEditing = false }
   if (!producto) return null
 
   const subtotal = producto.precio * cantidad
+  const stockResultante = producto.stock - cantidad
+  const stockQuedaNegativo = stockResultante < 0
 
   const getUnidadLabel = () => {
     return isLitro ? "litros" : "unidades"
@@ -163,7 +157,7 @@ const CantidadModal = ({ open, onClose, producto, onConfirm, isEditing = false }
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 1.5 }}>
             <Typography variant="body2" color="textSecondary" sx={{ fontSize: "0.875rem" }}>
               Stock:{" "}
-              <strong>
+              <strong style={{ color: producto.stock <= 0 ? "#dc2626" : "inherit" }}>
                 {formatStock(producto.stock)} {getUnidadLabel()}
               </strong>
             </Typography>
@@ -213,7 +207,6 @@ const CantidadModal = ({ open, onClose, producto, onConfirm, isEditing = false }
             </Box>
             <IconButton
               onClick={handleIncrement}
-              disabled={cantidad >= producto.stock}
               size="small"
               sx={{
                 border: "1px solid #d1d5db",
@@ -241,7 +234,6 @@ const CantidadModal = ({ open, onClose, producto, onConfirm, isEditing = false }
               <Button
                 key={valor}
                 onClick={() => handleCantidadRapida(valor)}
-                disabled={valor > producto.stock}
                 variant={cantidad === valor ? "contained" : "outlined"}
                 size="small"
                 sx={{
@@ -263,11 +255,28 @@ const CantidadModal = ({ open, onClose, producto, onConfirm, isEditing = false }
                   },
                 }}
               >
-                {valor}{isLitro ? "L" : ""}
+                {valor}
+                {isLitro ? "L" : ""}
               </Button>
             ))}
           </Box>
         </Box>
+
+        {stockQuedaNegativo && (
+          <Box
+            sx={{
+              mb: 2,
+              p: 1.5,
+              borderRadius: 1.5,
+              bgcolor: "#fef3c7",
+              border: "1px solid #fcd34d",
+            }}
+          >
+            <Typography variant="body2" sx={{ color: "#92400e", fontSize: "0.8125rem", fontWeight: 500 }}>
+              El stock quedará en {formatStock(stockResultante)} {getUnidadLabel()} (negativo)
+            </Typography>
+          </Box>
+        )}
 
         <Box
           sx={{
@@ -302,7 +311,7 @@ const CantidadModal = ({ open, onClose, producto, onConfirm, isEditing = false }
         <Button
           onClick={handleConfirm}
           variant="contained"
-          disabled={cantidad === 0 || cantidad > producto.stock}
+          disabled={cantidad === 0}
           sx={{
             bgcolor: "#dc2626",
             "&:hover": { bgcolor: "#b91c1c" },
