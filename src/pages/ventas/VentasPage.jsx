@@ -173,10 +173,7 @@ export default function VentasPage() {
       return
     }
 
-    if (producto.stock <= 0) {
-      showNotification("Este producto no tiene stock disponible", "warning")
-      return
-    }
+    // Removed validación de stock <= 0 - Se permite vender productos sin stock (quedará negativo)
 
     if (!producto.activo) {
       showNotification("Este producto está inactivo", "warning")
