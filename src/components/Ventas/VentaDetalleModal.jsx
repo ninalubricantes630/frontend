@@ -64,8 +64,21 @@ const VentaDetalleModal = ({ open, onClose, venta }) => {
       TRANSFERENCIA: "primary",
       CUENTA_CORRIENTE: "warning",
       TARJETA_CREDITO: "info",
+      PAGO_MULTIPLE: "secondary",
     }
     return colors[tipo] || "default"
+  }
+
+  const getTipoPagoLabel = (tipo) => {
+    const labels = {
+      EFECTIVO: "Efectivo",
+      CREDITO: "Tarjeta de Crédito",
+      TRANSFERENCIA: "Transferencia",
+      CUENTA_CORRIENTE: "Cuenta Corriente",
+      TARJETA_CREDITO: "Tarjeta de Crédito",
+      PAGO_MULTIPLE: "Pago Múltiple",
+    }
+    return labels[tipo] || tipo
   }
 
   const getEstadoColor = (estado) => {
@@ -258,15 +271,138 @@ const VentaDetalleModal = ({ open, onClose, venta }) => {
                       Tipo de Pago
                     </Typography>
                     <Box sx={{ mt: 0.5 }}>
-                      <Chip label={venta.tipo_pago} size="small" color={getTipoPagoColor(venta.tipo_pago)} />
+                      <Chip label={getTipoPagoLabel(venta.tipo_pago)} size="small" color={getTipoPagoColor(venta.tipo_pago)} />
                     </Box>
                   </Box>
                 </Box>
               </Box>
             </Grid>
 
-            {/* Información de Tarjeta (Simplificada) */}
-            {(venta.tipo_pago === "CREDITO" || venta.tipo_pago === "TARJETA_CREDITO") &&
+            {/* Información de Pago Múltiple */}
+            {venta.pago_dividido && venta.pagos && venta.pagos.length > 0 && (
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    backgroundColor: "#f0f9ff",
+                    borderRadius: 1.5,
+                    p: 2,
+                    border: "1px solid #7dd3fc",
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#0369a1", mb: 1.5 }}>
+                    Desglose de Pagos
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    {venta.pagos.map((pago, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          bgcolor: "#fff",
+                          p: 1.5,
+                          borderRadius: 1,
+                          border: "1px solid #e0f2fe",
+                        }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Chip
+                            label={getTipoPagoLabel(pago.metodo_pago)}
+                            size="small"
+                            color={getTipoPagoColor(pago.metodo_pago)}
+                            sx={{ fontWeight: 500 }}
+                          />
+                          <Typography variant="caption" sx={{ color: "#64748b" }}>
+                            Pago {index + 1}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#0369a1" }}>
+                          {formatCurrency(pago.monto)}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                </Box>
+              </Grid>
+            )}
+
+            {/* Información de Pago Múltiple (desde campos de la venta si no hay pagos) */}
+            {venta.pago_dividido && (!venta.pagos || venta.pagos.length === 0) && (
+              <Grid item xs={12}>
+                <Box
+                  sx={{
+                    backgroundColor: "#f0f9ff",
+                    borderRadius: 1.5,
+                    p: 2,
+                    border: "1px solid #7dd3fc",
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#0369a1", mb: 1.5 }}>
+                    Desglose de Pagos
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        bgcolor: "#fff",
+                        p: 1.5,
+                        borderRadius: 1,
+                        border: "1px solid #e0f2fe",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Chip
+                          label={getTipoPagoLabel(venta.tipo_pago === 'PAGO_MULTIPLE' ? 'EFECTIVO' : venta.tipo_pago)}
+                          size="small"
+                          color="success"
+                          sx={{ fontWeight: 500 }}
+                        />
+                        <Typography variant="caption" sx={{ color: "#64748b" }}>
+                          Pago 1
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "#0369a1" }}>
+                        {formatCurrency(venta.monto_pago_1)}
+                      </Typography>
+                    </Box>
+                    {venta.tipo_pago_2 && venta.monto_pago_2 && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          bgcolor: "#fff",
+                          p: 1.5,
+                          borderRadius: 1,
+                          border: "1px solid #e0f2fe",
+                        }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Chip
+                            label={getTipoPagoLabel(venta.tipo_pago_2)}
+                            size="small"
+                            color={getTipoPagoColor(venta.tipo_pago_2)}
+                            sx={{ fontWeight: 500 }}
+                          />
+                          <Typography variant="caption" sx={{ color: "#64748b" }}>
+                            Pago 2
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#0369a1" }}>
+                          {formatCurrency(venta.monto_pago_2)}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </Box>
+              </Grid>
+            )}
+
+            {/* Información de Tarjeta (Simplificada) - Solo si NO es pago múltiple */}
+            {!venta.pago_dividido && (venta.tipo_pago === "CREDITO" || venta.tipo_pago === "TARJETA_CREDITO") &&
               (venta.tarjeta_nombre || venta.numero_cuotas) && (
                 <Grid item xs={12}>
                   <Box

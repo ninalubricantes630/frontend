@@ -47,8 +47,22 @@ const VentasList = ({ ventas, loading, pagination, onPageChange, onView, onCance
       TRANSFERENCIA: "primary",
       CUENTA_CORRIENTE: "warning",
       TARJETA: "info",
+      PAGO_MULTIPLE: "secondary",
     }
     return colors[tipo] || "default"
+  }
+
+  const getTipoPagoLabel = (tipo) => {
+    const labels = {
+      EFECTIVO: "Efectivo",
+      CREDITO: "Tarjeta",
+      TARJETA_CREDITO: "Tarjeta",
+      TRANSFERENCIA: "Transferencia",
+      CUENTA_CORRIENTE: "Cta. Corriente",
+      TARJETA: "Tarjeta",
+      PAGO_MULTIPLE: "Pago Múltiple",
+    }
+    return labels[tipo] || tipo
   }
 
   const getEstadoColor = (estado) => {
@@ -232,17 +246,9 @@ const VentasList = ({ ventas, loading, pagination, onPageChange, onView, onCance
                 </TableCell>
                 <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                   <Chip
-                    label={
-                      venta.tipo_pago === "CREDITO"
-                        ? "TARJETA"
-                        : venta.tipo_pago || (venta.tarjeta_id ? "TARJETA" : "N/A")
-                    }
+                    label={getTipoPagoLabel(venta.tipo_pago || (venta.tarjeta_id ? "TARJETA_CREDITO" : "N/A"))}
                     size="small"
-                    color={getTipoPagoColor(
-                      venta.tipo_pago === "CREDITO"
-                        ? "TARJETA"
-                        : venta.tipo_pago || (venta.tarjeta_id ? "TARJETA_CREDITO" : ""),
-                    )}
+                    color={getTipoPagoColor(venta.tipo_pago || (venta.tarjeta_id ? "TARJETA_CREDITO" : ""))}
                     sx={{ fontWeight: 500, fontSize: "0.688rem", height: 22 }}
                   />
                 </TableCell>

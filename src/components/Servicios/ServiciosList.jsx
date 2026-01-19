@@ -45,8 +45,21 @@ const ServiciosList = ({ servicios, onView, loading, pagination, onPageChange, o
       TARJETA_CREDITO: "info",
       TRANSFERENCIA: "primary",
       CUENTA_CORRIENTE: "warning",
+      PAGO_MULTIPLE: "secondary",
     }
     return colors[tipo] || "default"
+  }
+
+  const getTipoPagoLabel = (tipo) => {
+    const labels = {
+      EFECTIVO: "Efectivo",
+      CREDITO: "Tarjeta",
+      TARJETA_CREDITO: "Tarjeta",
+      TRANSFERENCIA: "Transferencia",
+      CUENTA_CORRIENTE: "Cta. Corriente",
+      PAGO_MULTIPLE: "Pago Múltiple",
+    }
+    return labels[tipo] || tipo
   }
 
   const getEstadoColor = (estado) => {
@@ -253,7 +266,7 @@ const ServiciosList = ({ servicios, onView, loading, pagination, onPageChange, o
                 </TableCell>
                 <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                   <Chip
-                    label={servicio.tipo_pago || "N/A"}
+                    label={getTipoPagoLabel(servicio.tipo_pago) || "N/A"}
                     size="small"
                     color={getTipoPagoColor(servicio.tipo_pago)}
                     sx={{ fontWeight: 500, fontSize: "0.688rem", height: 22 }}
