@@ -220,7 +220,7 @@ const ServiciosPage = () => {
   }, [activeStep, formData])
 
   useEffect(() => {
-    loadClientes()
+    loadClientes(1, 1000) // Cargar todos los clientes (límite alto para selector)
     loadTiposServicios()
     loadSucursalesActivas()
   }, [])
