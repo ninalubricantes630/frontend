@@ -116,10 +116,20 @@ export default function CerrarCajaModal({ open, onClose, onCerrarCaja, sesionAct
   const totalEgresos = movimientos
     .filter((m) => m.tipo === "EGRESO")
     .reduce((sum, m) => sum + Number.parseFloat(m.monto || 0), 0)
-  const saldoEsperado = montoInicial + totalIngresos - totalEgresos
+  
+  // Calcular ingresos solo de efectivo
+  const totalIngresosEfectivo = movimientos
+    .filter((m) => m.tipo === "INGRESO" && m.metodo_pago === "EFECTIVO" && m.concepto !== "Apertura de caja")
+    .reduce((sum, m) => sum + Number.parseFloat(m.monto || 0), 0)
+  
+  // Saldo esperado del sistema (todos los métodos)
+  const saldoEsperadoSistema = montoInicial + totalIngresos - totalEgresos
+  
+  // Saldo esperado en caja (solo efectivo)
+  const saldoEsperadoCaja = montoInicial + totalIngresosEfectivo - totalEgresos
 
   const montoFinalNum = montoFinal ? Number.parseFloat(montoFinal) : 0
-  const diferencia = montoFinalNum - saldoEsperado
+  const diferencia = montoFinalNum - saldoEsperadoCaja
   const haySobrante = diferencia > 0
   const hayFaltante = diferencia < 0
 
@@ -259,21 +269,38 @@ export default function CerrarCajaModal({ open, onClose, onCerrarCaja, sesionAct
                   </Box>
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <Card
-                    sx={{
-                      p: 2,
-                      bgcolor: "#dbeafe",
-                      borderLeft: "4px solid #2563eb",
-                      boxShadow: "none",
-                    }}
-                  >
-                    <Typography variant="caption" sx={{ color: "#1e40af", fontWeight: 500 }}>
-                      Saldo Esperado del Sistema
-                    </Typography>
-                    <Typography variant="h5" sx={{ fontWeight: 700, color: "#1e40af", mt: 0.5 }}>
-                      ${formatCurrency(saldoEsperado)}
-                    </Typography>
-                  </Card>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                    <Card
+                      sx={{
+                        p: 1.5,
+                        bgcolor: "#dbeafe",
+                        borderLeft: "4px solid #2563eb",
+                        boxShadow: "none",
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ color: "#1e40af", fontWeight: 500, fontSize: "0.7rem" }}>
+                        Saldo Esperado del Sistema
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e40af", mt: 0.3 }}>
+                        ${formatCurrency(saldoEsperadoSistema)}
+                      </Typography>
+                    </Card>
+                    <Card
+                      sx={{
+                        p: 1.5,
+                        bgcolor: "#d1fae5",
+                        borderLeft: "4px solid #059669",
+                        boxShadow: "none",
+                      }}
+                    >
+                      <Typography variant="caption" sx={{ color: "#047857", fontWeight: 500, fontSize: "0.7rem" }}>
+                        Saldo Esperado en Caja (Efectivo)
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 700, color: "#047857", mt: 0.3 }}>
+                        ${formatCurrency(saldoEsperadoCaja)}
+                      </Typography>
+                    </Card>
+                  </Box>
                 </Grid>
               </Grid>
             </Paper>
@@ -399,10 +426,18 @@ export default function CerrarCajaModal({ open, onClose, onCerrarCaja, sesionAct
                 <Grid container spacing={2}>
                   <Grid item xs={6}>
                     <Typography variant="caption" sx={{ color: "#64748b" }}>
-                      Monto del Sistema
+                      Efectivo Esperado
                     </Typography>
                     <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
-                      ${formatCurrency(saldoEsperado)}
+                      ${formatCurrency(saldoEsperadoCaja)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="caption" sx={{ color: "#64748b" }}>
+                      Efectivo Real
+                    </Typography>
+                    <Typography variant="h6" sx={{ fontWeight: 700, color: "#0f172a" }}>
+                      ${formatCurrency(montoFinalNum)}
                     </Typography>
                   </Grid>
                   <Grid item xs={6}>

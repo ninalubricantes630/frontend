@@ -116,8 +116,19 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
   const totalEgresos =
     sesion.total_egresos ||
     movimientos.filter((m) => m.tipo === "EGRESO").reduce((sum, m) => sum + Number.parseFloat(m.monto || 0), 0)
-  const montoEsperado =
+  
+  // Calcular saldo esperado del sistema y saldo esperado en caja
+  const montoEsperadoSistema =
     sesion.monto_esperado_sistema || Number.parseFloat(sesion.monto_inicial) + totalIngresos - totalEgresos
+  
+  // Si existe monto_esperado_caja, usarlo, sino calcularlo
+  const totalIngresosEfectivo = movimientos
+    .filter((m) => m.tipo === "INGRESO" && m.metodo_pago === "EFECTIVO" && m.concepto !== "Apertura de caja")
+    .reduce((sum, m) => sum + Number.parseFloat(m.monto || 0), 0)
+  
+  const montoEsperadoCaja = sesion.monto_esperado_caja || 
+    (Number.parseFloat(sesion.monto_inicial) + totalIngresosEfectivo - totalEgresos)
+  
   const diferencia = sesion.diferencia || 0
 
   // Desglose de ingresos - usar el guardado o el cargado
@@ -136,6 +147,8 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
   } else {
     desgloseData = detalleIngresos?.desglose || []
   }
+
+  const montoEsperado = montoEsperadoSistema; // Declare montoEsperado variable
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
@@ -271,12 +284,23 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
           </Grid>
 
           <Grid item xs={12} md={3}>
-            <Card sx={{ p: 2, bgcolor: "#f3f4f6", borderLeft: "4px solid #6b7280" }}>
-              <Typography variant="caption" sx={{ color: "#374151", fontWeight: 500 }}>
-                Saldo Esperado
+            <Card sx={{ p: 2, bgcolor: "#dbeafe", borderLeft: "4px solid #2563eb" }}>
+              <Typography variant="caption" sx={{ color: "#1e40af", fontWeight: 500, fontSize: "0.7rem" }}>
+                Saldo Esperado Sistema
               </Typography>
-              <Typography variant="h5" sx={{ fontWeight: 700, color: "#374151" }}>
-                {formatCurrency(montoEsperado)}
+              <Typography variant="h6" sx={{ fontWeight: 700, color: "#1e40af" }}>
+                {formatCurrency(montoEsperadoSistema)}
+              </Typography>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={3}>
+            <Card sx={{ p: 2, bgcolor: "#d1fae5", borderLeft: "4px solid #059669" }}>
+              <Typography variant="caption" sx={{ color: "#047857", fontWeight: 500, fontSize: "0.7rem" }}>
+                Saldo Esperado Caja
+              </Typography>
+              <Typography variant="h6" sx={{ fontWeight: 700, color: "#047857" }}>
+                {formatCurrency(montoEsperadoCaja)}
               </Typography>
             </Card>
           </Grid>
