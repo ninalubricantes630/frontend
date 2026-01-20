@@ -362,6 +362,14 @@ export default function VentasPage() {
         // Interés de tarjeta
         interes_tarjeta: datosPago.interes_tarjeta || 0,
         tasa_interes_tarjeta: datosPago.tasa_interes_tarjeta || null,
+        // Pago dividido
+        pago_dividido: datosPago.pago_dividido || false,
+        monto_pago_1: datosPago.monto_pago_1 || null,
+        tipo_pago_2: datosPago.tipo_pago_2 || null,
+        monto_pago_2: datosPago.monto_pago_2 || null,
+        tarjeta_id_2: datosPago.tarjeta_id_2 || null,
+        numero_cuotas_2: datosPago.numero_cuotas_2 || null,
+        tasa_interes_tarjeta_2: datosPago.tasa_interes_tarjeta_2 || null,
       }
 
       const result = await createVenta(ventaData)

@@ -419,6 +419,14 @@ const ServiciosPage = () => {
         tasa_interes_tarjeta: pagoData?.tasa_interes_tarjeta || null,
         total_con_interes: pagoData?.total_con_interes || calculatedSubtotal,
         total_con_interes_tarjeta: pagoData?.total_con_interes_tarjeta || null,
+        // Pago dividido
+        pago_dividido: pagoData?.pago_dividido || false,
+        monto_pago_1: pagoData?.monto_pago_1 || null,
+        tipo_pago_2: pagoData?.tipo_pago_2 || null,
+        monto_pago_2: pagoData?.monto_pago_2 || null,
+        tarjeta_id_2: pagoData?.tarjeta_id_2 || null,
+        numero_cuotas_2: pagoData?.numero_cuotas_2 || null,
+        tasa_interes_tarjeta_2: pagoData?.tasa_interes_tarjeta_2 || null,
         items: Array.isArray(formData.items)
           ? formData.items.map((item) => {
               let itemTotal = 0
