@@ -578,6 +578,7 @@ const ReportesPage = () => {
                   <MenuItem value="TARJETA_CREDITO">Tarjeta de Crédito</MenuItem>
                   <MenuItem value="TRANSFERENCIA">Transferencia</MenuItem>
                   <MenuItem value="CUENTA_CORRIENTE">Cuenta Corriente</MenuItem>
+                  <MenuItem value="PAGO_MULTIPLE">Pago Múltiple</MenuItem>
                 </Select>
               </FormControl>
 

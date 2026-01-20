@@ -327,8 +327,8 @@ const VentaDetalleModal = ({ open, onClose, venta }) => {
               </Grid>
             )}
 
-            {/* Información de Pago Múltiple (desde campos de la venta si no hay pagos) */}
-            {venta.pago_dividido && (!venta.pagos || venta.pagos.length === 0) && (
+            {/* Información de Pago Múltiple (desde campos de la venta si no hay pagos de movimientos_caja) */}
+            {venta.pago_dividido && (!venta.pagos || venta.pagos.length === 0) && venta.monto_pago_1 && (
               <Grid item xs={12}>
                 <Box
                   sx={{
@@ -355,17 +355,17 @@ const VentaDetalleModal = ({ open, onClose, venta }) => {
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                         <Chip
-                          label={getTipoPagoLabel(venta.tipo_pago === 'PAGO_MULTIPLE' ? 'EFECTIVO' : venta.tipo_pago)}
+                          label={getTipoPagoLabel(venta.tipo_pago === 'PAGO_MULTIPLE' && venta.monto_pago_1 ? 'EFECTIVO' : venta.tipo_pago)}
                           size="small"
-                          color="success"
+                          color={getTipoPagoColor(venta.tipo_pago === 'PAGO_MULTIPLE' && venta.monto_pago_1 ? 'EFECTIVO' : venta.tipo_pago)}
                           sx={{ fontWeight: 500 }}
                         />
                         <Typography variant="caption" sx={{ color: "#64748b" }}>
-                          Pago 1
+                          Pago 1/2
                         </Typography>
                       </Box>
                       <Typography variant="body2" sx={{ fontWeight: 600, color: "#0369a1" }}>
-                        {formatCurrency(venta.monto_pago_1)}
+                        {formatCurrency(venta.monto_pago_1 || 0)}
                       </Typography>
                     </Box>
                     {venta.tipo_pago_2 && venta.monto_pago_2 && (
@@ -388,11 +388,11 @@ const VentaDetalleModal = ({ open, onClose, venta }) => {
                             sx={{ fontWeight: 500 }}
                           />
                           <Typography variant="caption" sx={{ color: "#64748b" }}>
-                            Pago 2
+                            Pago 2/2
                           </Typography>
                         </Box>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: "#0369a1" }}>
-                          {formatCurrency(venta.monto_pago_2)}
+                          {formatCurrency(venta.monto_pago_2 || 0)}
                         </Typography>
                       </Box>
                     )}

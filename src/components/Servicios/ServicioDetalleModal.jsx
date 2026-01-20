@@ -339,8 +339,8 @@ const ServicioDetalleModal = ({ open, onClose, servicio }) => {
               </Grid>
             )}
 
-            {/* Información de Pago Múltiple (desde campos del servicio si no hay pagos) */}
-            {servicio.pago_dividido && (!servicio.pagos || servicio.pagos.length === 0) && (
+            {/* Información de Pago Múltiple (desde campos del servicio si no hay pagos de movimientos_caja) */}
+            {servicio.pago_dividido && (!servicio.pagos || servicio.pagos.length === 0) && servicio.monto_pago_1 && (
               <Grid item xs={12}>
                 <Box
                   sx={{
@@ -354,31 +354,32 @@ const ServicioDetalleModal = ({ open, onClose, servicio }) => {
                     Desglose de Pagos
                   </Typography>
                   <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                    {servicio.monto_pago_1 && (
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          bgcolor: "#fff",
-                          p: 1.5,
-                          borderRadius: 1,
-                          border: "1px solid #e0f2fe",
-                        }}
-                      >
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Chip
-                            label="Pago 1"
-                            size="small"
-                            color="success"
-                            sx={{ fontWeight: 500 }}
-                          />
-                        </Box>
-                        <Typography variant="body2" sx={{ fontWeight: 600, color: "#0369a1" }}>
-                          {formatCurrency(servicio.monto_pago_1)}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        bgcolor: "#fff",
+                        p: 1.5,
+                        borderRadius: 1,
+                        border: "1px solid #e0f2fe",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Chip
+                          label={getTipoPagoLabel(servicio.tipo_pago === 'PAGO_MULTIPLE' && servicio.monto_pago_1 ? 'EFECTIVO' : servicio.tipo_pago)}
+                          size="small"
+                          color={getTipoPagoColor(servicio.tipo_pago === 'PAGO_MULTIPLE' && servicio.monto_pago_1 ? 'EFECTIVO' : servicio.tipo_pago)}
+                          sx={{ fontWeight: 500 }}
+                        />
+                        <Typography variant="caption" sx={{ color: "#64748b" }}>
+                          Pago 1/2
                         </Typography>
                       </Box>
-                    )}
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "#0369a1" }}>
+                        {formatCurrency(servicio.monto_pago_1 || 0)}
+                      </Typography>
+                    </Box>
                     {servicio.tipo_pago_2 && servicio.monto_pago_2 && (
                       <Box
                         sx={{
@@ -399,7 +400,7 @@ const ServicioDetalleModal = ({ open, onClose, servicio }) => {
                             sx={{ fontWeight: 500 }}
                           />
                           <Typography variant="caption" sx={{ color: "#64748b" }}>
-                            Pago 2
+                            Pago 2/2
                           </Typography>
                         </Box>
                         <Typography variant="body2" sx={{ fontWeight: 600, color: "#0369a1" }}>
