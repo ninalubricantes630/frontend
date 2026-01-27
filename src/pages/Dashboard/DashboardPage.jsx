@@ -6,8 +6,10 @@ import SearchResults from "../../components/Dashboard/SearchResults"
 import { Box } from "@mui/material"
 import clientesService from "../../services/clientesService"
 import vehiculosService from "../../services/vehiculosService"
+import { useAuth } from "../../contexts/AuthContext"
 
 const DashboardPage = () => {
+  const { user } = useAuth()
   const [searchMode, setSearchMode] = useState("patente")
   const [searchTerm, setSearchTerm] = useState("")
   const [searchResults, setSearchResults] = useState([])
@@ -23,13 +25,42 @@ const DashboardPage = () => {
     setLoading(true)
     setSearchTerm(term)
 
+    console.log("[v0] Dashboard search - term:", term, "mode:", searchMode)
+    console.log("[v0] Dashboard search - user sucursales:", user?.sucursales)
+
     try {
       let results = []
 
       if (searchMode === "cliente") {
-        const response = await clientesService.getClientes({ page: 1, limit: 10, search: term })
+        // Prepare sucursal filters similar to ClientesPage
+        let sucursal_id = ""
+        let sucursales_ids = ""
+
+        if (user?.sucursales && user.sucursales.length > 0) {
+          if (user.sucursales.length === 1) {
+            sucursal_id = user.sucursales[0].id
+          } else {
+            sucursales_ids = user.sucursales.map((s) => s.id).join(",")
+          }
+        }
+
+        console.log("[v0] Dashboard search - sucursal filters:", { sucursal_id, sucursales_ids })
+
+        const response = await clientesService.getClientes({ 
+          page: 1, 
+          limit: 10, 
+          search: term,
+          searchBy: "",
+          sucursal_id,
+          sucursales_ids
+        })
+        
+        console.log("[v0] Dashboard search - response:", response)
+        
         const clientesArray = response?.data || []
         results = Array.isArray(clientesArray) ? clientesArray : []
+        
+        console.log("[v0] Dashboard search - clientes found:", results.length)
       } else {
         const response = await vehiculosService.getAll({
           page: 1,
@@ -43,7 +74,7 @@ const DashboardPage = () => {
 
       setSearchResults(results)
     } catch (error) {
-      console.error("Error en búsqueda:", error)
+      console.error("[v0] Error en búsqueda:", error)
       setSearchResults([])
     } finally {
       setLoading(false)
