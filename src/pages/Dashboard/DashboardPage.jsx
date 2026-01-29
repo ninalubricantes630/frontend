@@ -55,15 +55,11 @@ const DashboardPage = () => {
           sucursales_ids
         })
         
-        console.log("[v0] Dashboard search - response:", response)
-        console.log("[v0] Dashboard search - response.data:", response?.data)
-        console.log("[v0] Dashboard search - response.data.data:", response?.data?.data)
+
         
         const clientesArray = response?.data?.data || []
         results = Array.isArray(clientesArray) ? clientesArray : []
-        
-        console.log("[v0] Dashboard search - clientes found:", results.length)
-        console.log("[v0] Dashboard search - clientes array:", results)
+
       } else {
         const response = await vehiculosService.getAll({
           page: 1,
@@ -77,7 +73,7 @@ const DashboardPage = () => {
 
       setSearchResults(results)
     } catch (error) {
-      console.error("[v0] Error en búsqueda:", error)
+      console.error("Error en búsqueda:", error)
       setSearchResults([])
     } finally {
       setLoading(false)
