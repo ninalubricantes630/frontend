@@ -72,48 +72,6 @@ const ReportesPage = () => {
   const [motivoCancelacion, setMotivoCancelacion] = useState("")
   const loadServiciosDataRef = useRef(null)
 
-  useEffect(() => {
-    if (user?.sucursales && user.sucursales.length > 0) {
-      if (user.sucursales.length === 1) {
-        setFilters((prev) => ({
-          ...prev,
-          sucursal_id: user.sucursales[0].id,
-        }))
-        setUsuarioTieneMultiplesSucursales(false)
-      } else {
-        setUsuarioTieneMultiplesSucursales(true)
-      }
-    }
-  }, [user])
-
-  useEffect(() => {
-    loadSucursales({ limit: 100 })
-    if (!user?.sucursales || user.sucursales.length === 0) return
-    const urlParams = new URLSearchParams(window.location.search)
-    if (urlParams.get("cliente")) return
-    loadServiciosData()
-  }, [user])
-
-  useEffect(() => {
-    if (!user?.sucursales || user.sucursales.length === 0) return
-    const urlParams = new URLSearchParams(window.location.search)
-    if (urlParams.get("cliente")) return
-
-    const timeoutId = setTimeout(() => {
-      if (loadServiciosDataRef.current) loadServiciosDataRef.current()
-    }, 500)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchTerm, filters, user, loadServiciosData])
-
-  const handleViewMore = (servicio) => {
-    loadSpecificService(servicio.id, true)
-  }
-
-  const handlePageChangeReportes = (page, newLimit) => {
-    loadServiciosData(page, newLimit || pagination.limit)
-  }
-
   const loadServiciosData = useCallback(
     async (page = 1, limit = 10, clienteIdParam = null) => {
       if (!user?.sucursales || user.sucursales.length === 0) return
@@ -159,6 +117,48 @@ const ReportesPage = () => {
   )
 
   loadServiciosDataRef.current = loadServiciosData
+
+  const handleViewMore = (servicio) => {
+    loadSpecificService(servicio.id, true)
+  }
+
+  const handlePageChangeReportes = (page, newLimit) => {
+    loadServiciosData(page, newLimit || pagination.limit)
+  }
+
+  useEffect(() => {
+    if (user?.sucursales && user.sucursales.length > 0) {
+      if (user.sucursales.length === 1) {
+        setFilters((prev) => ({
+          ...prev,
+          sucursal_id: user.sucursales[0].id,
+        }))
+        setUsuarioTieneMultiplesSucursales(false)
+      } else {
+        setUsuarioTieneMultiplesSucursales(true)
+      }
+    }
+  }, [user])
+
+  useEffect(() => {
+    loadSucursales({ limit: 100 })
+    if (!user?.sucursales || user.sucursales.length === 0) return
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get("cliente")) return
+    loadServiciosData()
+  }, [user])
+
+  useEffect(() => {
+    if (!user?.sucursales || user.sucursales.length === 0) return
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get("cliente")) return
+
+    const timeoutId = setTimeout(() => {
+      if (loadServiciosDataRef.current) loadServiciosDataRef.current()
+    }, 500)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, filters, user, loadServiciosData])
 
   useEffect(() => {
     if (!user?.sucursales || user.sucursales.length === 0) return
