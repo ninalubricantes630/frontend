@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import {
   Box,
   Typography,
@@ -70,6 +70,7 @@ const ReportesPage = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [servicioToCancel, setServicioToCancel] = useState(null)
   const [motivoCancelacion, setMotivoCancelacion] = useState("")
+  const loadServiciosDataRef = useRef(null)
 
   useEffect(() => {
     if (user?.sucursales && user.sucursales.length > 0) {
@@ -86,28 +87,37 @@ const ReportesPage = () => {
   }, [user])
 
   useEffect(() => {
-    if (user?.sucursales && user.sucursales.length > 0) {
-      loadServiciosData()
-    }
     loadSucursales({ limit: 100 })
+    if (!user?.sucursales || user.sucursales.length === 0) return
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get("cliente")) return
+    loadServiciosData()
   }, [user])
+
+  loadServiciosDataRef.current = loadServiciosData
 
   useEffect(() => {
     if (!user?.sucursales || user.sucursales.length === 0) return
+    const urlParams = new URLSearchParams(window.location.search)
+    if (urlParams.get("cliente")) return
 
     const timeoutId = setTimeout(() => {
-      loadServiciosData()
+      if (loadServiciosDataRef.current) loadServiciosDataRef.current()
     }, 500)
 
     return () => clearTimeout(timeoutId)
-  }, [searchTerm, filters, user])
+  }, [searchTerm, filters, user, loadServiciosData])
 
   const handleViewMore = (servicio) => {
     loadSpecificService(servicio.id, true)
   }
 
+  const handlePageChangeReportes = (page, newLimit) => {
+    loadServiciosData(page, newLimit || pagination.limit)
+  }
+
   const loadServiciosData = useCallback(
-    async (page = 1, limit = 10) => {
+    async (page = 1, limit = 10, clienteIdParam = null) => {
       if (!user?.sucursales || user.sucursales.length === 0) return
 
       try {
@@ -137,15 +147,22 @@ const ReportesPage = () => {
           additionalParams.fecha_hasta = filters.fecha_hasta
         }
 
+        const clienteIdToUse = clienteIdParam ?? clienteFilter
+        if (clienteIdToUse) {
+          additionalParams.clienteId = String(clienteIdToUse)
+        }
+
         await loadServicios(page, searchTerm, limit, additionalParams)
       } catch (err) {
         showSnackbar("Error al cargar los servicios", "error")
       }
     },
-    [searchTerm, filters, user, loadServicios],
+    [searchTerm, filters, user, loadServicios, clienteFilter],
   )
 
   useEffect(() => {
+    if (!user?.sucursales || user.sucursales.length === 0) return
+
     const urlParams = new URLSearchParams(window.location.search)
     const clienteId = urlParams.get("cliente")
     const vehiculoPatente = urlParams.get("vehiculo")
@@ -153,31 +170,25 @@ const ReportesPage = () => {
     const autoOpen = urlParams.get("autoOpen")
 
     if (clienteId) {
-      loadServiciosByCliente(clienteId)
+      setClienteFilter(clienteId)
+      loadServiciosData(1, 10, clienteId)
     } else if (vehiculoPatente) {
       loadServiciosByVehiculo(vehiculoPatente)
     } else if (servicioId) {
       loadSpecificService(servicioId, autoOpen === "true")
-    } else if (user?.sucursales && user.sucursales.length > 0) {
+    } else {
       loadServiciosData()
     }
   }, [user])
 
-  const loadServiciosByCliente = async (clienteId) => {
-    try {
-      const response = await serviciosService.getServiciosByCliente(clienteId)
-      const serviciosData = Array.isArray(response) ? response : response.data || []
-
-      setClienteFilter(clienteId)
-      if (serviciosData.length > 0) {
-        const clienteName = `${serviciosData[0].cliente_nombre} ${serviciosData[0].cliente_apellido}`
-        setClienteFilterName(clienteName)
-      }
-    } catch (error) {
-      console.error("Error al cargar servicios del cliente:", error)
-      showSnackbar("Error al cargar los servicios del cliente", "error")
+  useEffect(() => {
+    if (clienteFilter && servicios.length > 0 && servicios[0].cliente_nombre) {
+      const nombre = `${servicios[0].cliente_nombre} ${servicios[0].cliente_apellido || ""}`.trim()
+      setClienteFilterName((prev) => (prev === nombre ? prev : nombre))
+    } else if (clienteFilter && servicios.length === 0) {
+      setClienteFilterName("")
     }
-  }
+  }, [clienteFilter, servicios])
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity })
@@ -680,7 +691,7 @@ const ReportesPage = () => {
               servicios={servicios}
               loading={loading}
               pagination={pagination}
-              onPageChange={handlePageChange}
+              onPageChange={handlePageChangeReportes}
               onEdit={handleEditServicio}
               onDelete={handleDeleteServicio}
               onView={handleViewMore}
