@@ -163,6 +163,22 @@ const ReportesPage = () => {
     }
   }, [user])
 
+  const loadServiciosByCliente = async (clienteId) => {
+    try {
+      const response = await serviciosService.getServiciosByCliente(clienteId)
+      const serviciosData = Array.isArray(response) ? response : response.data || []
+
+      setClienteFilter(clienteId)
+      if (serviciosData.length > 0) {
+        const clienteName = `${serviciosData[0].cliente_nombre} ${serviciosData[0].cliente_apellido}`
+        setClienteFilterName(clienteName)
+      }
+    } catch (error) {
+      console.error("Error al cargar servicios del cliente:", error)
+      showSnackbar("Error al cargar los servicios del cliente", "error")
+    }
+  }
+
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity })
   }
@@ -250,22 +266,6 @@ const ReportesPage = () => {
     } catch (error) {
       console.error("Error al cancelar servicio:", error)
       showSnackbar("Error al cancelar el servicio: " + (error.response?.data?.message || error.message), "error")
-    }
-  }
-
-  const loadServiciosByCliente = async (clienteId) => {
-    try {
-      const response = await serviciosService.getServiciosByCliente(clienteId)
-      const serviciosData = Array.isArray(response) ? response : response.data || []
-
-      setClienteFilter(clienteId)
-      if (serviciosData.length > 0) {
-        const clienteName = `${serviciosData[0].cliente_nombre} ${serviciosData[0].cliente_apellido}`
-        setClienteFilterName(clienteName)
-      }
-    } catch (error) {
-      console.error("Error al cargar servicios del cliente:", error)
-      showSnackbar("Error al cargar los servicios del cliente", "error")
     }
   }
 
