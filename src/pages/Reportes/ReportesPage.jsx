@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   Box,
   Typography,
@@ -70,7 +70,6 @@ const ReportesPage = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [servicioToCancel, setServicioToCancel] = useState(null)
   const [motivoCancelacion, setMotivoCancelacion] = useState("")
-  const loadServiciosDataRef = useRef(null)
 
   const loadServiciosData = useCallback(
     async (page = 1, limit = 10, clienteIdParam = null) => {
@@ -116,8 +115,6 @@ const ReportesPage = () => {
     [searchTerm, filters, user, loadServicios, clienteFilter],
   )
 
-  loadServiciosDataRef.current = loadServiciosData
-
   const handleViewMore = (servicio) => {
     loadSpecificService(servicio.id, true)
   }
@@ -140,26 +137,12 @@ const ReportesPage = () => {
     }
   }, [user])
 
+  // Cargar sucursales una vez que el usuario está disponible
   useEffect(() => {
     loadSucursales({ limit: 100 })
-    if (!user?.sucursales || user.sucursales.length === 0) return
-    const urlParams = new URLSearchParams(window.location.search)
-    if (urlParams.get("cliente")) return
-    loadServiciosData()
-  }, [user])
+  }, [user, loadSucursales])
 
-  useEffect(() => {
-    if (!user?.sucursales || user.sucursales.length === 0) return
-    const urlParams = new URLSearchParams(window.location.search)
-    if (urlParams.get("cliente")) return
-
-    const timeoutId = setTimeout(() => {
-      if (loadServiciosDataRef.current) loadServiciosDataRef.current()
-    }, 500)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchTerm, filters, user, loadServiciosData])
-
+  // Carga inicial según la URL (?cliente, ?vehiculo, ?servicio) o carga general
   useEffect(() => {
     if (!user?.sucursales || user.sucursales.length === 0) return
 
@@ -171,15 +154,29 @@ const ReportesPage = () => {
 
     if (clienteId) {
       setClienteFilter(clienteId)
-      loadServiciosData(1, 10, clienteId)
-    } else if (vehiculoPatente) {
-      loadServiciosByVehiculo(vehiculoPatente)
-    } else if (servicioId) {
-      loadSpecificService(servicioId, autoOpen === "true")
-    } else {
-      loadServiciosData()
+      // La carga real se hará en el efecto de filtros/clienteFilter
+      return
     }
-  }, [user])
+
+    if (vehiculoPatente) {
+      loadServiciosByVehiculo(vehiculoPatente)
+      return
+    }
+
+    if (servicioId) {
+      loadSpecificService(servicioId, autoOpen === "true")
+      return
+    }
+
+    // Sin parámetros especiales -> carga general
+    loadServiciosData()
+  }, [user, loadServiciosData])
+
+  // Cada vez que cambian búsqueda, filtros o cliente seleccionado, recargar la lista
+  useEffect(() => {
+    if (!user?.sucursales || user.sucursales.length === 0) return
+    loadServiciosData(1, pagination.limit || 10)
+  }, [searchTerm, filters, clienteFilter, user, loadServiciosData, pagination.limit])
 
   useEffect(() => {
     if (clienteFilter && servicios.length > 0 && servicios[0].cliente_nombre) {
