@@ -92,10 +92,9 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
     }
   }, [])
 
+  // Permitir usar/vender productos con stock 0 (el stock puede quedar en negativo, igual que en ventas)
   const handleProductoClick = (producto) => {
-    if (producto.stock > 0) {
-      onSelectProducto(producto)
-    }
+    onSelectProducto(producto)
   }
 
   const handleClearSearch = () => {
@@ -207,12 +206,10 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
                           boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                           bgcolor: yaAgregado ? "#f0fdf4" : "#fef2f2",
                         },
-                        cursor: stockDisponible > 0 ? "pointer" : "not-allowed",
-                        opacity: stockDisponible === 0 ? 0.6 : 1,
+                        cursor: "pointer",
                       }}
                       button
                       onClick={() => handleProductoClick(producto)}
-                      disabled={stockDisponible === 0}
                     >
                       <Box sx={{ p: 2, width: "100%", display: "flex", alignItems: "center", gap: 2 }}>
                         {/* Producto Info */}
