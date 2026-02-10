@@ -137,46 +137,40 @@ const ReportesPage = () => {
     }
   }, [user])
 
-  // Cargar sucursales una vez que el usuario está disponible
+  // Igual que ReportesVentasPage: carga inicial cuando hay user + loadSucursales
   useEffect(() => {
+    if (user?.sucursales && user.sucursales.length > 0) {
+      const urlParams = new URLSearchParams(window.location.search)
+      const clienteId = urlParams.get("cliente")
+      const vehiculoPatente = urlParams.get("vehiculo")
+      const servicioId = urlParams.get("servicio")
+      const autoOpen = urlParams.get("autoOpen")
+
+      if (clienteId) {
+        setClienteFilter(clienteId)
+        loadServiciosData(1, 10, clienteId)
+      } else if (vehiculoPatente) {
+        loadServiciosByVehiculo(vehiculoPatente)
+      } else if (servicioId) {
+        loadSpecificService(servicioId, autoOpen === "true")
+      } else {
+        loadServiciosData()
+      }
+    }
     loadSucursales({ limit: 100 })
-  }, [user, loadSucursales])
+    // Solo cuando cambia user, como en Ventas. No incluir loadServiciosData para evitar bucle.
+  }, [user])
 
-  // Carga inicial según la URL (?cliente, ?vehiculo, ?servicio) o carga general
+  // Igual que ReportesVentasPage: debounce 500ms al cambiar búsqueda o filtros (sin incluir loadServiciosData en deps)
   useEffect(() => {
     if (!user?.sucursales || user.sucursales.length === 0) return
 
-    const urlParams = new URLSearchParams(window.location.search)
-    const clienteId = urlParams.get("cliente")
-    const vehiculoPatente = urlParams.get("vehiculo")
-    const servicioId = urlParams.get("servicio")
-    const autoOpen = urlParams.get("autoOpen")
+    const timeoutId = setTimeout(() => {
+      loadServiciosData()
+    }, 500)
 
-    if (clienteId) {
-      setClienteFilter(clienteId)
-      // La carga real se hará en el efecto de filtros/clienteFilter
-      return
-    }
-
-    if (vehiculoPatente) {
-      loadServiciosByVehiculo(vehiculoPatente)
-      return
-    }
-
-    if (servicioId) {
-      loadSpecificService(servicioId, autoOpen === "true")
-      return
-    }
-
-    // Sin parámetros especiales -> carga general
-    loadServiciosData()
-  }, [user, loadServiciosData])
-
-  // Cada vez que cambian búsqueda, filtros o cliente seleccionado, recargar la lista
-  useEffect(() => {
-    if (!user?.sucursales || user.sucursales.length === 0) return
-    loadServiciosData(1, pagination.limit || 10)
-  }, [searchTerm, filters, clienteFilter, user, loadServiciosData, pagination.limit])
+    return () => clearTimeout(timeoutId)
+  }, [searchTerm, filters, user, clienteFilter])
 
   useEffect(() => {
     if (clienteFilter && servicios.length > 0 && servicios[0].cliente_nombre) {
