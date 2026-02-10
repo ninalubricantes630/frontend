@@ -94,8 +94,6 @@ const ReportesPage = () => {
     loadServiciosData()
   }, [user])
 
-  loadServiciosDataRef.current = loadServiciosData
-
   useEffect(() => {
     if (!user?.sucursales || user.sucursales.length === 0) return
     const urlParams = new URLSearchParams(window.location.search)
@@ -159,6 +157,8 @@ const ReportesPage = () => {
     },
     [searchTerm, filters, user, loadServicios, clienteFilter],
   )
+
+  loadServiciosDataRef.current = loadServiciosData
 
   useEffect(() => {
     if (!user?.sucursales || user.sucursales.length === 0) return
