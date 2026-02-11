@@ -44,6 +44,8 @@ export const getErrorMessage = (error) => {
         return data?.error || data?.message || "Error de validación"
       case 500:
         return "Error interno del servidor"
+      case 503:
+        return data?.message || "El servicio no está disponible temporalmente. Intenta de nuevo en unos segundos."
       default:
         return data?.error || data?.message || "Error desconocido"
     }

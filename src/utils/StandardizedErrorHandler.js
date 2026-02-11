@@ -65,7 +65,7 @@ export class StandardizedErrorHandler {
       case 500:
         return "Error interno del servidor. Nuestro equipo ha sido notificado."
       case 503:
-        return "El servicio no está disponible temporalmente. Intenta más tarde."
+        return serverMessage || "El servicio no está disponible temporalmente. Por favor, intenta de nuevo en unos segundos."
       default:
         if (error.code === "NETWORK_ERROR" || !error.response) {
           return "Error de conexión. Verifica tu conexión a internet."
