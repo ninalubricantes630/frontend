@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 25000, // 25s: suficiente para cold start / primera conexión en Railway
   headers: {
     "Content-Type": "application/json",
   },
@@ -60,17 +60,22 @@ api.interceptors.response.use(
           errorMessage = errorData.error.validationErrors[0].message
         }
       } else if (errorData.error?.message) {
-        // Si no hay validationErrors, usar el mensaje de error general
+        // Si no hay validationErrors, usar el mensaje de error general (formato { error: { message } })
         errorMessage = errorData.error.message
+      } else if (typeof errorData.error === "string") {
+        // Formato simple del backend: { error: "No hay una caja abierta...", etc. }
+        errorMessage = errorData.error
       } else if (errorData.message) {
-        // Fallback al mensaje directo
         errorMessage = errorData.message
       }
 
       return Promise.reject(new Error(errorMessage))
     }
 
-    const message = error.response?.data?.message || error.message || "Error desconocido"
+    const message =
+      error.code === "ECONNABORTED"
+        ? "El servidor tardó demasiado en responder. Por favor, intenta de nuevo."
+        : error.response?.data?.message || error.message || "Error desconocido"
     return Promise.reject(new Error(message))
   },
 )
