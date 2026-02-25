@@ -2,7 +2,7 @@
 import { useForm, Controller } from "react-hook-form"
 import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from "yup"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
   Dialog,
   DialogTitle,
@@ -56,7 +56,18 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
   const [clientes, setClientes] = useState([])
   const [loadingClientes, setLoadingClientes] = useState(false)
   const [selectedCliente, setSelectedCliente] = useState(null)
+  const [inputValueCliente, setInputValueCliente] = useState("")
+  const debounceRef = useRef(null)
+  const initialLoadDoneRef = useRef(false)
   const isEditing = Boolean(vehiculo)
+
+  const parseClientesFromResponse = useCallback((result) => {
+    if (!result) return []
+    if (Array.isArray(result)) return result.filter((c) => c.activo)
+    if (result.data && Array.isArray(result.data)) return result.data.filter((c) => c.activo)
+    if (result.data?.data && Array.isArray(result.data.data)) return result.data.data.filter((c) => c.activo)
+    return []
+  }, [])
 
   const {
     register,
@@ -79,42 +90,59 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
     },
   })
 
-  useEffect(() => {
-    const loadClientes = async () => {
+  const fetchClientes = useCallback(
+    async (search = "") => {
       setLoadingClientes(true)
       try {
-        logger.debug("Cargando clientes para formulario de vehículos")
-        const result = await clientesService.getAll(1, 1000)
-        logger.debug("Respuesta del servicio de clientes", result)
-
-        let clientesData = []
-
-        if (Array.isArray(result)) {
-          clientesData = result
-        } else if (result && result.data) {
-          if (Array.isArray(result.data)) {
-            clientesData = result.data
-          } else if (result.data.data && Array.isArray(result.data.data)) {
-            clientesData = result.data.data
-          }
-        }
-
-        const clientesActivos = clientesData.filter((c) => c.activo)
-        logger.debug("Clientes activos encontrados", { count: clientesActivos.length })
-        setClientes(clientesActivos)
+        const result = await clientesService.getClientes({ page: 1, limit: 100, search: search.trim() })
+        const list = parseClientesFromResponse(result)
+        setClientes(list)
       } catch (error) {
         logger.error("Error al cargar clientes", error)
         setClientes([])
       } finally {
         setLoadingClientes(false)
       }
-    }
+    },
+    [parseClientesFromResponse],
+  )
 
+  useEffect(() => {
     if (open) {
-      loadClientes()
+      initialLoadDoneRef.current = false
+      if (!vehiculo) setInputValueCliente("")
+      fetchClientes("")
       loadSucursales()
+      if (vehiculo?.cliente_id) {
+        clientesService
+          .getClienteById(vehiculo.cliente_id)
+          .then((cliente) => {
+            if (cliente && cliente.activo !== false) {
+              setSelectedCliente(cliente)
+              setInputValueCliente(`${cliente.nombre || ""} ${cliente.apellido || ""}${cliente.dni ? ` - ${cliente.dni}` : ""}`.trim())
+              setClientes((prev) => (prev.some((c) => c.id === cliente.id) ? prev : [cliente, ...prev]))
+            }
+          })
+          .catch(() => {})
+      }
     }
-  }, [open])
+  }, [open, vehiculo?.cliente_id, fetchClientes])
+
+  useEffect(() => {
+    if (!open) return
+    if (initialLoadDoneRef.current === false && inputValueCliente === "") {
+      initialLoadDoneRef.current = true
+      return
+    }
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      fetchClientes(inputValueCliente)
+      debounceRef.current = null
+    }, 300)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [inputValueCliente, open, fetchClientes])
 
   useEffect(() => {
     if (open && !vehiculo && user?.sucursales && user.sucursales.length === 1) {
@@ -179,12 +207,14 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
   const handleClose = () => {
     reset()
     setSelectedCliente(null)
+    setInputValueCliente("")
     onClose()
   }
 
   const handleClienteChange = (event, newValue) => {
     setSelectedCliente(newValue)
     setValue("clienteId", newValue ? newValue.id : "")
+    setInputValueCliente(newValue ? `${newValue.nombre || ""} ${newValue.apellido || ""}${newValue.dni ? ` - ${newValue.dni}` : ""}`.trim() : "")
   }
 
   return (
@@ -261,9 +291,11 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
                 >
                   <Autocomplete
                     options={clientes}
-                    getOptionLabel={(option) => `${option.nombre} ${option.apellido} - ${option.dni}`}
+                    getOptionLabel={(option) => (option ? `${option.nombre || ""} ${option.apellido || ""}${option.dni ? ` - ${option.dni}` : ""}` : "")}
                     value={selectedCliente}
                     onChange={handleClienteChange}
+                    inputValue={inputValueCliente}
+                    onInputChange={(_, value) => setInputValueCliente(value)}
                     loading={loadingClientes}
                     size="small"
                     renderInput={(params) => (
