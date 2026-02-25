@@ -93,10 +93,21 @@ const cajaService = {
   async getDetalleIngresos(sesionId) {
     try {
       const response = await api.get(`/caja/sesiones/${sesionId}/detalle-ingresos`)
-      console.log("[v0] Frontend - API response getDetalleIngresos:", response)
       return response.data
     } catch (error) {
       logger.error("Error al obtener detalle de ingresos", error)
+      throw error
+    }
+  },
+
+  // Detalle de ventas y servicios en cuenta corriente (por qué y a qué cliente)
+  async getCuentaCorrienteDetalle(sesionId) {
+    try {
+      const response = await api.get(`/caja/sesiones/${sesionId}/cuenta-corriente-detalle`)
+      const res = response?.data ?? response
+      return res?.data ?? res
+    } catch (error) {
+      logger.error("Error al obtener detalle cuenta corriente", error)
       throw error
     }
   },

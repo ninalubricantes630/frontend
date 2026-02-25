@@ -35,6 +35,7 @@ import cajaService from "../../services/cajaService"
 export default function DetalleSesionModal({ open, onClose, sesion }) {
   const [movimientos, setMovimientos] = useState([])
   const [detalleIngresos, setDetalleIngresos] = useState(null)
+  const [detalleCC, setDetalleCC] = useState(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -51,6 +52,16 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
 
       const ingresosRes = await cajaService.getDetalleIngresos(sesion.id)
       setDetalleIngresos(ingresosRes)
+
+      if (
+        Number(sesion.cantidad_ventas_cuenta_corriente) > 0 ||
+        Number(sesion.cantidad_servicios_cuenta_corriente) > 0
+      ) {
+        const ccRes = await cajaService.getCuentaCorrienteDetalle(sesion.id)
+        setDetalleCC(ccRes)
+      } else {
+        setDetalleCC(null)
+      }
     } catch (error) {
       console.error("Error al cargar detalles:", error)
     } finally {
@@ -304,6 +315,77 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
               </Typography>
             </Card>
           </Grid>
+
+          {(Number(sesion.cantidad_ventas_cuenta_corriente) > 0 ||
+            Number(sesion.cantidad_servicios_cuenta_corriente) > 0) && (
+            <Grid item xs={12}>
+              <Card sx={{ p: 2, bgcolor: "#fef3c7", borderLeft: "4px solid #f59e0b" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                  <ReceiptIcon sx={{ fontSize: 20, color: "#b45309" }} />
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "#92400e" }}>
+                    Cuenta corriente (referencia)
+                  </Typography>
+                </Box>
+                <Typography variant="caption" sx={{ color: "#92400e", display: "block", mb: 1 }}>
+                  No afecta caja. Estimado de lo facturado en cuenta corriente en esta sesión.
+                </Typography>
+                <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", mb: 1 }}>
+                  {Number(sesion.cantidad_ventas_cuenta_corriente) > 0 && (
+                    <Typography variant="body2" sx={{ color: "#0f172a", fontWeight: 500 }}>
+                      Ventas: {sesion.cantidad_ventas_cuenta_corriente} — {formatCurrency(sesion.total_ventas_cuenta_corriente)}
+                    </Typography>
+                  )}
+                  {Number(sesion.cantidad_servicios_cuenta_corriente) > 0 && (
+                    <Typography variant="body2" sx={{ color: "#0f172a", fontWeight: 500 }}>
+                      Servicios: {sesion.cantidad_servicios_cuenta_corriente} — {formatCurrency(sesion.total_servicios_cuenta_corriente)}
+                    </Typography>
+                  )}
+                  <Typography variant="body2" sx={{ fontWeight: 700, color: "#b45309" }}>
+                    Total ref. CC: {formatCurrency((Number(sesion.total_ventas_cuenta_corriente) || 0) + (Number(sesion.total_servicios_cuenta_corriente) || 0))}
+                  </Typography>
+                </Box>
+
+                {detalleCC && (detalleCC.ventas?.length > 0 || detalleCC.servicios?.length > 0) && (
+                  <Box sx={{ mt: 1, pt: 1, borderTop: "1px solid #fde68a" }}>
+                    {detalleCC.ventas?.length > 0 && (
+                      <Box sx={{ mb: 1 }}>
+                        <Typography variant="caption" sx={{ color: "#92400e", fontWeight: 600, display: "block", mb: 0.5 }}>
+                          Ventas en CC
+                        </Typography>
+                        {detalleCC.ventas.map((v) => (
+                          <Box key={`v-${v.id}`} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.25, px: 0.5 }}>
+                            <Typography variant="caption" sx={{ color: "#0f172a" }}>
+                              {v.numero} — {v.cliente || "Sin cliente"}
+                            </Typography>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: "#b45309" }}>
+                              {formatCurrency(v.total)}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                    {detalleCC.servicios?.length > 0 && (
+                      <Box>
+                        <Typography variant="caption" sx={{ color: "#92400e", fontWeight: 600, display: "block", mb: 0.5 }}>
+                          Servicios en CC
+                        </Typography>
+                        {detalleCC.servicios.map((s) => (
+                          <Box key={`s-${s.id}`} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.25, px: 0.5 }}>
+                            <Typography variant="caption" sx={{ color: "#0f172a" }}>
+                              {s.numero} — {s.cliente || "Sin cliente"}
+                            </Typography>
+                            <Typography variant="caption" sx={{ fontWeight: 600, color: "#b45309" }}>
+                              {formatCurrency(s.total)}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              </Card>
+            </Grid>
+          )}
 
           {sesion.estado === "CERRADA" && (
             <>
