@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Box,
   Typography,
@@ -86,7 +86,8 @@ const ServiciosPage = () => {
   })
 
   const { user } = useAuth()
-  const { clientes, loadClientes } = useClientes()
+  const { clientes, loadClientes, loading: loadingClientes } = useClientes()
+  const clienteSearchDebounceRef = useRef(null)
   const { vehiculos, loadVehiculos, loadVehiculosByCliente } = useVehiculos()
   const { tiposServicios, loadTiposServicios } = useTiposServicios()
   const { createServicio, loading } = useServicios()
@@ -220,10 +221,22 @@ const ServiciosPage = () => {
   }, [activeStep, formData])
 
   useEffect(() => {
-    loadClientes(1, 1000) // Cargar todos los clientes (límite alto para selector)
     loadTiposServicios()
     loadSucursalesActivas()
   }, [])
+
+  // Búsqueda de clientes en el servidor (paso 0 - Seleccionar Cliente)
+  useEffect(() => {
+    if (activeStep !== 0) return
+    if (clienteSearchDebounceRef.current) clearTimeout(clienteSearchDebounceRef.current)
+    clienteSearchDebounceRef.current = setTimeout(() => {
+      loadClientes(1, 100, clienteSearch.trim())
+      clienteSearchDebounceRef.current = null
+    }, 300)
+    return () => {
+      if (clienteSearchDebounceRef.current) clearTimeout(clienteSearchDebounceRef.current)
+    }
+  }, [activeStep, clienteSearch, loadClientes])
 
   useEffect(() => {
     if (formData.clienteId) {
@@ -481,9 +494,8 @@ const ServiciosPage = () => {
     }
   }
 
-  const filteredClientes = clientes.filter((cliente) =>
-    `${cliente.nombre} ${cliente.apellido} ${cliente.dni}`.toLowerCase().includes(clienteSearch.toLowerCase()),
-  )
+  // En paso 0 los clientes vienen del servidor (búsqueda con search=clienteSearch)
+  const clientesToShow = activeStep === 0 ? clientes : []
 
   const renderStepContent = () => {
     switch (activeStep) {
@@ -539,10 +551,18 @@ const ServiciosPage = () => {
                 }}
               />
 
-              {clienteSearch.trim() && (
+              {(clienteSearch.trim() || (clientesToShow.length > 0 && !selectedCliente)) && (
                 <Grid container spacing={2}>
-                  {filteredClientes.length > 0 ? (
-                    filteredClientes.map((cliente) => (
+                  {loadingClientes ? (
+                    <Grid item xs={12}>
+                      <Box sx={{ textAlign: "center", py: 4 }}>
+                        <Typography variant="body2" sx={{ color: "#6b7280" }}>
+                          Buscando clientes...
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  ) : clientesToShow.length > 0 ? (
+                    clientesToShow.map((cliente) => (
                       <Grid item xs={12} sm={6} md={4} key={cliente.id}>
                         <Card
                           elevation={selectedCliente?.id === cliente.id ? 1 : 0}
@@ -612,7 +632,7 @@ const ServiciosPage = () => {
                 </Card>
               )}
 
-              {!clienteSearch.trim() && !selectedCliente && (
+              {!clienteSearch.trim() && !selectedCliente && clientesToShow.length === 0 && !loadingClientes && (
                 <Box
                   sx={{
                     textAlign: "center",
