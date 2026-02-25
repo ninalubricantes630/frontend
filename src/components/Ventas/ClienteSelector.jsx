@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import {
   Dialog,
   DialogTitle,
@@ -19,86 +19,97 @@ import {
 import { Search as SearchIcon, Close as CloseIcon } from "@mui/icons-material"
 import { clientesService } from "../../services/clientesService"
 
+const LIMIT = 100
+const DEBOUNCE_MS = 300
+
 export default function ClienteSelector({ open, onClose, onSelect }) {
   const [clientes, setClientes] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
-  const [filteredClientes, setFilteredClientes] = useState([])
-  const [displayedClientes, setDisplayedClientes] = useState([])
-  const [currentPage, setCurrentPage] = useState(1)
   const [totalItems, setTotalItems] = useState(0)
+  const [apiPage, setApiPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(0)
   const searchInputRef = useRef(null)
-  const ITEMS_PER_PAGE = 5
+  const debounceRef = useRef(null)
+  const justOpenedRef = useRef(false)
+
+  const parseClientesFromResponse = useCallback((response) => {
+    if (!response) return []
+    if (response.data && Array.isArray(response.data)) return response.data
+    if (response.data?.data && Array.isArray(response.data.data)) return response.data.data
+    if (response.clientes && Array.isArray(response.clientes)) return response.clientes
+    return []
+  }, [])
+
+  const loadClientes = useCallback(
+    async (search = "", page = 1, append = false) => {
+      try {
+        setLoading(true)
+        const response = await clientesService.getClientes({
+          page,
+          limit: LIMIT,
+          search: search.trim(),
+        })
+        const clientesData = parseClientesFromResponse(response)
+        const pagination = response?.data?.pagination || {}
+        const total = pagination.total ?? clientesData.length
+        const pages = pagination.totalPages ?? 1
+
+        setTotalItems(total)
+        setTotalPages(pages)
+        setApiPage(page)
+        setClientes((prev) => (append ? [...prev, ...clientesData] : clientesData))
+      } catch (error) {
+        console.error("Error al cargar clientes:", error)
+        if (!append) setClientes([])
+      } finally {
+        setLoading(false)
+      }
+    },
+    [parseClientesFromResponse],
+  )
 
   useEffect(() => {
     if (open) {
-      loadClientes()
+      setSearchTerm("")
+      justOpenedRef.current = true
+      loadClientes("", 1, false)
       setTimeout(() => {
         if (searchInputRef.current) {
           searchInputRef.current.focus()
         }
       }, 100)
     }
-  }, [open])
+  }, [open, loadClientes])
 
   useEffect(() => {
-    if (searchTerm.trim() === "") {
-      setFilteredClientes(Array.isArray(clientes) ? clientes : [])
-    } else {
-      const clientesArray = Array.isArray(clientes) ? clientes : []
-      const filtered = clientesArray.filter(
-        (cliente) =>
-          cliente.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          cliente.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          cliente.dni?.includes(searchTerm) ||
-          cliente.telefono?.includes(searchTerm),
-      )
-      setFilteredClientes(filtered)
+    if (!open) return
+    if (justOpenedRef.current && searchTerm === "") {
+      justOpenedRef.current = false
+      return
     }
-    setCurrentPage(1)
-  }, [searchTerm, clientes])
-
-  useEffect(() => {
-    const clientesArray = Array.isArray(filteredClientes) ? filteredClientes : []
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE
-    const endIndex = startIndex + ITEMS_PER_PAGE
-    setDisplayedClientes(clientesArray.slice(startIndex, endIndex))
-    setTotalItems(clientesArray.length)
-  }, [filteredClientes, currentPage])
-
-  const loadClientes = async () => {
-    try {
-      setLoading(true)
-      const response = await clientesService.getAll(1, 1000)
-
-      let clientesData = []
-
-      if (response.data && Array.isArray(response.data)) {
-        clientesData = response.data
-      } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        clientesData = response.data.data
-      } else if (response.clientes && Array.isArray(response.clientes)) {
-        clientesData = response.clientes
-      }
-
-
-      setClientes(clientesData)
-      setFilteredClientes(clientesData)
-    } catch (error) {
-      console.error("Error al cargar clientes:", error)
-    } finally {
-      setLoading(false)
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      loadClientes(searchTerm, 1, false)
+      debounceRef.current = null
+    }, DEBOUNCE_MS)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
     }
+  }, [searchTerm, open, loadClientes])
+
+  const handleVerMas = () => {
+    if (apiPage >= totalPages || loading) return
+    loadClientes(searchTerm, apiPage + 1, true)
   }
+
+  const hasMoreResults = totalItems > clientes.length
 
   const handleSelect = (cliente) => {
     onSelect(cliente)
     onClose()
     setSearchTerm("")
-    setCurrentPage(1)
   }
-
-  const hasMoreResults = totalItems > currentPage * ITEMS_PER_PAGE
 
   return (
     <Dialog
@@ -171,10 +182,10 @@ export default function ClienteSelector({ open, onClose, onSelect }) {
           <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
             <CircularProgress size={32} sx={{ color: "#dc2626" }} />
           </Box>
-        ) : displayedClientes.length === 0 ? (
+        ) : clientes.length === 0 ? (
           <Box sx={{ textAlign: "center", py: 4 }}>
             <Typography color="textSecondary" sx={{ fontSize: "0.95rem" }}>
-              {searchTerm ? "No se encontraron clientes" : "No hay clientes registrados"}
+              {searchTerm ? "No se encontraron clientes con ese criterio" : "No hay clientes registrados"}
             </Typography>
           </Box>
         ) : (
@@ -188,12 +199,12 @@ export default function ClienteSelector({ open, onClose, onSelect }) {
                 p: 0,
               }}
             >
-              {displayedClientes.map((cliente, index) => (
+              {clientes.map((cliente, index) => (
                 <ListItem
-                  key={cliente.id}
+                  key={`${cliente.id}-${index}`}
                   disablePadding
                   sx={{
-                    borderBottom: index < displayedClientes.length - 1 ? "1px solid #f3f4f6" : "none",
+                    borderBottom: index < clientes.length - 1 ? "1px solid #f3f4f6" : "none",
                   }}
                 >
                   <ListItemButton
@@ -234,34 +245,21 @@ export default function ClienteSelector({ open, onClose, onSelect }) {
                 }}
               >
                 <Typography variant="caption" sx={{ color: "#6b7280", fontSize: "0.85rem" }}>
-                  Mostrando {displayedClientes.length} de {totalItems} clientes
+                  Mostrando {clientes.length} de {totalItems} clientes
                 </Typography>
 
                 {hasMoreResults && (
                   <Button
                     size="small"
-                    onClick={() => setCurrentPage(currentPage + 1)}
+                    onClick={handleVerMas}
+                    disabled={loading}
                     sx={{
                       color: "#dc2626",
                       fontSize: "0.875rem",
                       "&:hover": { bgcolor: "#fef2f2" },
                     }}
                   >
-                    Ver más
-                  </Button>
-                )}
-
-                {currentPage > 1 && (
-                  <Button
-                    size="small"
-                    onClick={() => setCurrentPage(currentPage - 1)}
-                    sx={{
-                      color: "#6b7280",
-                      fontSize: "0.875rem",
-                      "&:hover": { bgcolor: "#f3f4f6" },
-                    }}
-                  >
-                    Ver menos
+                    {loading ? "Cargando..." : "Ver más"}
                   </Button>
                 )}
               </Box>
