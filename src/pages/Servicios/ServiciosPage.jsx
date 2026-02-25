@@ -87,7 +87,8 @@ const ServiciosPage = () => {
 
   const { user } = useAuth()
   const { clientes, loadClientes, loading: loadingClientes } = useClientes()
-  const clienteSearchDebounceRef = useRef(null)
+  const loadClientesRef = useRef(loadClientes)
+  loadClientesRef.current = loadClientes
   const { vehiculos, loadVehiculos, loadVehiculosByCliente } = useVehiculos()
   const { tiposServicios, loadTiposServicios } = useTiposServicios()
   const { createServicio, loading } = useServicios()
@@ -225,18 +226,14 @@ const ServiciosPage = () => {
     loadSucursalesActivas()
   }, [])
 
-  // Búsqueda de clientes en el servidor (paso 0 - Seleccionar Cliente)
+  // Búsqueda de clientes en el servidor (paso 0 - Seleccionar Cliente). Solo depende de activeStep y clienteSearch para evitar bucle de recarga.
   useEffect(() => {
     if (activeStep !== 0) return
-    if (clienteSearchDebounceRef.current) clearTimeout(clienteSearchDebounceRef.current)
-    clienteSearchDebounceRef.current = setTimeout(() => {
-      loadClientes(1, 100, clienteSearch.trim())
-      clienteSearchDebounceRef.current = null
+    const id = setTimeout(() => {
+      loadClientesRef.current(1, 100, clienteSearch.trim())
     }, 300)
-    return () => {
-      if (clienteSearchDebounceRef.current) clearTimeout(clienteSearchDebounceRef.current)
-    }
-  }, [activeStep, clienteSearch, loadClientes])
+    return () => clearTimeout(id)
+  }, [activeStep, clienteSearch])
 
   useEffect(() => {
     if (formData.clienteId) {
