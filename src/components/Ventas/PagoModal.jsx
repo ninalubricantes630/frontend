@@ -132,11 +132,25 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
 
       setInteresTarjeta(interesCalculado)
       setTotalConInteresTarjeta(totalConInteresCalculado)
+    } else if (pagoDividido) {
+      setInteresTarjeta(0)
+      setTotalConInteresTarjeta(total)
     } else {
       setInteresTarjeta(0)
       setTotalConInteresTarjeta(total)
     }
   }, [cuotasSeleccionadas, metodoPago, total, pagoDividido])
+
+  // Montos con interés para pago dividido (cuando uno de los pagos es tarjeta)
+  const monto1Base = parsePriceInput(montoPago1) || 0
+  const monto2Base = parsePriceInput(montoPago2) || 0
+  const tasa1 = metodoPago === "tarjeta_credito" && cuotasSeleccionadas?.tasa_interes ? cuotasSeleccionadas.tasa_interes : 0
+  const tasa2 = metodoPago2 === "tarjeta_credito" && cuotasSeleccionadas2?.tasa_interes ? cuotasSeleccionadas2.tasa_interes : 0
+  const monto1ConInteres = tasa1 > 0 ? monto1Base * (1 + tasa1 / 100) : monto1Base
+  const monto2ConInteres = tasa2 > 0 ? monto2Base * (1 + tasa2 / 100) : monto2Base
+  const monto1ACobrar = pagoDividido && metodoPago === "tarjeta_credito" ? monto1ConInteres : monto1Base
+  const monto2ACobrar = pagoDividido && metodoPago2 === "tarjeta_credito" ? monto2ConInteres : monto2Base
+  const totalPagoDivididoConInteres = monto1ACobrar + monto2ACobrar
 
   useEffect(() => {
     if (metodoPago === "cuenta_corriente" && !clienteSeleccionado) {
@@ -281,7 +295,7 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
       }
 
       if (Math.abs(sumaPagos - total) > 0.01) {
-        setError(`La suma de los pagos (${formatCurrency(sumaPagos)}) debe ser igual al total (${formatCurrency(total)})`)
+        setError(`La suma de los montos base (${formatCurrency(sumaPagos)}) debe ser igual al total (${formatCurrency(total)})`)
         return
       }
 
@@ -314,23 +328,27 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
         }
       }
 
-      // Datos para pago dividido
+      // Montos a cobrar (con interés aplicado en la parte de tarjeta)
+      const monto1Cobrar = metodoPago === "tarjeta_credito" && cuotasSeleccionadas?.tasa_interes
+        ? monto1 * (1 + cuotasSeleccionadas.tasa_interes / 100)
+        : monto1
+      const monto2Cobrar = metodoPago2 === "tarjeta_credito" && cuotasSeleccionadas2?.tasa_interes
+        ? monto2 * (1 + cuotasSeleccionadas2.tasa_interes / 100)
+        : monto2
+
       const datosPago = {
         pago_dividido: true,
-        // Primer pago
         tipo_pago: metodoPago.toUpperCase(),
-        monto_pago_1: monto1,
+        monto_pago_1: monto1Cobrar,
         tarjeta_id: metodoPago === "tarjeta_credito" ? tarjetaSeleccionada : null,
         numero_cuotas: metodoPago === "tarjeta_credito" ? cuotasSeleccionadas?.numero_cuotas || null : null,
         tasa_interes_tarjeta: metodoPago === "tarjeta_credito" && cuotasSeleccionadas?.tasa_interes ? cuotasSeleccionadas.tasa_interes : null,
-        // Segundo pago
         tipo_pago_2: metodoPago2.toUpperCase(),
-        monto_pago_2: monto2,
+        monto_pago_2: monto2Cobrar,
         tarjeta_id_2: metodoPago2 === "tarjeta_credito" ? tarjetaSeleccionada2 : null,
         numero_cuotas_2: metodoPago2 === "tarjeta_credito" ? cuotasSeleccionadas2?.numero_cuotas || null : null,
         tasa_interes_tarjeta_2: metodoPago2 === "tarjeta_credito" && cuotasSeleccionadas2?.tasa_interes ? cuotasSeleccionadas2.tasa_interes : null,
-        // Datos generales
-        monto_pagado: total,
+        monto_pagado: monto1Cobrar + monto2Cobrar,
         vuelto: 0,
         cliente_id: clienteSeleccionado?.id || null,
         observaciones: observaciones.trim() || null,
@@ -340,7 +358,7 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
         valor_interes_sistema: interes?.valorInteres || 0,
         total_con_interes: total,
         interes_tarjeta: 0,
-        total_con_interes_tarjeta: null,
+        total_con_interes_tarjeta: monto1Cobrar + monto2Cobrar,
       }
 
       onConfirm(datosPago)
@@ -1001,7 +1019,7 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
                   />
                 </Paper>
 
-                {/* Resumen de pagos divididos */}
+                {/* Resumen de pagos divididos (muestra montos con interés aplicado en crédito) */}
                 <Paper
                   elevation={0}
                   sx={{
@@ -1017,7 +1035,12 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
                       Pago 1 ({METODOS_PAGO_DIVIDIDO.find(m => m.value === metodoPago)?.label}):
                     </Typography>
                     <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                      {formatCurrency(parsePriceInput(montoPago1) || 0)}
+                      {formatCurrency(monto1ACobrar)}
+                      {tasa1 > 0 && (
+                        <Typography component="span" variant="caption" sx={{ color: "#6b7280", ml: 0.5 }}>
+                          (base {formatCurrency(monto1Base)} + {tasa1}%)
+                        </Typography>
+                      )}
                     </Typography>
                   </Box>
                   <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
@@ -1025,7 +1048,12 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
                       Pago 2 ({METODOS_PAGO_DIVIDIDO.find(m => m.value === metodoPago2)?.label}):
                     </Typography>
                     <Typography variant="caption" sx={{ fontWeight: 600 }}>
-                      {formatCurrency(parsePriceInput(montoPago2) || 0)}
+                      {formatCurrency(monto2ACobrar)}
+                      {tasa2 > 0 && (
+                        <Typography component="span" variant="caption" sx={{ color: "#6b7280", ml: 0.5 }}>
+                          (base {formatCurrency(monto2Base)} + {tasa2}%)
+                        </Typography>
+                      )}
                     </Typography>
                   </Box>
                   <Divider sx={{ my: 0.5 }} />
@@ -1035,12 +1063,9 @@ export default function PagoModal({ open, onClose, subtotal, descuento, interes,
                     </Typography>
                     <Typography 
                       variant="caption" 
-                      sx={{ 
-                        fontWeight: 600,
-                        color: Math.abs((parsePriceInput(montoPago1) || 0) + (parsePriceInput(montoPago2) || 0) - total) < 0.01 ? "#16a34a" : "#dc2626"
-                      }}
+                      sx={{ fontWeight: 600, color: Math.abs(monto1Base + monto2Base - total) < 0.01 ? "#16a34a" : "#dc2626" }}
                     >
-                      {formatCurrency((parsePriceInput(montoPago1) || 0) + (parsePriceInput(montoPago2) || 0))}
+                      {formatCurrency(totalPagoDivididoConInteres)}
                     </Typography>
                   </Box>
                 </Paper>
