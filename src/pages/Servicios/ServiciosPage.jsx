@@ -70,6 +70,7 @@ const ServiciosPage = () => {
   const [formData, setFormData] = useState({
     clienteId: null,
     vehiculoId: null,
+    vehiculoIds: [],
     sucursalId: null,
     empleados: [],
     observaciones: "",
@@ -97,6 +98,7 @@ const ServiciosPage = () => {
 
   const [selectedCliente, setSelectedCliente] = useState(null)
   const [selectedVehiculo, setSelectedVehiculo] = useState(null)
+  const [selectedVehiculos, setSelectedVehiculos] = useState([])
   const [selectedSucursal, setSelectedSucursal] = useState(null)
   const [clienteSearch, setClienteSearch] = useState("")
   const [showItemDialog, setShowItemDialog] = useState(false)
@@ -120,40 +122,42 @@ const ServiciosPage = () => {
     setSnackbar({ ...snackbar, open: false })
   }
 
+  const numVehiculosParaTotal = Math.max(1, selectedVehiculos?.length || 0)
+
   const calcularSubtotal = () => {
-    let subtotal = 0
+    let subtotalUnaVuelta = 0
     if (Array.isArray(formData.items)) {
       for (const item of formData.items) {
         if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
           for (const prod of item.productos) {
             const precioProducto =
               (Number.parseFloat(prod.precio_unitario) || 0) * (Number.parseFloat(prod.cantidad) || 0)
-            subtotal += precioProducto
+            subtotalUnaVuelta += precioProducto
           }
         } else {
           const precioManual = Number.parseFloat(item.total) || 0
-          subtotal += precioManual
+          subtotalUnaVuelta += precioManual
         }
       }
     }
-    return Math.max(0, subtotal)
+    return Math.max(0, subtotalUnaVuelta * numVehiculosParaTotal)
   }
 
   const calcularTotal = () => {
-    // Sum subtotals from all items
-    let subtotal = 0
+    let subtotalUnaVuelta = 0
     if (Array.isArray(formData.items)) {
       for (const item of formData.items) {
         if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
           for (const prod of item.productos) {
-            subtotal += (Number.parseFloat(prod.precio_unitario) || 0) * (Number.parseFloat(prod.cantidad) || 0)
+            subtotalUnaVuelta += (Number.parseFloat(prod.precio_unitario) || 0) * (Number.parseFloat(prod.cantidad) || 0)
           }
         } else {
           const precioManual = Number.parseFloat(item.total) || 0
-          subtotal += precioManual
+          subtotalUnaVuelta += precioManual
         }
       }
     }
+    const subtotal = subtotalUnaVuelta * numVehiculosParaTotal
 
     let total = subtotal
 
@@ -271,6 +275,7 @@ const ServiciosPage = () => {
     setFormData({
       clienteId: null,
       vehiculoId: null,
+      vehiculoIds: [],
       sucursalId:
         user && user.sucursales ? (user.sucursales.find((s) => s.es_principal) || user.sucursales[0])?.id : null,
       empleados: [],
@@ -287,6 +292,7 @@ const ServiciosPage = () => {
     })
     setSelectedCliente(null)
     setSelectedVehiculo(null)
+    setSelectedVehiculos([])
     setClienteSearch("")
     setEditingItemId(null)
     // Reset interest and discount states as well
@@ -300,16 +306,20 @@ const ServiciosPage = () => {
       ...prev,
       clienteId: cliente?.id || null,
       vehiculoId: null,
+      vehiculoIds: [],
     }))
     setSelectedVehiculo(null)
+    setSelectedVehiculos([])
   }
 
   const handleVehiculoSelect = (vehiculo) => {
-    setSelectedVehiculo(vehiculo)
-    setFormData((prev) => ({
-      ...prev,
-      vehiculoId: vehiculo?.id || null,
-    }))
+    setSelectedVehiculos((prev) => {
+      const exists = prev.some((v) => v.id === vehiculo.id)
+      const next = exists ? prev.filter((v) => v.id !== vehiculo.id) : [...prev, vehiculo]
+      setFormData((f) => ({ ...f, vehiculoIds: next.map((v) => v.id), vehiculoId: next[0]?.id ?? null }))
+      setSelectedVehiculo(next[0] ?? null)
+      return next
+    })
   }
 
   const handleSucursalSelect = (sucursalId) => {
@@ -410,16 +420,17 @@ const ServiciosPage = () => {
 
   const handleSubmit = async (pagoData) => {
     try {
-      const calculatedSubtotal = calcularSubtotal()
+      const numV = Math.max(1, formData.vehiculoIds?.length || 0)
+      const subtotalParaBackend = calcularSubtotal() / numV
 
       const submitData = {
         cliente_id: formData.clienteId,
-        vehiculo_id: formData.vehiculoId,
+        vehiculo_ids: formData.vehiculoIds,
         sucursal_id: formData.sucursalId,
         empleados: formData.empleados,
         observaciones: formData.observaciones,
         tipo_pago: pagoData?.tipo_pago?.toUpperCase() || formData.metodoPago?.toUpperCase() || "EFECTIVO",
-        subtotal: calculatedSubtotal,
+        subtotal: subtotalParaBackend,
         descuento: pagoData?.descuento || 0,
         tipo_interes_sistema: pagoData?.tipo_interes_sistema || null,
         valor_interes_sistema: pagoData?.valor_interes_sistema || 0,
@@ -427,7 +438,7 @@ const ServiciosPage = () => {
         tarjeta_id: pagoData?.tarjeta_id || null,
         numero_cuotas: pagoData?.numero_cuotas || null,
         tasa_interes_tarjeta: pagoData?.tasa_interes_tarjeta || null,
-        total_con_interes: pagoData?.total_con_interes || calculatedSubtotal,
+        total_con_interes: pagoData?.total_con_interes ?? calcularTotal(),
         total_con_interes_tarjeta: pagoData?.total_con_interes_tarjeta || null,
         // Pago dividido
         pago_dividido: pagoData?.pago_dividido || false,
@@ -479,7 +490,7 @@ const ServiciosPage = () => {
       case 0:
         return formData.clienteId !== null
       case 1:
-        return formData.vehiculoId !== null
+        return formData.vehiculoIds?.length > 0
       case 2:
         return formData.sucursalId !== null
       case 3:
@@ -671,8 +682,15 @@ const ServiciosPage = () => {
                     Seleccionar Vehículo
                   </Typography>
                   <Typography variant="caption" sx={{ color: "#6b7280", fontSize: "0.8rem" }}>
-                    Elige el vehículo que recibirá el servicio
+                    Elige uno o más vehículos que recibirán el mismo servicio
                   </Typography>
+                  {selectedVehiculos.length > 0 && (
+                    <Chip
+                      size="small"
+                      label={`${selectedVehiculos.length} seleccionado${selectedVehiculos.length !== 1 ? "s" : ""}`}
+                      sx={{ mt: 1, bgcolor: "#fef2f2", color: "#dc2626", fontWeight: 600 }}
+                    />
+                  )}
                 </Box>
               </Box>
             </CardContent>
@@ -689,11 +707,13 @@ const ServiciosPage = () => {
                   {vehiculos.map((vehiculo) => (
                     <Grid item xs={12} sm={6} md={4} key={vehiculo.id}>
                       <Card
-                        elevation={selectedVehiculo?.id === vehiculo.id ? 1 : 0}
+                        elevation={selectedVehiculos.some((v) => v.id === vehiculo.id) ? 1 : 0}
                         sx={{
                           cursor: "pointer",
-                          border: selectedVehiculo?.id === vehiculo.id ? "2px solid #dc2626" : "1px solid #e5e7eb",
-                          bgcolor: selectedVehiculo?.id === vehiculo.id ? "#fef2f2" : "white",
+                          border: selectedVehiculos.some((v) => v.id === vehiculo.id)
+                            ? "2px solid #dc2626"
+                            : "1px solid #e5e7eb",
+                          bgcolor: selectedVehiculos.some((v) => v.id === vehiculo.id) ? "#fef2f2" : "white",
                           p: 2.5,
                           borderRadius: 1.5,
                           transition: "all 0.2s ease",
@@ -719,7 +739,7 @@ const ServiciosPage = () => {
                               {vehiculo.marca} {vehiculo.modelo}
                             </Typography>
                           </Box>
-                          {selectedVehiculo?.id === vehiculo.id && (
+                          {selectedVehiculos.some((v) => v.id === vehiculo.id) && (
                             <CheckCircle size={20} color="#dc2626" strokeWidth={2.5} />
                           )}
                         </Box>
@@ -1059,6 +1079,7 @@ const ServiciosPage = () => {
             formData={formData}
             selectedCliente={selectedCliente}
             selectedVehiculo={selectedVehiculo}
+            selectedVehiculos={selectedVehiculos}
             selectedSucursal={selectedSucursal}
             calcularTotal={calcularTotal}
             empleadosActivos={empleadosActivos}

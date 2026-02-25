@@ -9,6 +9,7 @@ const ConfirmacionServicio = ({
   formData,
   selectedCliente,
   selectedVehiculo,
+  selectedVehiculos = [],
   selectedSucursal,
   empleadosActivos,
   descuento,
@@ -27,12 +28,14 @@ const ConfirmacionServicio = ({
   const hayDescuento = descuento && descuento.montoDescuento > 0
   const hayInteres = interes && interes.montoInteres > 0
 
-  const subtotal = formData.items.reduce((sum, item) => {
+  const numVehiculos = selectedVehiculos?.length > 0 ? selectedVehiculos.length : 1
+  const subtotalUnaVuelta = formData.items.reduce((sum, item) => {
     if (item.productos && Array.isArray(item.productos) && item.productos.length > 0) {
       return sum + item.productos.reduce((pSum, prod) => pSum + (prod.precio_unitario * prod.cantidad || 0), 0)
     }
     return sum + (Number.parseFloat(item.total) || 0)
   }, 0)
+  const subtotal = subtotalUnaVuelta * numVehiculos
 
   const totalConDescuentoInteres =
     subtotal - (hayDescuento ? descuento.montoDescuento : 0) + (hayInteres ? interes.montoInteres : 0)
@@ -88,7 +91,7 @@ const ConfirmacionServicio = ({
 
             <Divider sx={{ my: 2, opacity: 0.5 }} />
 
-            {/* Vehículo */}
+            {/* Vehículo(s) */}
             <Box sx={{ mb: 3 }}>
               <Typography
                 variant="caption"
@@ -102,17 +105,23 @@ const ConfirmacionServicio = ({
                   letterSpacing: "0.5px",
                 }}
               >
-                Vehículo
+                Vehículo{selectedVehiculos?.length > 1 ? "s" : ""}
               </Typography>
-              <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#dc2626", mb: 0.5 }}>
-                {selectedVehiculo?.patente}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "#6b7280", fontSize: "0.85rem", display: "block", mb: 0.25 }}>
-                {selectedVehiculo?.marca} {selectedVehiculo?.modelo}
-              </Typography>
-              <Typography variant="caption" sx={{ color: "#6b7280", fontSize: "0.85rem" }}>
-                Año: {selectedVehiculo?.año}
-              </Typography>
+              {(selectedVehiculos?.length > 0 ? selectedVehiculos : selectedVehiculo ? [selectedVehiculo] : []).map(
+                (v) => (
+                  <Box key={v.id} sx={{ mb: v.id ? 1.5 : 0 }}>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#dc2626", mb: 0.5 }}>
+                      {v.patente}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#6b7280", fontSize: "0.85rem", display: "block", mb: 0.25 }}>
+                      {v.marca} {v.modelo}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#6b7280", fontSize: "0.85rem" }}>
+                      Año: {v.año}
+                    </Typography>
+                  </Box>
+                ),
+              )}
             </Box>
 
             <Divider sx={{ my: 2, opacity: 0.5 }} />

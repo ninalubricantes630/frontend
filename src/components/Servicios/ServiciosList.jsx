@@ -249,7 +249,7 @@ const ServiciosList = ({ servicios, onView, loading, pagination, onPageChange, o
                 </TableCell>
                 <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>
                   <Typography variant="body2" sx={{ color: "#0f172a", fontWeight: 500, fontSize: "0.813rem" }}>
-                    {servicio.patente || "N/A"}
+                    {servicio.vehiculos_patentes || servicio.patente || "N/A"}
                   </Typography>
                 </TableCell>
                 <TableCell sx={{ py: 1.5, borderBottom: "1px solid #f1f5f9" }}>

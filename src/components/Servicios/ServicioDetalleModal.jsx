@@ -221,11 +221,20 @@ const ServicioDetalleModal = ({ open, onClose, servicio }) => {
                       color="textSecondary"
                       sx={{ fontSize: "0.7rem", fontWeight: 600, textTransform: "uppercase" }}
                     >
-                      Vehículo
+                      Vehículo{servicio.vehiculos?.length > 1 ? "s" : ""}
                     </Typography>
-                    <Typography variant="body2" fontWeight={500} sx={{ color: "#171717", fontSize: "0.875rem" }}>
-                      {servicio.patente || "N/A"} - {servicio.marca} {servicio.modelo} ({servicio.año || "N/A"})
-                    </Typography>
+                    {(servicio.vehiculos?.length > 0 ? servicio.vehiculos : [{ patente: servicio.patente, marca: servicio.marca, modelo: servicio.modelo, año: servicio.año }]).map(
+                      (v, idx) => (
+                        <Typography
+                          key={v.id || idx}
+                          variant="body2"
+                          fontWeight={500}
+                          sx={{ color: "#171717", fontSize: "0.875rem", display: "block" }}
+                        >
+                          {v.patente || "N/A"} - {v.marca} {v.modelo || ""} ({v.año ?? "N/A"})
+                        </Typography>
+                      ),
+                    )}
                   </Box>
                   <Box>
                     <Typography
