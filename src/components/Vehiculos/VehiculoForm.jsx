@@ -152,6 +152,9 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
     }
   }, [open, user, vehiculo, setValue])
 
+  // Solo sincronizar formulario y cliente cuando cambia el vehículo (abrir editar vs nuevo).
+  // No depender de `clientes`: al seleccionar un cliente se actualiza clientes y este efecto
+  // borraba la selección (reset + setSelectedCliente(null)).
   useEffect(() => {
     if (vehiculo) {
       reset({
@@ -164,10 +167,8 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
         observaciones: vehiculo.observaciones || "",
         sucursal_id: vehiculo.sucursal_id || "",
       })
-      const cliente = clientes.find((c) => c.id === vehiculo.cliente_id)
-      if (cliente) {
-        setSelectedCliente(cliente)
-      }
+      setSelectedCliente(null)
+      setInputValueCliente("")
     } else {
       const defaultSucursalId =
         user?.sucursales?.length === 1 ? user.sucursales[0].id : user?.sucursal_principal_id || ""
@@ -183,8 +184,9 @@ const VehiculoForm = ({ open, onClose, onSubmit, vehiculo = null, loading = fals
         sucursal_id: defaultSucursalId,
       })
       setSelectedCliente(null)
+      setInputValueCliente("")
     }
-  }, [vehiculo, reset, clientes, user])
+  }, [vehiculo, reset, user])
 
   const handleFormSubmit = (data) => {
     logger.debug("Datos del formulario antes de enviar", data)
