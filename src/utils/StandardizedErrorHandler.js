@@ -34,44 +34,59 @@ export class StandardizedErrorHandler {
 
   // Get user-friendly error messages
   getUserFriendlyMessage(error, operation = "operación") {
-    const status = error.response?.status
-    const errorData = error.response?.data?.error
+    if (error.response) {
+      const status = error.response.status
+      const errorData = error.response.data?.error
 
-    if (
-      errorData?.validationErrors &&
-      Array.isArray(errorData.validationErrors) &&
-      errorData.validationErrors.length > 0
-    ) {
-      return errorData.validationErrors[0]
+      if (errorData?.validationErrors && Array.isArray(errorData.validationErrors) && errorData.validationErrors.length > 0) {
+        const lines = errorData.validationErrors
+          .map((e) => {
+            if (e == null) return ""
+            if (typeof e === "string") return e
+            const msg = e.message
+            const field = e.field
+            if (msg && field) return `${field}: ${msg}`
+            return msg || ""
+          })
+          .filter(Boolean)
+        if (lines.length > 0) return lines.join(" · ")
+      }
+
+      const serverMessage =
+        typeof errorData === "string" ? errorData : errorData?.message || error.response.data?.message
+
+      switch (status) {
+        case 400:
+          return serverMessage || `Datos inválidos para ${operation}`
+        case 401:
+          return "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
+        case 403:
+          return `No tienes permisos para realizar esta ${operation}`
+        case 404:
+          return `El recurso solicitado no fue encontrado`
+        case 409:
+          return serverMessage || `Ya existe un registro con estos datos`
+        case 422:
+          return serverMessage || `Error de validación en los datos`
+        case 429:
+          return "Demasiadas solicitudes. Por favor, espera un momento e intenta de nuevo."
+        case 500:
+          return "Error interno del servidor. Nuestro equipo ha sido notificado."
+        case 503:
+          return serverMessage || "El servicio no está disponible temporalmente. Por favor, intenta de nuevo en unos segundos."
+        default:
+          return serverMessage || `Error inesperado en ${operation}`
+      }
     }
 
-    const serverMessage = errorData?.message || error.response?.data?.message
-
-    switch (status) {
-      case 400:
-        return serverMessage || `Datos inválidos para ${operation}`
-      case 401:
-        return "Tu sesión ha expirado. Por favor, inicia sesión nuevamente."
-      case 403:
-        return `No tienes permisos para realizar esta ${operation}`
-      case 404:
-        return `El recurso solicitado no fue encontrado`
-      case 409:
-        return serverMessage || `Ya existe un registro con estos datos`
-      case 422:
-        return serverMessage || `Error de validación en los datos`
-      case 429:
-        return "Demasiadas solicitudes. Por favor, espera un momento e intenta de nuevo."
-      case 500:
-        return "Error interno del servidor. Nuestro equipo ha sido notificado."
-      case 503:
-        return serverMessage || "El servicio no está disponible temporalmente. Por favor, intenta de nuevo en unos segundos."
-      default:
-        if (error.code === "NETWORK_ERROR" || !error.response) {
-          return "Error de conexión. Verifica tu conexión a internet."
-        }
-        return serverMessage || `Error inesperado en ${operation}`
+    // p. ej. api.js rechaza con `new Error(mensaje)` y ya no hay `response`
+    if (error.message && typeof error.message === "string" && error.message.trim()) {
+      return error.message.trim()
     }
+    if (error.code === "NETWORK_ERROR" || error.code === "ERR_NETWORK") {
+      return "Error de conexión. Verifica tu conexión a internet."
+    }
+    return `Error inesperado en ${operation}`
   }
 
   // Standard success handling

@@ -30,16 +30,22 @@ export const getErrorMessage = (error) => {
     const { status, data } = error.response
 
     switch (status) {
-      case 400:
-        return data?.error || data?.message || "Datos inválidos"
+      case 400: {
+        const err = data?.error
+        const nested = typeof err === "object" && err !== null ? err.message : null
+        return nested || (typeof err === "string" ? err : null) || data?.message || "Datos inválidos"
+      }
       case 401:
         return "Credenciales inválidas"
       case 403:
         return "No tienes permisos para realizar esta acción"
       case 404:
         return "Recurso no encontrado"
-      case 409:
-        return data?.error || data?.message || "El recurso ya existe"
+      case 409: {
+        const err = data?.error
+        const nested = typeof err === "object" && err !== null ? err.message : null
+        return nested || (typeof err === "string" ? err : null) || data?.message || "El recurso ya existe"
+      }
       case 422:
         return data?.error || data?.message || "Error de validación"
       case 500:

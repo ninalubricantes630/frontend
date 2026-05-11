@@ -57,7 +57,13 @@ api.interceptors.response.use(
       // Si hay errores de validación específicos, usar el primer mensaje
       if (errorData.error?.validationErrors && Array.isArray(errorData.error.validationErrors)) {
         if (errorData.error.validationErrors.length > 0) {
-          errorMessage = errorData.error.validationErrors[0].message
+          const parts = errorData.error.validationErrors.map((e) => {
+            if (typeof e === "string") return e
+            if (e?.message && e?.field) return `${e.field}: ${e.message}`
+            return e?.message || ""
+          }).filter(Boolean)
+          errorMessage =
+            parts.length > 0 ? parts.join(" · ") : errorData.error.validationErrors[0]?.message || errorMessage
         }
       } else if (errorData.error?.message) {
         // Si no hay validationErrors, usar el mensaje de error general (formato { error: { message } })

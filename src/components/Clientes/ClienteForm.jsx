@@ -32,18 +32,46 @@ import {
 } from "@mui/icons-material"
 import { useSucursales } from "../../hooks/useSucursales"
 
+const CLIENTE_NOMBRE_REGEX = /^[\p{L}\p{M}\p{N}\s.'-]+$/u
+const MSG_NOMBRE_CHARS = "Use solo letras, números, espacios y los signos . ' - (sin @, #, /, etc.)"
+
 const clienteSchema = yup.object({
   nombre: yup
     .string()
     .required("El nombre es obligatorio")
+    .transform((v) => (v == null ? "" : String(v).trim()))
     .min(2, "El nombre debe tener al menos 2 caracteres")
-    .max(50, "El nombre no puede exceder 50 caracteres"),
+    .max(100, "El nombre no puede exceder 100 caracteres")
+    .matches(CLIENTE_NOMBRE_REGEX, `Nombre: ${MSG_NOMBRE_CHARS}`),
   apellido: yup
     .string()
     .required("El apellido es obligatorio")
+    .transform((v) => (v == null ? "" : String(v).trim()))
     .min(2, "El apellido debe tener al menos 2 caracteres")
-    .max(50, "El apellido no puede exceder 50 caracteres"),
-  telefono: yup.string().nullable(),
+    .max(100, "El apellido no puede exceder 100 caracteres")
+    .matches(CLIENTE_NOMBRE_REGEX, `Apellido: ${MSG_NOMBRE_CHARS}`),
+  dni: yup
+    .string()
+    .optional()
+    .transform((v) => {
+      if (v == null || v === "") return undefined
+      return String(v).trim()
+    })
+    .test(
+      "dni-formato",
+      "El DNI debe tener 7 u 8 dígitos y solo números (sin puntos ni letras)",
+      (v) => v === undefined || /^[0-9]{7,8}$/.test(v),
+    ),
+  telefono: yup
+    .string()
+    .nullable()
+    .transform((v) => (v == null || v === "" ? null : String(v).trim()))
+    .max(20, "El teléfono no puede superar 20 caracteres"),
+  direccion: yup
+    .string()
+    .nullable()
+    .transform((v) => (v == null || v === "" ? null : String(v).trim()))
+    .max(255, "La dirección no puede superar 255 caracteres"),
   tiene_cuenta_corriente: yup.boolean(),
   limite_credito: yup
     .number()
