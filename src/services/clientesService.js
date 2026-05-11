@@ -2,7 +2,15 @@ import api from "./api.js"
 
 export const clientesService = {
   getClientes: async (params = {}) => {
-    const { page = 1, limit = 10, search = "", searchBy = "", sucursal_id = "", sucursales_ids = "" } = params
+    const {
+      page = 1,
+      limit = 10,
+      search = "",
+      searchBy = "",
+      sucursal_id = "",
+      sucursales_ids = "",
+      con_saldo_cc = false,
+    } = params
 
     const queryParams = new URLSearchParams({
       page,
@@ -11,6 +19,7 @@ export const clientesService = {
       ...(searchBy && { searchBy }),
       ...(sucursal_id && { sucursal_id }),
       ...(sucursales_ids && { sucursales_ids }),
+      ...(con_saldo_cc ? { con_saldo_cc: "true" } : {}),
     })
 
     const response = await api.get(`/clientes?${queryParams}`)

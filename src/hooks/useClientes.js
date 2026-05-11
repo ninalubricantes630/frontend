@@ -20,16 +20,17 @@ export const useClientes = () => {
     searchBy: "",
     sucursal_id: "",
     sucursales_ids: "",
+    con_saldo_cc: false,
   })
 
   const { showToast } = useToast()
   const errorHandler = useStandardizedErrorHandler(showToast)
 
   const loadClientes = useCallback(
-    async (page = 1, limit = 10, search = "", searchBy = "", sucursal_id = "", sucursales_ids = "") => {
+    async (page = 1, limit = 10, search = "", searchBy = "", sucursal_id = "", sucursales_ids = "", con_saldo_cc = false) => {
       setLoading(true)
       setError(null)
-      setCurrentFilters({ search, searchBy, sucursal_id, sucursales_ids })
+      setCurrentFilters({ search, searchBy, sucursal_id, sucursales_ids, con_saldo_cc })
 
       try {
         const response = await clientesService.getClientes({
@@ -39,6 +40,7 @@ export const useClientes = () => {
           searchBy,
           sucursal_id,
           sucursales_ids,
+          con_saldo_cc,
         })
 
         if (!response || !response.data) {
@@ -72,10 +74,26 @@ export const useClientes = () => {
 
   const fetchClientes = useCallback(
     async (params = {}) => {
-      const { search = "", limit = 10, page = 1, searchBy = "", sucursal_id = "", sucursales_ids = "" } = params
+      const {
+        search = "",
+        limit = 10,
+        page = 1,
+        searchBy = "",
+        sucursal_id = "",
+        sucursales_ids = "",
+        con_saldo_cc = false,
+      } = params
 
       try {
-        const result = await clientesService.getClientes({ page, limit, search, searchBy, sucursal_id, sucursales_ids })
+        const result = await clientesService.getClientes({
+          page,
+          limit,
+          search,
+          searchBy,
+          sucursal_id,
+          sucursales_ids,
+          con_saldo_cc,
+        })
         return result
       } catch (err) {
         const { userMessage } = errorHandler.handleApiError(err, "buscar clientes")
@@ -101,6 +119,7 @@ export const useClientes = () => {
           currentFilters.searchBy,
           currentFilters.sucursal_id,
           currentFilters.sucursales_ids,
+          currentFilters.con_saldo_cc,
         )
 
         return { success: true, data: newCliente }
@@ -169,6 +188,7 @@ export const useClientes = () => {
           currentFilters.searchBy,
           currentFilters.sucursal_id,
           currentFilters.sucursales_ids,
+          currentFilters.con_saldo_cc,
         )
       } else {
         loadClientes(
@@ -178,6 +198,7 @@ export const useClientes = () => {
           currentFilters.searchBy,
           currentFilters.sucursal_id,
           currentFilters.sucursales_ids,
+          currentFilters.con_saldo_cc,
         )
       }
     },

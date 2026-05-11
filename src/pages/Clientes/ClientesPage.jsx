@@ -18,6 +18,7 @@ import {
   MenuItem,
   Collapse,
   Chip,
+  Tooltip,
 } from "@mui/material"
 import {
   Add as AddIcon,
@@ -25,6 +26,7 @@ import {
   Close as CloseIcon,
   FilterList as FilterListIcon,
   ExpandLess as ExpandLessIcon,
+  AccountBalance as AccountBalanceIcon,
 } from "@mui/icons-material"
 import { useClientes } from "../../hooks/useClientes.js"
 import { useSucursales } from "../../hooks/useSucursales"
@@ -65,6 +67,7 @@ const ClientesPage = () => {
   const [filters, setFilters] = useState({
     sucursal_id: "",
   })
+  const [soloConSaldoCC, setSoloConSaldoCC] = useState(false)
   const [usuarioTieneMultiplesSucursales, setUsuarioTieneMultiplesSucursales] = useState(false)
 
   useEffect(() => {
@@ -95,12 +98,10 @@ const ClientesPage = () => {
     return () => clearTimeout(timeoutId)
   }, [searchTerm, filters, user])
 
-  const handleSearch = () => {
-    if (!user?.sucursales || user.sucursales.length === 0) return
-
+  const getSucursalParams = () => {
+    if (!user?.sucursales || user.sucursales.length === 0) return null
     let sucursal_id = ""
     let sucursales_ids = ""
-
     if (filters.sucursal_id) {
       sucursal_id = filters.sucursal_id
     } else if (user.sucursales.length === 1) {
@@ -108,13 +109,20 @@ const ClientesPage = () => {
     } else {
       sucursales_ids = user.sucursales.map((s) => s.id).join(",")
     }
+    return { sucursal_id, sucursales_ids }
+  }
 
-    loadClientes(1, pagination.limit, searchTerm, searchCriteria, sucursal_id, sucursales_ids)
+  const handleSearch = (options = {}) => {
+    const params = getSucursalParams()
+    if (!params) return
+    const saldo = Object.prototype.hasOwnProperty.call(options, "conSaldoCC") ? options.conSaldoCC : soloConSaldoCC
+    loadClientes(1, pagination.limit, searchTerm, searchCriteria, params.sucursal_id, params.sucursales_ids, saldo)
   }
 
   const handleClearFilters = () => {
     setSearchTerm("")
     setSearchCriteria("nombre")
+    setSoloConSaldoCC(false)
 
     const newFilters = { sucursal_id: "" }
     if (user?.sucursales && user.sucursales.length === 1) {
@@ -124,14 +132,21 @@ const ClientesPage = () => {
 
     let sucursal_id = ""
     let sucursales_ids = ""
-
     if (user?.sucursales && user.sucursales.length === 1) {
       sucursal_id = user.sucursales[0].id
     } else if (user?.sucursales && user.sucursales.length > 1) {
       sucursales_ids = user.sucursales.map((s) => s.id).join(",")
     }
 
-    loadClientes(1, pagination.limit, "", "", sucursal_id, sucursales_ids)
+    loadClientes(1, pagination.limit, "", "", sucursal_id, sucursales_ids, false)
+  }
+
+  const toggleFiltroSaldoCC = () => {
+    const params = getSucursalParams()
+    if (!params) return
+    const next = !soloConSaldoCC
+    setSoloConSaldoCC(next)
+    loadClientes(1, pagination.limit, searchTerm, searchCriteria, params.sucursal_id, params.sucursales_ids, next)
   }
 
   const handleFilterChange = (field, value) => {
@@ -148,6 +163,7 @@ const ClientesPage = () => {
   const activeFiltersCount = () => {
     let count = 0
     if (usuarioTieneMultiplesSucursales && filters.sucursal_id) count++
+    if (soloConSaldoCC) count++
     return count
   }
 
@@ -307,6 +323,32 @@ const ClientesPage = () => {
                 <MenuItem value="telefono">Teléfono</MenuItem>
               </Select>
             </FormControl>
+
+            <Tooltip
+              title="Solo clientes con cuenta corriente activa y saldo distinto de cero (deuda o a favor)"
+              arrow
+              placement="bottom"
+            >
+              <Chip
+                icon={<AccountBalanceIcon sx={{ fontSize: "18px !important" }} />}
+                label="Saldo en CC"
+                onClick={toggleFiltroSaldoCC}
+                variant={soloConSaldoCC ? "filled" : "outlined"}
+                color={soloConSaldoCC ? "warning" : "default"}
+                sx={{
+                  fontWeight: 600,
+                  fontSize: "0.8125rem",
+                  borderColor: soloConSaldoCC ? undefined : "#e5e7eb",
+                  bgcolor: soloConSaldoCC ? undefined : "#f8fafc",
+                  "& .MuiChip-icon": {
+                    color: soloConSaldoCC ? undefined : "#b45309",
+                  },
+                  "&:hover": {
+                    bgcolor: soloConSaldoCC ? undefined : "#f1f5f9",
+                  },
+                }}
+              />
+            </Tooltip>
 
             <TextField
               size="small"
