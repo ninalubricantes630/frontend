@@ -20,6 +20,7 @@ import CerrarCajaModal from "../../components/Caja/CerrarCajaModal"
 import MovimientoModal from "../../components/Caja/MovimientoModal"
 import MovimientosTable from "../../components/Caja/MovimientosTable"
 import DetalleIngresosModal from "../../components/Caja/DetalleIngresosModal"
+import DetalleCuentaCorrienteModal from "../../components/Caja/DetalleCuentaCorrienteModal"
 import cajaService from "../../services/cajaService"
 import PermissionGuard from "../../components/Auth/PermissionGuard"
 
@@ -45,6 +46,7 @@ export default function CajaPage() {
   const [loadingIngresos, setLoadingIngresos] = useState(false)
   const [detalleCC, setDetalleCC] = useState(null)
   const [loadingDetalleCC, setLoadingDetalleCC] = useState(false)
+  const [cuentaCorrienteModal, setCuentaCorrienteModal] = useState(false)
 
   const sucursalPrincipal = user?.sucursales?.find((s) => s.es_principal)
 
@@ -84,6 +86,10 @@ export default function CajaPage() {
       setDetalleCC(null)
     }
   }, [sesionActiva?.id, sesionActiva?.cantidad_ventas_cuenta_corriente, sesionActiva?.cantidad_servicios_cuenta_corriente])
+
+  useEffect(() => {
+    if (!sesionActiva) setCuentaCorrienteModal(false)
+  }, [sesionActiva])
 
   const handleAbrirCaja = async (data) => {
     const success = await abrirCaja({
@@ -281,13 +287,21 @@ export default function CajaPage() {
             )}
 
             {sesionActiva ? (
-              <>
+              <Box
+                sx={{
+                  flex: 1,
+                  minHeight: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 2,
+                  overflow: "hidden",
+                }}
+              >
                 <Box
                   sx={{
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
                     gap: 1.5,
-                    mb: 2,
                   }}
                 >
                   <Card
@@ -384,12 +398,32 @@ export default function CajaPage() {
                   {(Number(sesionActiva.cantidad_ventas_cuenta_corriente) > 0 ||
                     Number(sesionActiva.cantidad_servicios_cuenta_corriente) > 0) && (
                     <Card
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setCuentaCorrienteModal(true)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault()
+                          setCuentaCorrienteModal(true)
+                        }
+                      }}
                       sx={{
                         p: 2,
                         bgcolor: "#fef3c7",
                         border: "1px solid #fde68a",
                         borderRadius: 1,
                         boxShadow: "none",
+                        cursor: "pointer",
+                        transition: "all 0.2s",
+                        "&:hover": {
+                          bgcolor: "#fde68a",
+                          transform: "translateY(-2px)",
+                          boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+                        },
+                        "&:focus-visible": {
+                          outline: "2px solid #b45309",
+                          outlineOffset: 2,
+                        },
                       }}
                     >
                       <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
@@ -398,8 +432,8 @@ export default function CajaPage() {
                           Cuenta corriente (referencia)
                         </Typography>
                       </Box>
-                      <Typography variant="caption" sx={{ color: "#92400e", display: "block", mb: 0.5 }}>
-                        No afecta caja. Estimado de lo facturado en CC en esta sesión.
+                      <Typography variant="caption" sx={{ color: "#92400e", display: "block", mb: 1, lineHeight: 1.4 }}>
+                        No afecta caja. Referencia de lo facturado en CC en esta sesión.
                       </Typography>
                       {Number(sesionActiva.cantidad_ventas_cuenta_corriente) > 0 && (
                         <Typography variant="body2" sx={{ color: "#0f172a", fontWeight: 500 }}>
@@ -414,59 +448,18 @@ export default function CajaPage() {
                         </Typography>
                       )}
                       <Typography variant="body2" sx={{ fontWeight: 600, color: "#b45309", mt: 0.5 }}>
-                        Total ref. CC: $
+                        Total ref. CC
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600, color: "#b45309" }}>
+                        $
                         {formatCurrency(
                           (Number(sesionActiva.total_ventas_cuenta_corriente) || 0) +
                             (Number(sesionActiva.total_servicios_cuenta_corriente) || 0),
                         )}
                       </Typography>
-
-                      {(loadingDetalleCC || detalleCC) && (
-                        <Box sx={{ mt: 1.5, pt: 1, borderTop: "1px solid #fde68a" }}>
-                          {loadingDetalleCC ? (
-                            <Typography variant="caption" sx={{ color: "#92400e" }}>
-                              Cargando detalle...
-                            </Typography>
-                          ) : detalleCC && (detalleCC.ventas?.length > 0 || detalleCC.servicios?.length > 0) ? (
-                            <>
-                              {detalleCC.ventas?.length > 0 && (
-                                <Box sx={{ mb: 1 }}>
-                                  <Typography variant="caption" sx={{ color: "#92400e", fontWeight: 600, display: "block", mb: 0.5 }}>
-                                    Ventas en CC
-                                  </Typography>
-                                  {detalleCC.ventas.map((v) => (
-                                    <Box key={`v-${v.id}`} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.25, px: 0.5 }}>
-                                      <Typography variant="caption" sx={{ color: "#0f172a" }}>
-                                        {v.numero} — {v.cliente || "Sin cliente"}
-                                      </Typography>
-                                      <Typography variant="caption" sx={{ fontWeight: 600, color: "#b45309" }}>
-                                        ${formatCurrency(v.total)}
-                                      </Typography>
-                                    </Box>
-                                  ))}
-                                </Box>
-                              )}
-                              {detalleCC.servicios?.length > 0 && (
-                                <Box>
-                                  <Typography variant="caption" sx={{ color: "#92400e", fontWeight: 600, display: "block", mb: 0.5 }}>
-                                    Servicios en CC
-                                  </Typography>
-                                  {detalleCC.servicios.map((s) => (
-                                    <Box key={`s-${s.id}`} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.25, px: 0.5 }}>
-                                      <Typography variant="caption" sx={{ color: "#0f172a" }}>
-                                        {s.numero} — {s.cliente || "Sin cliente"}
-                                      </Typography>
-                                      <Typography variant="caption" sx={{ fontWeight: 600, color: "#b45309" }}>
-                                        ${formatCurrency(s.total)}
-                                      </Typography>
-                                    </Box>
-                                  ))}
-                                </Box>
-                              )}
-                            </>
-                          ) : null}
-                        </Box>
-                      )}
+                      <Typography variant="caption" sx={{ color: "#92400e", opacity: 0.9, mt: 0.75, display: "block" }}>
+                        Click para ver detalle
+                      </Typography>
                     </Card>
                   )}
                 </Box>
@@ -474,7 +467,6 @@ export default function CajaPage() {
                 <Card
                   sx={{
                     p: 2,
-                    mb: 2,
                     bgcolor: "white",
                     border: "1px solid #e5e7eb",
                     borderRadius: 1,
@@ -522,6 +514,7 @@ export default function CajaPage() {
                 <Box
                   sx={{
                     flex: 1,
+                    minHeight: 0,
                     overflow: "hidden",
                     bgcolor: "white",
                     borderRadius: 1,
@@ -530,16 +523,16 @@ export default function CajaPage() {
                     flexDirection: "column",
                   }}
                 >
-                  <Box sx={{ p: 2, borderBottom: "1px solid #e5e7eb" }}>
+                  <Box sx={{ p: 2, borderBottom: "1px solid #e5e7eb", flexShrink: 0 }}>
                     <Typography variant="h6" sx={{ fontWeight: 600, color: "#0f172a", fontSize: "1rem" }}>
                       Movimientos de Caja
                     </Typography>
                   </Box>
-                  <Box sx={{ flex: 1, overflow: "auto" }}>
+                  <Box sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
                     <MovimientosTable movimientos={movimientos} />
                   </Box>
                 </Box>
-              </>
+              </Box>
             ) : (
               <Box
                 sx={{
@@ -605,6 +598,13 @@ export default function CajaPage() {
               onClose={() => setIngresosModal(false)}
               detalleIngresos={detalleIngresos}
               loading={loadingIngresos}
+            />
+            <DetalleCuentaCorrienteModal
+              open={cuentaCorrienteModal}
+              onClose={() => setCuentaCorrienteModal(false)}
+              sesionActiva={sesionActiva}
+              detalleCC={detalleCC}
+              loading={loadingDetalleCC}
             />
           </>
         )}
