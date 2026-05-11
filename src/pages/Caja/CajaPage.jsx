@@ -11,7 +11,6 @@ import {
   AccountBalanceWallet as WalletIcon,
   Person as PersonIcon,
   CalendarToday as CalendarIcon,
-  Receipt as ReceiptIcon,
 } from "@mui/icons-material"
 import { useAuth } from "../../contexts/AuthContext"
 import { useCaja } from "../../hooks/useCaja"
@@ -426,28 +425,7 @@ export default function CajaPage() {
                         },
                       }}
                     >
-                      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 0.5 }}>
-                        <ReceiptIcon sx={{ fontSize: 18, color: "#b45309" }} />
-                        <Typography variant="body2" sx={{ color: "#b45309", fontWeight: 500 }}>
-                          Cuenta corriente (referencia)
-                        </Typography>
-                      </Box>
-                      <Typography variant="caption" sx={{ color: "#92400e", display: "block", mb: 1, lineHeight: 1.4 }}>
-                        No afecta caja. Referencia de lo facturado en CC en esta sesión.
-                      </Typography>
-                      {Number(sesionActiva.cantidad_ventas_cuenta_corriente) > 0 && (
-                        <Typography variant="body2" sx={{ color: "#0f172a", fontWeight: 500 }}>
-                          Ventas: {sesionActiva.cantidad_ventas_cuenta_corriente} — $
-                          {formatCurrency(sesionActiva.total_ventas_cuenta_corriente)}
-                        </Typography>
-                      )}
-                      {Number(sesionActiva.cantidad_servicios_cuenta_corriente) > 0 && (
-                        <Typography variant="body2" sx={{ color: "#0f172a", fontWeight: 500 }}>
-                          Servicios: {sesionActiva.cantidad_servicios_cuenta_corriente} — $
-                          {formatCurrency(sesionActiva.total_servicios_cuenta_corriente)}
-                        </Typography>
-                      )}
-                      <Typography variant="body2" sx={{ fontWeight: 600, color: "#b45309", mt: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600, color: "#b45309", mb: 0.5 }}>
                         Total ref. CC
                       </Typography>
                       <Typography variant="h6" sx={{ fontWeight: 600, color: "#b45309" }}>
