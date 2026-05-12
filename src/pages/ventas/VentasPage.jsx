@@ -151,7 +151,7 @@ export default function VentasPage() {
       filters.prioridad_sucursal_id = sucursalVenta.id
     }
 
-    loadProductos(pageNum, 10, filters)
+    loadProductos(pageNum, 10, filters, { append: pageNum > 1 })
   }
 
   const handleLoadMore = () => {
@@ -383,6 +383,7 @@ export default function VentasPage() {
         showNotification("Venta procesada exitosamente", "success")
 
         if (searchTerm.trim()) {
+          setPage(1)
           buscarProductos(searchTerm, 1)
         }
       } else {

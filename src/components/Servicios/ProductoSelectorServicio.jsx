@@ -50,6 +50,7 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
           limit: 100,
           search: searchTerm.trim(),
           sucursales_ids: sucursalId.toString(),
+          prioridad_sucursal_id: sucursalId,
         }
 
         const response = await productosService.getAll(params)

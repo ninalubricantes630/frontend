@@ -20,11 +20,11 @@ export const useProductos = () => {
   const errorHandler = useStandardizedErrorHandler(showToast)
 
   const loadProductos = useCallback(
-    async (page = 1, limit = 10, filters = {}) => {
+    async (page = 1, limit = 10, filters = {}, options = {}) => {
+      const { append = false } = options
       setLoading(true)
       setError(null)
       try {
-
         const params = {
           page,
           limit,
@@ -34,18 +34,29 @@ export const useProductos = () => {
         const response = await productosService.getAll(params)
 
         if (!response || !response.data) {
-          setProductos([])
+          if (!append) setProductos([])
           return
         }
 
-
-        // Acceder a response.data.productos igual que ventas accede a response.data.ventas
         const productosData = response.data.productos || []
         const paginationData = response.data.pagination || {}
 
-      
+        if (append) {
+          setProductos((prev) => {
+            const seen = new Set(prev.map((p) => p.id))
+            const merged = [...prev]
+            for (const p of productosData) {
+              if (!seen.has(p.id)) {
+                seen.add(p.id)
+                merged.push(p)
+              }
+            }
+            return merged
+          })
+        } else {
+          setProductos(productosData)
+        }
 
-        setProductos(productosData)
         setPagination({
           total: paginationData.total || 0,
           totalPages: paginationData.totalPages || 1,
@@ -55,7 +66,7 @@ export const useProductos = () => {
       } catch (err) {
         const { userMessage } = errorHandler.handleApiError(err, "cargar productos")
         setError(userMessage)
-        setProductos([])
+        if (!append) setProductos([])
       } finally {
         setLoading(false)
       }
