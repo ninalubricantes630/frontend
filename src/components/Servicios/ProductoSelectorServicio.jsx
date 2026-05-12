@@ -13,18 +13,21 @@ import {
   InputAdornment,
   List,
   ListItem,
+  Tooltip,
 } from "@mui/material"
 import {
   Search as SearchIcon,
   Inventory as InventoryIcon,
   ExpandMore as ExpandMoreIcon,
   Close as CloseIcon,
+  QrCodeScanner as QrCodeScannerIcon,
 } from "@mui/icons-material"
 import { productosService } from "../../services/productosService"
 import { formatQuantity } from "../../utils/formatters"
 
 const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], sucursalId }) => {
   const [busqueda, setBusqueda] = useState("")
+  const [modoBusquedaProducto, setModoBusquedaProducto] = useState("nombre")
   const [productos, setProductos] = useState([])
   const [loading, setLoading] = useState(false)
   const [mostrarResultados, setMostrarResultados] = useState(5)
@@ -51,6 +54,7 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
           search: searchTerm.trim(),
           sucursales_ids: sucursalId.toString(),
           prioridad_sucursal_id: sucursalId,
+          search_mode: modoBusquedaProducto === "codigo" ? "codigo" : "nombre",
         }
 
         const response = await productosService.getAll(params)
@@ -76,7 +80,7 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
         setLoading(false)
       }
     },
-    [sucursalId],
+    [sucursalId, modoBusquedaProducto],
   )
 
   useEffect(() => {
@@ -85,7 +89,7 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
     }, 300)
 
     return () => clearTimeout(timeoutId)
-  }, [busqueda, buscarProductos])
+  }, [busqueda, buscarProductos, modoBusquedaProducto])
 
   useEffect(() => {
     if (searchInputRef.current) {
@@ -128,7 +132,11 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
       <TextField
         fullWidth
         inputRef={searchInputRef}
-        placeholder="Buscar por nombre, código, fabricante..."
+        placeholder={
+          modoBusquedaProducto === "nombre"
+            ? "Buscar por nombre o descripción..."
+            : "Buscar solo por código de producto..."
+        }
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
         InputProps={{
@@ -138,7 +146,23 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
             </InputAdornment>
           ),
           endAdornment: (
-            <InputAdornment position="end">
+            <InputAdornment position="end" sx={{ gap: 0.25 }}>
+              <Tooltip
+                title={
+                  modoBusquedaProducto === "nombre"
+                    ? "Activar búsqueda solo por código"
+                    : "Volver a búsqueda por nombre o descripción"
+                }
+              >
+                <IconButton
+                  size="small"
+                  onClick={() => setModoBusquedaProducto((m) => (m === "nombre" ? "codigo" : "nombre"))}
+                  sx={{ color: modoBusquedaProducto === "codigo" ? "#dc2626" : "#64748b" }}
+                  aria-label="Alternar búsqueda por código"
+                >
+                  <QrCodeScannerIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
               {busqueda && (
                 <IconButton onClick={handleClearSearch} size="small" sx={{ mr: 0.5 }}>
                   <CloseIcon fontSize="small" />

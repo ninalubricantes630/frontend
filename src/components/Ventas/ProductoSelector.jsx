@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useRef } from "react"
 import {
   Box,
   TextField,
@@ -30,13 +30,14 @@ const ProductoSelector = ({
   onSelectProducto,
   searchTerm,
   onSearchChange,
+  modoBusquedaProducto = "nombre",
+  onModoBusquedaProductoChange,
   hasMore,
   onLoadMore,
   sucursalVenta,
   usuarioTieneMultiplesSucursales,
   searchInputRef,
 }) => {
-  const [searchMode, setSearchMode] = useState("nombre")
   const localSearchInputRef = useRef(null)
   const ref = searchInputRef || localSearchInputRef
 
@@ -44,11 +45,11 @@ const ProductoSelector = ({
     if (ref.current) {
       ref.current.focus()
     }
-  }, [searchMode, ref])
+  }, [modoBusquedaProducto, ref])
 
   const handleToggleSearchMode = () => {
-    setSearchMode((prev) => (prev === "nombre" ? "codigo" : "nombre"))
-    onSearchChange("")
+    const next = modoBusquedaProducto === "nombre" ? "codigo" : "nombre"
+    onModoBusquedaProductoChange?.(next)
   }
 
   const handleClearSearch = () => {
@@ -93,7 +94,11 @@ const ProductoSelector = ({
           fullWidth
           size="small"
           inputRef={ref}
-          placeholder={searchMode === "nombre" ? "Buscar por nombre o descripción..." : "Escanear o ingresar código..."}
+          placeholder={
+            modoBusquedaProducto === "nombre"
+              ? "Buscar por nombre o descripción..."
+              : "Buscar solo por código de producto..."
+          }
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           InputProps={{
@@ -119,12 +124,18 @@ const ProductoSelector = ({
                     </IconButton>
                   </Tooltip>
                 )}
-                <Tooltip title={searchMode === "nombre" ? "Buscar por código" : "Buscar por nombre"}>
+                <Tooltip
+                  title={
+                    modoBusquedaProducto === "nombre"
+                      ? "Activar búsqueda solo por código"
+                      : "Volver a búsqueda por nombre o descripción"
+                  }
+                >
                   <IconButton
                     onClick={handleToggleSearchMode}
                     size="small"
                     sx={{
-                      color: searchMode === "codigo" ? "#dc2626" : "#6b7280",
+                      color: modoBusquedaProducto === "codigo" ? "#dc2626" : "#6b7280",
                       "&:hover": { bgcolor: "#fef2f2" },
                     }}
                   >

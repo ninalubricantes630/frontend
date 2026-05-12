@@ -28,6 +28,8 @@ export default function VentasPage() {
   const [notification, setNotification] = useState({ open: false, message: "", severity: "success" })
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(false)
+  /** "nombre" = solo nombre y descripción; "codigo" = solo si el usuario activa el icono de código */
+  const [modoBusquedaProducto, setModoBusquedaProducto] = useState("nombre")
   const [sucursalVenta, setSucursalVenta] = useState(null)
   const [interes, setInteres] = useState(null)
   const [descuento, setDescuento] = useState(null)
@@ -139,10 +141,22 @@ export default function VentasPage() {
     }
   }
 
-  const buscarProductos = (termino, pageNum = 1) => {
+  const handleModoBusquedaProductoChange = (modo) => {
+    setModoBusquedaProducto(modo)
+    setPage(1)
+    if (searchTerm.trim() && sucursalVenta && user?.sucursales) {
+      buscarProductos(searchTerm, 1, modo)
+    }
+  }
+
+  const buscarProductos = (termino, pageNum = 1, modo) => {
     if (!sucursalVenta || !user?.sucursales) return
 
-    const filters = { search: termino }
+    const resolvedModo = modo !== undefined && modo !== null ? modo : modoBusquedaProducto
+    const filters = {
+      search: termino,
+      search_mode: resolvedModo === "codigo" ? "codigo" : "nombre",
+    }
 
     if (user.sucursales.length === 1) {
       filters.sucursales_ids = sucursalVenta.id.toString()
@@ -435,6 +449,7 @@ export default function VentasPage() {
 
     setSearchTerm("")
     setPage(1)
+    setModoBusquedaProducto("nombre")
 
     showNotification(`Sucursal cambiada a "${nuevaSucursal.nombre}"`, "success")
   }
@@ -558,6 +573,8 @@ export default function VentasPage() {
                 onSelectProducto={handleSelectProducto}
                 searchTerm={searchTerm}
                 onSearchChange={handleSearchChange}
+                modoBusquedaProducto={modoBusquedaProducto}
+                onModoBusquedaProductoChange={handleModoBusquedaProductoChange}
                 hasMore={hasMore}
                 onLoadMore={handleLoadMore}
                 sucursalVenta={sucursalVenta}

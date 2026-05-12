@@ -18,6 +18,7 @@ import {
   IconButton,
   Grid,
   CircularProgress,
+  Tooltip,
 } from "@mui/material"
 import {
   Add as AddIcon,
@@ -27,6 +28,7 @@ import {
   FilterList as FilterListIcon,
   ExpandLess as ExpandLessIcon,
   FileDownload as FileDownloadIcon,
+  QrCodeScanner as QrCodeScannerIcon,
 } from "@mui/icons-material"
 import ProductosList from "../../components/Stock/ProductosList"
 import ProductoForm from "../../components/Stock/ProductoForm"
@@ -49,6 +51,8 @@ const StockPage = () => {
   const { user, loading: authLoading } = useAuth()
 
   const [searchTerm, setSearchTerm] = useState("")
+  /** Por defecto solo nombre y descripción; el icono activa búsqueda solo por código */
+  const [modoBusquedaProducto, setModoBusquedaProducto] = useState("nombre")
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState({
     categoria_id: "",
@@ -98,17 +102,6 @@ const StockPage = () => {
     }
   }, [user])
 
-  // Search debounce effect
-  useEffect(() => {
-    if (!user?.sucursales || user.sucursales.length === 0) return
-
-    const timeoutId = setTimeout(() => {
-      handleSearch()
-    }, 1000)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchTerm, filters, priceRange, user])
-
   const handleSearch = useCallback(() => {
     if (!user?.sucursales || user.sucursales.length === 0) return
 
@@ -116,6 +109,7 @@ const StockPage = () => {
 
     if (searchTerm) {
       params.search = searchTerm
+      params.search_mode = modoBusquedaProducto === "codigo" ? "codigo" : "nombre"
     }
 
     if (filters.categoria_id) {
@@ -148,7 +142,18 @@ const StockPage = () => {
     }
 
     loadProductos(1, pagination.limit, params)
-  }, [searchTerm, filters, priceRange, pagination.limit, user])
+  }, [searchTerm, filters, priceRange, pagination.limit, user, modoBusquedaProducto])
+
+  // Search debounce: al cambiar término, filtros, modo de búsqueda o precios
+  useEffect(() => {
+    if (!user?.sucursales || user.sucursales.length === 0) return
+
+    const timeoutId = setTimeout(() => {
+      handleSearch()
+    }, 1000)
+
+    return () => clearTimeout(timeoutId)
+  }, [handleSearch])
 
   const handleClearFilters = () => {
     setSearchTerm("")
@@ -165,6 +170,7 @@ const StockPage = () => {
     setFilters(newFilters)
     setPriceRange([0, 100000])
     setSucursalFilter("") // Limpiar el filtro de sucursales
+    setModoBusquedaProducto("nombre")
 
     const params = {}
     if (user?.sucursales && user.sucursales.length === 1) {
@@ -404,6 +410,7 @@ const StockPage = () => {
 
     if (searchTerm) {
       params.search = searchTerm
+      params.search_mode = modoBusquedaProducto === "codigo" ? "codigo" : "nombre"
     }
 
     if (filters.categoria_id) {
@@ -509,7 +516,11 @@ const StockPage = () => {
             >
               <TextField
                 size="small"
-                placeholder="Buscar productos en tiempo real..."
+                placeholder={
+                  modoBusquedaProducto === "nombre"
+                    ? "Buscar por nombre o descripción..."
+                    : "Buscar solo por código..."
+                }
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 InputProps={{
@@ -518,11 +529,29 @@ const StockPage = () => {
                       <SearchIcon sx={{ fontSize: 18, color: "#64748b" }} />
                     </InputAdornment>
                   ),
-                  endAdornment: searchTerm && (
-                    <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => setSearchTerm("")} sx={{ p: 0.5 }}>
-                        <CloseIcon sx={{ fontSize: 18, color: "#64748b" }} />
-                      </IconButton>
+                  endAdornment: (
+                    <InputAdornment position="end" sx={{ gap: 0.25 }}>
+                      <Tooltip
+                        title={
+                          modoBusquedaProducto === "nombre"
+                            ? "Activar búsqueda solo por código"
+                            : "Volver a búsqueda por nombre o descripción"
+                        }
+                      >
+                        <IconButton
+                          size="small"
+                          onClick={() => setModoBusquedaProducto((m) => (m === "nombre" ? "codigo" : "nombre"))}
+                          sx={{ p: 0.5, color: modoBusquedaProducto === "codigo" ? "#dc2626" : "#64748b" }}
+                          aria-label="Alternar búsqueda por código"
+                        >
+                          <QrCodeScannerIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      </Tooltip>
+                      {searchTerm && (
+                        <IconButton size="small" onClick={() => setSearchTerm("")} sx={{ p: 0.5 }}>
+                          <CloseIcon sx={{ fontSize: 18, color: "#64748b" }} />
+                        </IconButton>
+                      )}
                     </InputAdornment>
                   ),
                 }}
