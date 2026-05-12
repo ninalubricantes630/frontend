@@ -25,6 +25,7 @@ import { formatQuantity } from "../../utils/formatters"
 import { useState, useEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { useCaja } from "../../hooks/useCaja"
+import { buildVentaParaRecrearFromApi } from "../../utils/ventaRehacerHelpers"
 
 const VentaDetalleModal = ({ open, onClose, venta }) => {
   const navigate = useNavigate()
@@ -90,11 +91,9 @@ const VentaDetalleModal = ({ open, onClose, venta }) => {
   }
 
   const handleRecrearVenta = () => {
-    const ventaParaRecrear = {
-      ...venta,
-      productos: venta.detalle || [], // Asegurar que use 'detalle' pero lo guarde como 'productos' para compatibilidad
-    }
-    localStorage.setItem("ventaParaRecrear", JSON.stringify(ventaParaRecrear))
+    const payload = buildVentaParaRecrearFromApi(venta)
+    if (!payload) return
+    localStorage.setItem("ventaParaRecrear", JSON.stringify(payload))
     onClose()
     navigate("/ventas?recrear=true")
   }

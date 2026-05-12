@@ -33,6 +33,7 @@ export default function VentasPage() {
   const [sucursalVenta, setSucursalVenta] = useState(null)
   const [interes, setInteres] = useState(null)
   const [descuento, setDescuento] = useState(null)
+  const [pagoInicialRehacer, setPagoInicialRehacer] = useState(null)
   const pageRef = useRef(null)
   const searchInputRef = useRef(null)
   const [searchParams, setSearchParams] = useSearchParams()
@@ -43,59 +44,84 @@ export default function VentasPage() {
 
   useEffect(() => {
     const recrear = searchParams.get("recrear")
-    if (recrear === "true") {
-      const ventaGuardada = localStorage.getItem("ventaParaRecrear")
-      if (ventaGuardada) {
-        try {
-          const ventaData = JSON.parse(ventaGuardada)
+    if (recrear !== "true" || !user?.sucursales?.length) return
 
-          const productosVenta = ventaData.productos || ventaData.detalle || []
-          if (productosVenta && Array.isArray(productosVenta)) {
-            const carritoRecreado = productosVenta.map((prod) => ({
-              producto_id: prod.producto_id,
-              nombre: prod.producto_nombre || prod.nombre,
-              descripcion: prod.descripcion || "",
-              precio_unitario: prod.precio_unitario,
-              cantidad: prod.cantidad,
-              subtotal: prod.precio_unitario * prod.cantidad,
-              stock: 999, // Stock ficticio para permitir edición
-              unidad_medida: prod.unidad_medida || "unidad",
-            }))
-            setCarrito(carritoRecreado)
-          }
+    const ventaGuardada = localStorage.getItem("ventaParaRecrear")
+    if (!ventaGuardada) return
 
-          // Cargar descuento si existe
-          if (ventaData.descuento > 0) {
-            setDescuento({
-              tipoDescuento: ventaData.tipo_descuento || "porcentaje",
-              valorDescuento: ventaData.valor_descuento || 0,
-              montoDescuento: ventaData.descuento,
-            })
-          }
+    try {
+      const ventaData = JSON.parse(ventaGuardada)
 
-          // Cargar interés del sistema si existe
-          if (ventaData.interes_sistema_monto > 0) {
-            setInteres({
-              tipoInteres: ventaData.tipo_interes_sistema || "porcentaje",
-              valorInteres: ventaData.valor_interes_sistema || 0,
-              montoInteres: ventaData.interes_sistema_monto,
-              total: ventaData.subtotal - (ventaData.descuento || 0) + ventaData.interes_sistema_monto,
-            })
-          }
-
-          // Limpiar localStorage y query params
-          localStorage.removeItem("ventaParaRecrear")
-          setSearchParams({})
-
-          showNotification("Venta cargada para recrear. Puedes modificar productos y método de pago.", "info")
-        } catch (error) {
-          console.error("[v0] Error al cargar venta para recrear:", error)
-          localStorage.removeItem("ventaParaRecrear")
-          showNotification("Error al cargar la venta para recrear", "error")
+      if (ventaData.sucursal_id) {
+        const sucursalVentaData = user.sucursales.find((s) => Number(s.id) === Number(ventaData.sucursal_id))
+        if (sucursalVentaData) {
+          setSucursalVenta(sucursalVentaData)
+        } else {
+          showNotification("La sucursal de la venta no coincide con tus sucursales asignadas.", "warning")
         }
       }
+
+      const productosVenta = ventaData.productos || ventaData.detalle || []
+      if (productosVenta && Array.isArray(productosVenta)) {
+        const carritoRecreado = productosVenta.map((prod) => ({
+          producto_id: prod.producto_id,
+          nombre: prod.producto_nombre || prod.nombre,
+          descripcion: prod.descripcion || "",
+          precio_unitario: Number.parseFloat(prod.precio_unitario),
+          cantidad: Number.parseFloat(prod.cantidad),
+          subtotal: Number.parseFloat(prod.precio_unitario) * Number.parseFloat(prod.cantidad),
+          stock: 999,
+          unidad_medida: prod.unidad_medida || "unidad",
+        }))
+        setCarrito(carritoRecreado)
+      }
+
+      if (ventaData.descuento > 0) {
+        setDescuento({
+          tipoDescuento: ventaData.tipo_descuento === "porcentaje" ? "porcentaje" : "monto",
+          valorDescuento:
+            ventaData.tipo_descuento === "porcentaje"
+              ? Number.parseFloat(ventaData.valor_descuento) || 0
+              : Number.parseFloat(ventaData.descuento) || 0,
+          montoDescuento: Number.parseFloat(ventaData.descuento) || 0,
+        })
+      } else {
+        setDescuento(null)
+      }
+
+      if (ventaData.interes_sistema_monto > 0) {
+        setInteres({
+          tipoInteres: ventaData.tipo_interes_sistema === "porcentaje" ? "porcentaje" : "monto",
+          valorInteres:
+            ventaData.valor_interes_sistema != null && ventaData.valor_interes_sistema !== ""
+              ? Number.parseFloat(ventaData.valor_interes_sistema)
+              : Number.parseFloat(ventaData.interes_sistema_monto) || 0,
+          montoInteres: Number.parseFloat(ventaData.interes_sistema_monto) || 0,
+          total:
+            Number.parseFloat(ventaData.subtotal || 0) -
+            (Number.parseFloat(ventaData.descuento) || 0) +
+            (Number.parseFloat(ventaData.interes_sistema_monto) || 0),
+        })
+      } else {
+        setInteres(null)
+      }
+
+      if (ventaData.pagoInicial && typeof ventaData.pagoInicial === "object") {
+        setPagoInicialRehacer(ventaData.pagoInicial)
+      } else {
+        setPagoInicialRehacer(null)
+      }
+
+      localStorage.removeItem("ventaParaRecrear")
+      setSearchParams({})
+
+      showNotification("Venta cargada para rehacer. Revisá el pago y confirmá cuando esté listo.", "info")
+    } catch (error) {
+      console.error("[v0] Error al cargar venta para recrear:", error)
+      localStorage.removeItem("ventaParaRecrear")
+      showNotification("Error al cargar la venta para recrear", "error")
     }
-  }, [searchParams, setSearchParams])
+  }, [searchParams, setSearchParams, user])
 
   useEffect(() => {
     if (user?.sucursales && user.sucursales.length > 0) {
@@ -644,13 +670,17 @@ export default function VentasPage() {
 
         <PagoModal
           open={showPagoModal}
-          onClose={() => setShowPagoModal(false)}
+          onClose={() => {
+            setShowPagoModal(false)
+            setPagoInicialRehacer(null)
+          }}
           subtotal={calcularSubtotal()}
           descuento={descuento}
           interes={interes}
           total={calcularTotal()}
           onConfirm={handleConfirmarVenta}
           sucursalVenta={sucursalVenta}
+          pagoInicialRehacer={pagoInicialRehacer}
         />
 
         <Snackbar

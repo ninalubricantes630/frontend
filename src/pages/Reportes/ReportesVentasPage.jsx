@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useNavigate } from "react-router-dom"
 import {
   Box,
   Typography,
@@ -25,11 +26,13 @@ import ventasService from "../../services/ventasService.js"
 import VentasList from "../../components/Ventas/VentasList.jsx"
 import VentaDetalleModal from "../../components/Ventas/VentaDetalleModal.jsx"
 import { useAuth } from "../../contexts/AuthContext"
+import { buildVentaParaRecrearFromApi } from "../../utils/ventaRehacerHelpers"
 import { useSucursales } from "../../hooks/useSucursales"
 import PermissionGuard from "../../components/Auth/PermissionGuard"
 
 const ReportesVentasPage = () => {
-  const { user } = useAuth()
+  const navigate = useNavigate()
+  const { user, hasPermissionSlug } = useAuth()
   const { sucursales, loadSucursales } = useSucursales()
 
   const [ventas, setVentas] = useState([])
@@ -53,6 +56,7 @@ const ReportesVentasPage = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [ventaToCancel, setVentaToCancel] = useState(null)
   const [motivoCancelacion, setMotivoCancelacion] = useState("")
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" })
 
@@ -216,6 +220,8 @@ const ReportesVentasPage = () => {
   }
 
   const confirmCancel = async () => {
+    if (!ventaToCancel) return
+    setCancelLoading(true)
     try {
       await ventasService.cancel(ventaToCancel.id, motivoCancelacion)
       showSnackbar("Venta cancelada correctamente", "success")
@@ -226,6 +232,43 @@ const ReportesVentasPage = () => {
     } catch (error) {
       console.error("Error al cancelar venta:", error)
       showSnackbar("Error al cancelar la venta: " + (error.response?.data?.message || error.message), "error")
+    } finally {
+      setCancelLoading(false)
+    }
+  }
+
+  const confirmCancelYRehacer = async () => {
+    if (!ventaToCancel) return
+    if (!hasPermissionSlug("create_venta")) {
+      showSnackbar("No tenés permiso para registrar ventas. Solo se cancelará desde aquí si usás la otra opción.", "error")
+      return
+    }
+    setCancelLoading(true)
+    try {
+      const resp = await ventasService.getById(ventaToCancel.id)
+      const full = resp?.data ?? resp
+      const payload = buildVentaParaRecrearFromApi(full)
+      if (!payload) {
+        showSnackbar("No se pudieron leer los datos de la venta para rehacer.", "error")
+        return
+      }
+
+      await ventasService.cancel(ventaToCancel.id, motivoCancelacion)
+
+      localStorage.setItem("ventaParaRecrear", JSON.stringify(payload))
+      setCancelDialogOpen(false)
+      setVentaToCancel(null)
+      setMotivoCancelacion("")
+      await loadVentas(pagination.page, pagination.limit)
+      navigate("/ventas?recrear=true")
+    } catch (error) {
+      console.error("Error al cancelar y rehacer venta:", error)
+      showSnackbar(
+        "Error: " + (error?.response?.data?.message || error?.message || "No se pudo completar la operación"),
+        "error",
+      )
+    } finally {
+      setCancelLoading(false)
     }
   }
 
@@ -628,6 +671,11 @@ const ReportesVentasPage = () => {
             <Typography sx={{ color: "#475569", mb: 2 }}>
               ¿Estás seguro de que deseas cancelar la venta <strong>#{ventaToCancel?.numero}</strong>?
             </Typography>
+            <Typography variant="body2" sx={{ color: "#64748b", mb: 2 }}>
+              Se revertirá el stock, la cuenta corriente (si aplica) y se registrará el movimiento de caja correspondiente.
+              Podés <strong>solo cancelar</strong> o <strong>cancelar y rehacer</strong> el mismo pedido en la pantalla de
+              ventas (útil si la registraste mal).
+            </Typography>
             <TextField
               fullWidth
               multiline
@@ -643,10 +691,11 @@ const ReportesVentasPage = () => {
               }}
             />
           </DialogContent>
-          <DialogActions sx={{ p: 2.5, gap: 1, borderTop: "1px solid #e5e7eb" }}>
+          <DialogActions sx={{ p: 2.5, gap: 1, borderTop: "1px solid #e5e7eb", flexWrap: "wrap" }}>
             <Button
               onClick={() => setCancelDialogOpen(false)}
               variant="outlined"
+              disabled={cancelLoading}
               sx={{
                 borderColor: "#e5e7eb",
                 color: "#475569",
@@ -658,11 +707,12 @@ const ReportesVentasPage = () => {
                 },
               }}
             >
-              Cancelar
+              Volver
             </Button>
             <Button
               onClick={confirmCancel}
               variant="contained"
+              disabled={cancelLoading}
               sx={{
                 bgcolor: "#dc2626",
                 borderRadius: 2,
@@ -670,8 +720,23 @@ const ReportesVentasPage = () => {
                 "&:hover": { bgcolor: "#b91c1c" },
               }}
             >
-              Confirmar Cancelación
+              {cancelLoading ? "Procesando…" : "Solo cancelar"}
             </Button>
+            {hasPermissionSlug("create_venta") && (
+              <Button
+                onClick={confirmCancelYRehacer}
+                variant="contained"
+                disabled={cancelLoading}
+                sx={{
+                  bgcolor: "#0f172a",
+                  borderRadius: 2,
+                  px: 3,
+                  "&:hover": { bgcolor: "#1e293b" },
+                }}
+              >
+                {cancelLoading ? "Procesando…" : "Cancelar y rehacer en ventas"}
+              </Button>
+            )}
           </DialogActions>
         </Dialog>
 
