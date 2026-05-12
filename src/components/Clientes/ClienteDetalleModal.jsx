@@ -355,7 +355,9 @@ const ClienteDetalleModal = ({ open, onClose, cliente }) => {
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
       currency: "ARS",
-    }).format(amount)
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number.parseFloat(amount) || 0)
   }
 
   if (!cliente) return null

@@ -32,9 +32,9 @@ const ClientesList = ({ clientes, loading, pagination, onPageChange, onEdit, onD
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
       currency: "ARS",
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value)
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(Number.parseFloat(value) || 0)
   }
 
   const isConsumidorFinal = (cliente) => {
