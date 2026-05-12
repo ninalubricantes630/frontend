@@ -148,6 +148,7 @@ export default function VentasPage() {
       filters.sucursales_ids = sucursalVenta.id.toString()
     } else {
       filters.sucursales_ids = user.sucursales.map((s) => s.id).join(",")
+      filters.prioridad_sucursal_id = sucursalVenta.id
     }
 
     loadProductos(pageNum, 10, filters)

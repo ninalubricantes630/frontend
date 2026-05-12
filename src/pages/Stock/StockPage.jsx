@@ -131,6 +131,8 @@ const StockPage = () => {
     } else {
       // User has multiple sucursales and didn't select one - show all their sucursales
       params.sucursales_ids = user.sucursales.map((s) => s.id).join(",")
+      const principal = user.sucursales.find((s) => s.es_principal)
+      params.prioridad_sucursal_id = principal?.id ?? user.sucursales[0].id
     }
 
     if (filters.unidad_medida) {
@@ -169,6 +171,8 @@ const StockPage = () => {
       params.sucursal_id = user.sucursales[0].id
     } else if (user?.sucursales && user.sucursales.length > 1) {
       params.sucursales_ids = user.sucursales.map((s) => s.id).join(",")
+      const principal = user.sucursales.find((s) => s.es_principal)
+      params.prioridad_sucursal_id = principal?.id ?? user.sucursales[0].id
     }
 
     loadProductos(1, pagination.limit, params)
@@ -412,6 +416,8 @@ const StockPage = () => {
       params.sucursal_id = user.sucursales[0].id
     } else {
       params.sucursales_ids = user.sucursales.map((s) => s.id).join(",")
+      const principal = user.sucursales.find((s) => s.es_principal)
+      params.prioridad_sucursal_id = principal?.id ?? user.sucursales[0].id
     }
 
     if (filters.unidad_medida) {
