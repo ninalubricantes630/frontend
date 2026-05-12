@@ -32,7 +32,7 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
 
   const buscarProductos = useCallback(
     async (searchTerm) => {
-      if (!searchTerm || searchTerm.trim().length < 2) {
+      if (!searchTerm || searchTerm.trim().length < 1) {
         setProductos([])
         setMostrarResultados(5)
         return
@@ -127,7 +127,7 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
       <TextField
         fullWidth
         inputRef={searchInputRef}
-        placeholder="Buscar productos por nombre, código o categoría..."
+        placeholder="Buscar por nombre, código, fabricante..."
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
         InputProps={{
@@ -158,13 +158,13 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
         }}
       />
 
-      {!sucursalId && busqueda.trim().length >= 2 && (
+      {!sucursalId && busqueda.trim().length >= 1 && (
         <Alert severity="warning" sx={{ borderRadius: 1.5, mb: 2 }}>
           Selecciona una sucursal primero para buscar productos
         </Alert>
       )}
 
-      {busqueda.trim().length >= 2 && sucursalId && (
+      {busqueda.trim().length >= 1 && sucursalId && (
         <Box>
           {productos.length === 0 && !loading && (
             <Alert severity="info" sx={{ borderRadius: 1.5 }}>
@@ -299,7 +299,7 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
         </Box>
       )}
 
-      {busqueda.trim().length < 2 && (
+      {busqueda.trim().length < 1 && (
         <Box
           sx={{
             textAlign: "center",
@@ -312,14 +312,14 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
         >
           <SearchIcon sx={{ fontSize: 48, color: "#cbd5e1", mb: 1 }} />
           <Typography variant="body1" sx={{ color: "#64748b", fontWeight: 500 }}>
-            Escribe al menos 2 caracteres para buscar productos
+            Escribe en el buscador para encontrar productos
           </Typography>
           <Typography variant="caption" sx={{ color: "#94a3b8", display: "block", mt: 0.5 }}>
             Haz clic en un producto para seleccionar cantidad y agregarlo
           </Typography>
           {!sucursalId && (
             <Typography variant="caption" sx={{ color: "#f59e0b", display: "block", mt: 1, fontWeight: 500 }}>
-              ⚠️ Asegúrate de seleccionar una sucursal primero
+              Selecciona una sucursal primero para buscar en su stock
             </Typography>
           )}
         </Box>
