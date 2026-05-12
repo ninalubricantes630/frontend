@@ -28,9 +28,12 @@ import serviciosService from "../../services/serviciosService.js"
 import { useAuth } from "../../contexts/AuthContext"
 import { useSucursales } from "../../hooks/useSucursales"
 import PermissionGuard from "../../components/Auth/PermissionGuard"
+import { useNavigate } from "react-router-dom"
+import { buildServicioParaRecrearFromApi } from "../../utils/servicioRehacerHelpers.js"
 
 const ReportesPage = () => {
-  const { user } = useAuth()
+  const { user, hasPermissionSlug } = useAuth()
+  const navigate = useNavigate()
   const { sucursales, loadSucursales } = useSucursales()
 
   const {
@@ -70,6 +73,7 @@ const ReportesPage = () => {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false)
   const [servicioToCancel, setServicioToCancel] = useState(null)
   const [motivoCancelacion, setMotivoCancelacion] = useState("")
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   const loadServiciosData = useCallback(
     async (page = 1, limit = 10, clienteIdParam = null) => {
@@ -258,6 +262,8 @@ const ReportesPage = () => {
   }
 
   const confirmCancel = async () => {
+    if (!servicioToCancel) return
+    setCancelLoading(true)
     try {
       await serviciosService.cancel(servicioToCancel.id, motivoCancelacion)
       showSnackbar("Servicio cancelado correctamente", "success")
@@ -268,6 +274,46 @@ const ReportesPage = () => {
     } catch (error) {
       console.error("Error al cancelar servicio:", error)
       showSnackbar("Error al cancelar el servicio: " + (error.response?.data?.message || error.message), "error")
+    } finally {
+      setCancelLoading(false)
+    }
+  }
+
+  const confirmCancelYRehacer = async () => {
+    if (!servicioToCancel) return
+    if (!hasPermissionSlug("create_servicio")) {
+      showSnackbar(
+        "No tenés permiso para registrar servicios. Usá «Solo cancelar» o pedí acceso al administrador.",
+        "error",
+      )
+      return
+    }
+    setCancelLoading(true)
+    try {
+      const resp = await serviciosService.getServicioById(servicioToCancel.id)
+      const full = resp?.data ?? resp
+      const payload = buildServicioParaRecrearFromApi(full)
+      if (!payload) {
+        showSnackbar("No se pudieron leer los datos del servicio para rehacer.", "error")
+        return
+      }
+
+      await serviciosService.cancel(servicioToCancel.id, motivoCancelacion)
+
+      localStorage.setItem("servicioParaRecrear", JSON.stringify(payload))
+      setCancelDialogOpen(false)
+      setServicioToCancel(null)
+      setMotivoCancelacion("")
+      await loadServiciosData(pagination.page, pagination.limit)
+      navigate("/servicios?recrear=true")
+    } catch (error) {
+      console.error("Error al cancelar y rehacer servicio:", error)
+      showSnackbar(
+        "Error: " + (error?.response?.data?.message || error?.message || "No se pudo completar la operación"),
+        "error",
+      )
+    } finally {
+      setCancelLoading(false)
     }
   }
 
@@ -801,6 +847,11 @@ const ReportesPage = () => {
             <Typography sx={{ color: "#475569", mb: 2 }}>
               ¿Estás seguro de que deseas cancelar el servicio <strong>#{servicioToCancel?.numero}</strong>?
             </Typography>
+            <Typography variant="body2" sx={{ color: "#64748b", mb: 2 }}>
+              Se revertirá el stock, la cuenta corriente (si aplica) y se registrará el movimiento de caja correspondiente.
+              Podés <strong>solo cancelar</strong> o <strong>cancelar y rehacer</strong> el mismo servicio en la pantalla de
+              servicios (útil si lo registraste mal).
+            </Typography>
             <TextField
               fullWidth
               label="Motivo de Cancelación"
@@ -809,6 +860,7 @@ const ReportesPage = () => {
               multiline
               rows={3}
               required
+              disabled={cancelLoading}
               sx={{
                 "& .MuiOutlinedInput-root": {
                   "& fieldset": {
@@ -825,10 +877,11 @@ const ReportesPage = () => {
               }}
             />
           </DialogContent>
-          <DialogActions sx={{ p: 2.5, gap: 1, borderTop: "1px solid #e5e7eb" }}>
+          <DialogActions sx={{ p: 2.5, gap: 1, borderTop: "1px solid #e5e7eb", flexWrap: "wrap" }}>
             <Button
               onClick={() => setCancelDialogOpen(false)}
               variant="outlined"
+              disabled={cancelLoading}
               sx={{
                 borderColor: "#e5e7eb",
                 color: "#475569",
@@ -840,12 +893,12 @@ const ReportesPage = () => {
                 },
               }}
             >
-              Cancelar
+              Volver
             </Button>
             <Button
               onClick={confirmCancel}
               variant="contained"
-              disabled={!motivoCancelacion.trim()}
+              disabled={cancelLoading || !motivoCancelacion.trim()}
               sx={{
                 bgcolor: "#dc2626",
                 borderRadius: 2,
@@ -857,8 +910,27 @@ const ReportesPage = () => {
                 },
               }}
             >
-              Confirmar Cancelación
+              {cancelLoading ? "Procesando…" : "Solo cancelar"}
             </Button>
+            {hasPermissionSlug("create_servicio") && (
+              <Button
+                onClick={confirmCancelYRehacer}
+                variant="contained"
+                disabled={cancelLoading || !motivoCancelacion.trim()}
+                sx={{
+                  bgcolor: "#0f172a",
+                  borderRadius: 2,
+                  px: 3,
+                  "&:hover": { bgcolor: "#1e293b" },
+                  "&:disabled": {
+                    bgcolor: "#cbd5e1",
+                    color: "#94a3b8",
+                  },
+                }}
+              >
+                {cancelLoading ? "Procesando…" : "Cancelar y rehacer en servicios"}
+              </Button>
+            )}
           </DialogActions>
         </Dialog>
 

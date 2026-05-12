@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
+import { useSearchParams } from "react-router-dom"
 import {
   Box,
   Typography,
@@ -111,7 +112,9 @@ const ServiciosPage = () => {
 
   const [interes, setInteres] = useState(null)
   const [descuento, setDescuento] = useState(null)
+  const [pagoInicialRehacer, setPagoInicialRehacer] = useState(null)
 
+  const [searchParams, setSearchParams] = useSearchParams()
   const [userSucursalesCount, setUserSucursalesCount] = useState(0)
 
   const showSnackbar = (message, severity = "success") => {
@@ -190,6 +193,81 @@ const ServiciosPage = () => {
   }, [user])
 
   useEffect(() => {
+    const recrear = searchParams.get("recrear")
+    if (recrear !== "true" || !user?.sucursales?.length) return
+
+    const raw = localStorage.getItem("servicioParaRecrear")
+    if (!raw) {
+      setSearchParams({})
+      return
+    }
+
+    try {
+      const data = JSON.parse(raw)
+      if (!data || typeof data !== "object") return
+
+      const sucursalObj =
+        user.sucursales.find((s) => Number(s.id) === Number(data.sucursal_id)) ||
+        sucursalesActivas.find((s) => Number(s.id) === Number(data.sucursal_id))
+
+      if (data.sucursal_id && !sucursalObj) {
+        showSnackbar("La sucursal del servicio no coincide con tus sucursales asignadas.", "warning")
+      } else if (sucursalObj) {
+        setSelectedSucursal(sucursalObj)
+      }
+
+      const cli = data.cliente
+      if (cli && cli.id) {
+        setSelectedCliente(cli)
+      }
+
+      const vehs = Array.isArray(data.vehiculos) ? data.vehiculos : []
+      const ids = Array.isArray(data.vehiculo_ids) && data.vehiculo_ids.length > 0 ? data.vehiculo_ids : vehs.map((v) => v.id)
+      setSelectedVehiculos(vehs.length > 0 ? vehs : [])
+      setSelectedVehiculo(vehs[0] ?? null)
+
+      setFormData((prev) => ({
+        ...prev,
+        clienteId: data.cliente_id ?? cli?.id ?? null,
+        vehiculoIds: ids || [],
+        vehiculoId: ids?.[0] ?? null,
+        sucursalId: data.sucursal_id ?? sucursalObj?.id ?? prev.sucursalId,
+        empleados: Array.isArray(data.empleados) ? data.empleados : [],
+        observaciones: data.observaciones != null ? String(data.observaciones) : "",
+        items: Array.isArray(data.items) ? data.items : [],
+      }))
+
+      if (data.descuento && Number(data.descuento.montoDescuento) > 0) {
+        setDescuento(data.descuento)
+      } else {
+        setDescuento(null)
+      }
+
+      if (data.interes && Number(data.interes.montoInteres) > 0) {
+        setInteres(data.interes)
+      } else {
+        setInteres(null)
+      }
+
+      if (data.pagoInicial && typeof data.pagoInicial === "object") {
+        setPagoInicialRehacer(data.pagoInicial)
+      } else {
+        setPagoInicialRehacer(null)
+      }
+
+      localStorage.removeItem("servicioParaRecrear")
+      setSearchParams({})
+
+      setActiveStep(4)
+      showSnackbar("Servicio cargado para rehacer. Revisá el pago y confirmá cuando esté listo.", "info")
+    } catch (e) {
+      console.error("[v0] Error al cargar servicio para recrear:", e)
+      localStorage.removeItem("servicioParaRecrear")
+      showSnackbar("Error al cargar el servicio para recrear", "error")
+    }
+  }, [searchParams, setSearchParams, user, sucursalesActivas])
+
+  useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Enter" && !e.ctrlKey && !e.metaKey) {
         if (activeStep < 4 && canProceed()) {
@@ -248,10 +326,6 @@ const ServiciosPage = () => {
   useEffect(() => {
     if (formData.sucursalId) {
       loadEmpleadosBySucursal(formData.sucursalId)
-      setFormData((prev) => ({
-        ...prev,
-        empleados: [],
-      }))
     }
   }, [formData.sucursalId, loadEmpleadosBySucursal])
 
@@ -298,6 +372,7 @@ const ServiciosPage = () => {
     // Reset interest and discount states as well
     setInteres(null)
     setDescuento(null)
+    setPagoInicialRehacer(null)
   }
 
   const handleClienteSelect = (cliente) => {
@@ -428,7 +503,7 @@ const ServiciosPage = () => {
         vehiculo_ids: formData.vehiculoIds,
         sucursal_id: formData.sucursalId,
         empleados: formData.empleados,
-        observaciones: formData.observaciones,
+        observaciones: pagoData?.observaciones ?? formData.observaciones,
         tipo_pago: pagoData?.tipo_pago?.toUpperCase() || formData.metodoPago?.toUpperCase() || "EFECTIVO",
         subtotal: subtotalParaBackend,
         descuento: pagoData?.descuento || 0,
@@ -1289,6 +1364,7 @@ const ServiciosPage = () => {
           descuento={descuento}
           interes={interes}
           sucursalId={selectedSucursal?.id || formData.sucursalId}
+          pagoInicialRehacer={pagoInicialRehacer}
         />
 
         <DescuentoModalServicio

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Dialog,
   DialogTitle,
@@ -60,6 +60,7 @@ export default function PagoModalServicio({
   descuento,
   interes,
   sucursalId: sucursalProp,
+  pagoInicialRehacer = null,
 }) {
   const [metodoPago, setMetodoPago] = useState("efectivo")
   const [montoPagado, setMontoPagado] = useState("")
@@ -87,29 +88,7 @@ export default function PagoModalServicio({
 
   const { user } = useAuth()
   const sucursalId = sucursalProp
-
-  useEffect(() => {
-    if (isOpen) {
-      setMontoPagado(formatCurrency(total).replace("$", "").trim())
-      setMetodoPago("efectivo")
-      setClienteSeleccionado(null)
-      setObservaciones("")
-      setError("")
-      setTarjetaSeleccionada(null)
-      setCuotasSeleccionadas(null)
-      setInteresTarjeta(0)
-      setTotalConInteresTarjeta(total)
-      // Reset pago dividido
-      setPagoDividido(false)
-      setMetodoPago2("transferencia")
-      setMontoPago1("")
-      setMontoPago2("")
-      setTarjetaSeleccionada2(null)
-      setCuotas2([])
-      setCuotasSeleccionadas2(null)
-      cargarTarjetas()
-    }
-  }, [isOpen, total])
+  const restauracionAplicadaRef = useRef(false)
 
   useEffect(() => {
     if (metodoPago === "tarjeta_credito" && !tarjetas.length && !loadingTarjetas) {
@@ -192,35 +171,163 @@ export default function PagoModalServicio({
     }
   }
 
-  const cargarCuotas = async (tarjeta_id) => {
+  const cargarCuotas = async (tarjeta_id, numeroCuotasPreferido = null) => {
     try {
       if (!sucursalId) {
         setError("No se pudo determinar la sucursal del usuario")
         return
       }
       const data = await tarjetasService.getCuotasPorTarjeta(tarjeta_id, sucursalId)
-      setCuotas(data || [])
-      setCuotasSeleccionadas(null)
+      const list = data || []
+      setCuotas(list)
+      if (numeroCuotasPreferido != null && numeroCuotasPreferido !== "") {
+        const pref = Number(numeroCuotasPreferido)
+        const match = list.find((c) => Number(c.numero_cuotas) === pref)
+        setCuotasSeleccionadas(
+          match || {
+            numero_cuotas: pref,
+            tasa_interes: 0,
+          },
+        )
+      } else {
+        setCuotasSeleccionadas(null)
+      }
     } catch (err) {
       console.error("[v0] Error loading installments:", err)
       setError("No se pudieron cargar las cuotas disponibles")
     }
   }
 
-  const cargarCuotas2 = async (tarjeta_id) => {
+  const cargarCuotas2 = async (tarjeta_id, numeroCuotasPreferido = null) => {
     try {
       if (!sucursalId) {
         setError("No se pudo determinar la sucursal del usuario")
         return
       }
       const data = await tarjetasService.getCuotasPorTarjeta(tarjeta_id, sucursalId)
-      setCuotas2(data || [])
-      setCuotasSeleccionadas2(null)
+      const list = data || []
+      setCuotas2(list)
+      if (numeroCuotasPreferido != null && numeroCuotasPreferido !== "") {
+        const pref = Number(numeroCuotasPreferido)
+        const match = list.find((c) => Number(c.numero_cuotas) === pref)
+        setCuotasSeleccionadas2(
+          match || {
+            numero_cuotas: pref,
+            tasa_interes: 0,
+          },
+        )
+      } else {
+        setCuotasSeleccionadas2(null)
+      }
     } catch (err) {
       console.error("[v0] Error loading installments for second payment:", err)
       setError("No se pudieron cargar las cuotas disponibles")
     }
   }
+
+  const resetCamposPagoPorDefecto = () => {
+    setMontoPagado(formatCurrency(total).replace("$", "").trim())
+    setMetodoPago("efectivo")
+    setClienteSeleccionado(null)
+    setObservaciones("")
+    setError("")
+    setTarjetaSeleccionada(null)
+    setCuotasSeleccionadas(null)
+    setInteresTarjeta(0)
+    setTotalConInteresTarjeta(total)
+    setPagoDividido(false)
+    setMetodoPago2("transferencia")
+    setMontoPago1("")
+    setMontoPago2("")
+    setTarjetaSeleccionada2(null)
+    setCuotas2([])
+    setCuotasSeleccionadas2(null)
+    if (sucursalId) {
+      cargarTarjetas()
+    }
+  }
+
+  const aplicarRestauracionPago = async (rest) => {
+    if (!rest || typeof rest !== "object") return
+
+    setError("")
+    setObservaciones(rest.observaciones != null ? String(rest.observaciones) : "")
+
+    if (rest.pagoDividido) {
+      setPagoDividido(true)
+      setMetodoPago(rest.metodoPago || "efectivo")
+      setMetodoPago2(rest.metodoPago2 || "transferencia")
+      if (rest.montoPago1 != null) {
+        setMontoPago1(formatCurrency(Number(rest.montoPago1)).replace("$", "").trim())
+      }
+      if (rest.montoPago2 != null) {
+        setMontoPago2(formatCurrency(Number(rest.montoPago2)).replace("$", "").trim())
+      }
+      setTarjetaSeleccionada(rest.tarjetaId || null)
+      setTarjetaSeleccionada2(rest.tarjetaId2 || null)
+      if (sucursalId) await cargarTarjetas()
+      if (rest.metodoPago === "tarjeta_credito" && rest.tarjetaId) {
+        await cargarCuotas(rest.tarjetaId, rest.numeroCuotas)
+      }
+      if (rest.metodoPago2 === "tarjeta_credito" && rest.tarjetaId2) {
+        await cargarCuotas2(rest.tarjetaId2, rest.numeroCuotas2)
+      }
+      if (rest.clienteId) {
+        setClienteSeleccionado({
+          id: rest.clienteId,
+          nombre: rest.clienteNombre || "Cliente",
+          apellido: "",
+        })
+      }
+      return
+    }
+
+    setPagoDividido(false)
+    setMetodoPago(rest.metodoPago || "efectivo")
+    if (rest.clienteId) {
+      setClienteSeleccionado({
+        id: rest.clienteId,
+        nombre: rest.clienteNombre || "Cliente",
+        apellido: "",
+      })
+    } else {
+      setClienteSeleccionado(null)
+    }
+
+    if (rest.metodoPago === "tarjeta_credito" && rest.tarjetaId) {
+      if (sucursalId) await cargarTarjetas()
+      await cargarCuotas(rest.tarjetaId, rest.numeroCuotas)
+      const tci = rest.totalConInteresTarjeta != null ? Number(rest.totalConInteresTarjeta) : total
+      setTotalConInteresTarjeta(tci)
+      setInteresTarjeta(rest.interesTarjetaMonto != null ? Number(rest.interesTarjetaMonto) : Math.max(0, tci - total))
+      setMontoPagado(formatCurrency(tci).replace("$", "").trim())
+    } else {
+      setTarjetaSeleccionada(null)
+      setCuotasSeleccionadas(null)
+      setInteresTarjeta(0)
+      setTotalConInteresTarjeta(total)
+      setMontoPagado(formatCurrency(total).replace("$", "").trim())
+    }
+  }
+
+  useEffect(() => {
+    if (!isOpen) {
+      restauracionAplicadaRef.current = false
+      return
+    }
+
+    if (pagoInicialRehacer && !restauracionAplicadaRef.current) {
+      restauracionAplicadaRef.current = true
+      ;(async () => {
+        await aplicarRestauracionPago(pagoInicialRehacer)
+      })()
+      return
+    }
+
+    if (!pagoInicialRehacer) {
+      resetCamposPagoPorDefecto()
+    }
+  }, [isOpen, total, sucursalId, pagoInicialRehacer])
 
   const calcularVuelto = () => {
     const pagado = parsePriceInput(montoPagado) || 0
