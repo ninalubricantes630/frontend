@@ -40,10 +40,15 @@ import {
   Payment as PaymentIcon,
   ExpandMore as ExpandMoreIcon,
   Cancel as CancelIcon,
+  Visibility as VisibilityIcon,
 } from "@mui/icons-material"
 import vehiculosService from "../../services/vehiculosService"
 import cuentasCorrientesService from "../../services/cuentasCorrientesService"
 import cajaService from "../../services/cajaService"
+import ventasService from "../../services/ventasService"
+import serviciosService from "../../services/serviciosService"
+import VentaDetalleModal from "../Ventas/VentaDetalleModal"
+import ServicioDetalleModal from "../Servicios/ServicioDetalleModal"
 import { NumericFormat } from "react-number-format"
 
 const CancelacionDetalleModal = ({ open, onClose, movimiento }) => {
@@ -135,6 +140,11 @@ const ClienteDetalleModal = ({ open, onClose, cliente }) => {
   const [motivoCancelacion, setMotivoCancelacion] = useState("")
   const [cancelandoPago, setCancelandoPago] = useState(null)
   const [detallesCancelacionModal, setDetallesCancelacionModal] = useState({ open: false, movimiento: null })
+
+  const [ventaDetalleModal, setVentaDetalleModal] = useState({ open: false, venta: null })
+  const [servicioDetalleModal, setServicioDetalleModal] = useState({ open: false, servicio: null })
+  const [detalleOrigenLoadingId, setDetalleOrigenLoadingId] = useState(null)
+  const [detalleOrigenError, setDetalleOrigenError] = useState(null)
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue)
@@ -323,8 +333,49 @@ const ClienteDetalleModal = ({ open, onClose, cliente }) => {
       setCancelacionModal({ open: false, movimiento: null })
       setMotivoCancelacion("")
       setDetallesCancelacionModal({ open: false, movimiento: null })
+      setVentaDetalleModal({ open: false, venta: null })
+      setServicioDetalleModal({ open: false, servicio: null })
+      setDetalleOrigenLoadingId(null)
+      setDetalleOrigenError(null)
     }
   }, [open])
+
+  const movimientoTieneDetalleOrigen = (mov) => {
+    if (!mov || mov.tipo !== "CARGO" || mov.referencia_id == null) return false
+    const ref = String(mov.referencia_tipo || "").toUpperCase()
+    return ref === "VENTA" || ref === "SERVICE"
+  }
+
+  const handleAbrirDetalleOrigen = async (mov) => {
+    if (!movimientoTieneDetalleOrigen(mov)) return
+    setDetalleOrigenError(null)
+    setDetalleOrigenLoadingId(mov.id)
+    try {
+      const ref = String(mov.referencia_tipo || "").toUpperCase()
+      if (ref === "VENTA") {
+        const resp = await ventasService.getById(mov.referencia_id)
+        const venta = resp?.data ?? resp
+        if (!venta || (venta.id == null && !venta.numero)) {
+          throw new Error("No se encontró la venta asociada a este movimiento.")
+        }
+        setVentaDetalleModal({ open: true, venta })
+      } else if (ref === "SERVICE") {
+        const resp = await serviciosService.getServicioById(mov.referencia_id)
+        const servicio = resp?.data ?? resp
+        if (!servicio || (servicio.id == null && !servicio.numero)) {
+          throw new Error("No se encontró el servicio asociado a este movimiento.")
+        }
+        setServicioDetalleModal({ open: true, servicio })
+      }
+    } catch (err) {
+      console.error(err)
+      setDetalleOrigenError(
+        err?.message || "No se pudo cargar el detalle. Verificá permisos o que el registro siga existiendo.",
+      )
+    } finally {
+      setDetalleOrigenLoadingId(null)
+    }
+  }
 
   const formatDate = (dateString) => {
     if (!dateString) return "No disponible"
@@ -1027,6 +1078,16 @@ const ClienteDetalleModal = ({ open, onClose, cliente }) => {
                       Historial de Movimientos
                     </Typography>
 
+                    {detalleOrigenError && (
+                      <Alert
+                        severity="error"
+                        sx={{ mb: 2, borderRadius: 1.5 }}
+                        onClose={() => setDetalleOrigenError(null)}
+                      >
+                        {detalleOrigenError}
+                      </Alert>
+                    )}
+
                     {movimientos.length > 0 ? (
                       <Box>
                         <Box
@@ -1120,30 +1181,61 @@ const ClienteDetalleModal = ({ open, onClose, cliente }) => {
                                       </Typography>
                                     </TableCell>
                                     <TableCell align="center" sx={{ py: 1.5 }}>
-                                      {movimiento.tipo === "PAGO" &&
-                                        movimiento.estado === "ACTIVO" &&
-                                        sesionCaja &&
-                                        movimiento.sesion_caja_id === sesionCaja.id && (
-                                          <Tooltip title="Cancelar pago">
-                                            <IconButton
-                                              size="small"
-                                              onClick={() => handleAbrirCancelacion(movimiento)}
-                                              disabled={cancelandoPago === movimiento.id}
-                                              sx={{
-                                                color: "#dc2626",
-                                                "&:hover": {
-                                                  backgroundColor: "#fee2e2",
-                                                },
-                                              }}
-                                            >
-                                              {cancelandoPago === movimiento.id ? (
-                                                <CircularProgress size={16} sx={{ color: "#dc2626" }} />
-                                              ) : (
-                                                <CancelIcon fontSize="small" />
-                                              )}
-                                            </IconButton>
+                                      <Box
+                                        sx={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          gap: 0.5,
+                                          flexWrap: "wrap",
+                                        }}
+                                      >
+                                        {movimientoTieneDetalleOrigen(movimiento) && (
+                                          <Tooltip title="Ver detalle de venta o servicio">
+                                            <span>
+                                              <IconButton
+                                                size="small"
+                                                onClick={() => handleAbrirDetalleOrigen(movimiento)}
+                                                disabled={detalleOrigenLoadingId === movimiento.id}
+                                                sx={{
+                                                  color: "#2563eb",
+                                                  "&:hover": { backgroundColor: "#eff6ff" },
+                                                }}
+                                              >
+                                                {detalleOrigenLoadingId === movimiento.id ? (
+                                                  <CircularProgress size={16} sx={{ color: "#2563eb" }} />
+                                                ) : (
+                                                  <VisibilityIcon fontSize="small" />
+                                                )}
+                                              </IconButton>
+                                            </span>
                                           </Tooltip>
                                         )}
+                                        {movimiento.tipo === "PAGO" &&
+                                          movimiento.estado === "ACTIVO" &&
+                                          sesionCaja &&
+                                          movimiento.sesion_caja_id === sesionCaja.id && (
+                                            <Tooltip title="Cancelar pago">
+                                              <IconButton
+                                                size="small"
+                                                onClick={() => handleAbrirCancelacion(movimiento)}
+                                                disabled={cancelandoPago === movimiento.id}
+                                                sx={{
+                                                  color: "#dc2626",
+                                                  "&:hover": {
+                                                    backgroundColor: "#fee2e2",
+                                                  },
+                                                }}
+                                              >
+                                                {cancelandoPago === movimiento.id ? (
+                                                  <CircularProgress size={16} sx={{ color: "#dc2626" }} />
+                                                ) : (
+                                                  <CancelIcon fontSize="small" />
+                                                )}
+                                              </IconButton>
+                                            </Tooltip>
+                                          )}
+                                      </Box>
                                     </TableCell>
                                   </TableRow>
                                 ))}
@@ -1341,6 +1433,17 @@ const ClienteDetalleModal = ({ open, onClose, cliente }) => {
           )}
         </Box>
       </Dialog>
+
+      <VentaDetalleModal
+        open={ventaDetalleModal.open}
+        onClose={() => setVentaDetalleModal({ open: false, venta: null })}
+        venta={ventaDetalleModal.venta}
+      />
+      <ServicioDetalleModal
+        open={servicioDetalleModal.open}
+        onClose={() => setServicioDetalleModal({ open: false, servicio: null })}
+        servicio={servicioDetalleModal.servicio}
+      />
     </>
   )
 }
