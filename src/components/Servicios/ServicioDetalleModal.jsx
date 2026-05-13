@@ -33,6 +33,13 @@ import { formatQuantity } from "../../utils/formatters"
 const ServicioDetalleModal = ({ open, onClose, servicio }) => {
   if (!servicio) return null
 
+  // MySQL devuelve 0/1: usar booleano explícito. Si no, `0 && <JSX>` evalúa a 0 y React pinta "0" (dos bloques → "00").
+  const esPagoDividido =
+    servicio.pago_dividido === true ||
+    servicio.pago_dividido === 1 ||
+    servicio.pago_dividido === "1" ||
+    servicio.pago_dividido === "true"
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("es-AR", {
       style: "currency",
@@ -300,7 +307,7 @@ const ServicioDetalleModal = ({ open, onClose, servicio }) => {
             </Grid>
 
             {/* Información de Pago Múltiple */}
-            {servicio.pago_dividido && servicio.pagos && servicio.pagos.length > 0 && (
+            {esPagoDividido && servicio.pagos && servicio.pagos.length > 0 && (
               <Grid item xs={12}>
                 <Box
                   sx={{
@@ -349,7 +356,7 @@ const ServicioDetalleModal = ({ open, onClose, servicio }) => {
             )}
 
             {/* Información de Pago Múltiple (desde campos del servicio si no hay pagos de movimientos_caja) */}
-            {servicio.pago_dividido && (!servicio.pagos || servicio.pagos.length === 0) && servicio.monto_pago_1 && (
+            {esPagoDividido && (!servicio.pagos || servicio.pagos.length === 0) && servicio.monto_pago_1 && (
               <Grid item xs={12}>
                 <Box
                   sx={{
@@ -423,7 +430,7 @@ const ServicioDetalleModal = ({ open, onClose, servicio }) => {
             )}
 
             {/* Información de Tarjeta - Solo si NO es pago múltiple */}
-            {!servicio.pago_dividido && servicio.tipo_pago === "TARJETA_CREDITO" &&
+            {!esPagoDividido && servicio.tipo_pago === "TARJETA_CREDITO" &&
               (servicio.tarjeta_nombre || servicio.numero_cuotas || interesTarjetaPorcentaje > 0) && (
                 <Grid item xs={12}>
                   <Box

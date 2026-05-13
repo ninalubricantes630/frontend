@@ -109,6 +109,13 @@ const VentaDetalleModal = ({ open, onClose, venta }) => {
 
   if (!venta) return null
 
+  // pago_dividido viene como 0/1 desde la API: evitar `0 && <JSX>` que React renderiza como "0" (dos bloques → "00").
+  const esPagoDividido =
+    venta.pago_dividido === true ||
+    venta.pago_dividido === 1 ||
+    venta.pago_dividido === "1" ||
+    venta.pago_dividido === "true"
+
   const interesDelSistema = venta.interes_sistema_monto || 0
   const descuentoAplicado = venta.descuento || 0
   const interesDeTarjeta = venta.interes_tarjeta_monto || 0
@@ -278,7 +285,7 @@ const VentaDetalleModal = ({ open, onClose, venta }) => {
             </Grid>
 
             {/* Información de Pago Múltiple */}
-            {venta.pago_dividido && venta.pagos && venta.pagos.length > 0 && (
+            {esPagoDividido && venta.pagos && venta.pagos.length > 0 && (
               <Grid item xs={12}>
                 <Box
                   sx={{
@@ -327,7 +334,7 @@ const VentaDetalleModal = ({ open, onClose, venta }) => {
             )}
 
             {/* Información de Pago Múltiple (desde campos de la venta si no hay pagos de movimientos_caja) */}
-            {venta.pago_dividido && (!venta.pagos || venta.pagos.length === 0) && venta.monto_pago_1 && (
+            {esPagoDividido && (!venta.pagos || venta.pagos.length === 0) && venta.monto_pago_1 && (
               <Grid item xs={12}>
                 <Box
                   sx={{
@@ -401,7 +408,7 @@ const VentaDetalleModal = ({ open, onClose, venta }) => {
             )}
 
             {/* Información de Tarjeta (Simplificada) - Solo si NO es pago múltiple */}
-            {!venta.pago_dividido && (venta.tipo_pago === "CREDITO" || venta.tipo_pago === "TARJETA_CREDITO") &&
+            {!esPagoDividido && (venta.tipo_pago === "CREDITO" || venta.tipo_pago === "TARJETA_CREDITO") &&
               (venta.tarjeta_nombre || venta.numero_cuotas) && (
                 <Grid item xs={12}>
                   <Box
