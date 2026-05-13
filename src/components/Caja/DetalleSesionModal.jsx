@@ -253,8 +253,8 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
       value: formatCurrency(sesion.monto_inicial),
       subtitle: "Fondo al abrir",
       icon: SavingsIcon,
-      accent: "#0ea5e9",
-      bg: alpha("#0ea5e9", 0.08),
+      accent: "#b91c1c",
+      bg: alpha("#dc2626", 0.08),
     },
     {
       key: "ingresos",
@@ -272,7 +272,7 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
       subtitle: "Salidas de caja",
       icon: TrendingDownIcon,
       accent: "#dc2626",
-      bg: alpha("#dc2626", 0.08),
+      bg: alpha("#dc2626", 0.1),
     },
     {
       key: "sistema",
@@ -280,8 +280,8 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
       value: formatCurrency(montoEsperadoSistema),
       subtitle: "Inicial + ingresos − egresos",
       icon: BalanceIcon,
-      accent: "#2563eb",
-      bg: alpha("#2563eb", 0.08),
+      accent: "#991b1b",
+      bg: alpha("#991b1b", 0.08),
     },
     {
       key: "caja",
@@ -289,8 +289,8 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
       value: formatCurrency(montoEsperadoCaja),
       subtitle: "Efectivo para arqueo",
       icon: PointOfSaleIcon,
-      accent: "#7c3aed",
-      bg: alpha("#7c3aed", 0.08),
+      accent: "#dc2626",
+      bg: alpha("#dc2626", 0.06),
     },
   ]
 
@@ -298,7 +298,7 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
     <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth scroll="paper">
       <DialogTitle
         sx={{
-          background: "linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #334155 100%)",
+          background: "linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)",
           color: "white",
           display: "flex",
           alignItems: "center",
@@ -334,13 +334,13 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
         </IconButton>
       </DialogTitle>
 
-      <DialogContent sx={{ p: { xs: 2, sm: 3 }, bgcolor: "#f4f6f8" }}>
+      <DialogContent sx={{ p: { xs: 2, sm: 3 }, bgcolor: "#fafafa" }}>
         {/* Contexto: fechas + usuario */}
         <Grid container spacing={2} sx={{ mb: 2.5 }}>
           <Grid item xs={12} md={6}>
             <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: "1px solid", borderColor: "divider", height: "100%" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-                <CalendarIcon sx={{ fontSize: 22, color: "primary.main" }} />
+                <CalendarIcon sx={{ fontSize: 22, color: "#dc2626" }} />
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
                   Fechas
                 </Typography>
@@ -368,7 +368,7 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
           <Grid item xs={12} md={6}>
             <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: "1px solid", borderColor: "divider", height: "100%" }}>
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5 }}>
-                <TimeIcon sx={{ fontSize: 22, color: "primary.main" }} />
+                <TimeIcon sx={{ fontSize: 22, color: "#dc2626" }} />
                 <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
                   Duración y responsable
                 </Typography>
@@ -451,7 +451,7 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
                       variant="h6"
                       sx={{
                         fontWeight: 800,
-                        color: "#0f172a",
+                        color: "#171717",
                         fontSize: { xs: "1rem", sm: "1.05rem" },
                         lineHeight: 1.25,
                         mt: 0.5,
@@ -538,12 +538,12 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
               >
                 <Box sx={{ display: "flex", gap: 3, flexWrap: "wrap", mb: detalleCC ? 1.5 : 0 }}>
                   {Number(sesion.cantidad_ventas_cuenta_corriente) > 0 && (
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171717" }}>
                       Ventas: {sesion.cantidad_ventas_cuenta_corriente} — {formatCurrency(sesion.total_ventas_cuenta_corriente)}
                     </Typography>
                   )}
                   {Number(sesion.cantidad_servicios_cuenta_corriente) > 0 && (
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#0f172a" }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: "#171717" }}>
                       Servicios: {sesion.cantidad_servicios_cuenta_corriente} —{" "}
                       {formatCurrency(sesion.total_servicios_cuenta_corriente)}
                     </Typography>
@@ -615,11 +615,15 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
             }}
           >
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <VerifiedIcon sx={{ color: "#6366f1", fontSize: 24 }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#0f172a", letterSpacing: "-0.02em" }}>
+              <VerifiedIcon sx={{ color: "#dc2626", fontSize: 24 }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 800, color: "#171717", letterSpacing: "-0.02em" }}>
                 Cierre de caja
               </Typography>
-              <Chip size="small" label="Auditoría" sx={{ ml: "auto", fontWeight: 600, bgcolor: alpha("#6366f1", 0.12), color: "#4338ca" }} />
+              <Chip
+                size="small"
+                label="Auditoría"
+                sx={{ ml: "auto", fontWeight: 600, bgcolor: alpha("#dc2626", 0.12), color: "#b91c1c" }}
+              />
             </Box>
 
             <Box
@@ -635,14 +639,14 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
                 sx={{
                   p: 2,
                   borderRadius: 2,
-                  bgcolor: alpha("#6366f1", 0.06),
-                  border: `1px solid ${alpha("#6366f1", 0.2)}`,
+                  bgcolor: alpha("#dc2626", 0.06),
+                  border: `1px solid ${alpha("#dc2626", 0.22)}`,
                 }}
               >
-                <Typography variant="caption" sx={{ color: "#4338ca", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <Typography variant="caption" sx={{ color: "#b91c1c", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
                   Monto contado al cierre
                 </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800, color: "#312e81", mt: 1, letterSpacing: "-0.03em" }}>
+                <Typography variant="h4" sx={{ fontWeight: 800, color: "#991b1b", mt: 1, letterSpacing: "-0.03em" }}>
                   {formatCurrency(sesion.monto_final)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: "block" }}>
@@ -712,7 +716,7 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
                     Cerrado por
                   </Typography>
                 </Box>
-                <Typography variant="h6" sx={{ fontWeight: 800, color: "#0f172a" }}>
+                <Typography variant="h6" sx={{ fontWeight: 800, color: "#171717" }}>
                   {sesion.usuario_cierre_nombre || "—"}
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
@@ -726,7 +730,7 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
         {/* Ingresos por método — neto vs bruto */}
         <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, alignItems: { sm: "center" }, justifyContent: "space-between", gap: 2, mb: 2 }}>
           <Box>
-            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#0f172a", letterSpacing: "-0.02em" }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 800, color: "#171717", letterSpacing: "-0.02em" }}>
               Por método de pago
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", maxWidth: 560 }}>
@@ -756,9 +760,9 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
                 fontSize: "0.8rem",
               },
               "& .Mui-selected": {
-                bgcolor: "#0f172a",
+                bgcolor: "#b91c1c",
                 color: "#fff",
-                "&:hover": { bgcolor: "#1e293b" },
+                "&:hover": { bgcolor: "#991b1b" },
               },
             }}
           >
