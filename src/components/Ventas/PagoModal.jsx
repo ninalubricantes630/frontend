@@ -1240,6 +1240,8 @@ export default function PagoModal({
         open={showClienteSelector}
         onClose={() => setShowClienteSelector(false)}
         onSelect={handleClienteSelect}
+        sucursalId={sucursalVenta?.id ?? ""}
+        strictSucursal={Boolean(sucursalVenta?.id)}
       />
     </>
   )

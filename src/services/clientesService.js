@@ -10,6 +10,7 @@ export const clientesService = {
       sucursal_id = "",
       sucursales_ids = "",
       con_saldo_cc = false,
+      strict_sucursal = false,
     } = params
 
     const queryParams = new URLSearchParams({
@@ -20,6 +21,7 @@ export const clientesService = {
       ...(sucursal_id && { sucursal_id }),
       ...(sucursales_ids && { sucursales_ids }),
       ...(con_saldo_cc ? { con_saldo_cc: "true" } : {}),
+      ...(strict_sucursal ? { strict_sucursal: "true" } : {}),
     })
 
     const response = await api.get(`/clientes?${queryParams}`)

@@ -21,16 +21,26 @@ export const useClientes = () => {
     sucursal_id: "",
     sucursales_ids: "",
     con_saldo_cc: false,
+    strict_sucursal: false,
   })
 
   const { showToast } = useToast()
   const errorHandler = useStandardizedErrorHandler(showToast)
 
   const loadClientes = useCallback(
-    async (page = 1, limit = 10, search = "", searchBy = "", sucursal_id = "", sucursales_ids = "", con_saldo_cc = false) => {
+    async (
+      page = 1,
+      limit = 10,
+      search = "",
+      searchBy = "",
+      sucursal_id = "",
+      sucursales_ids = "",
+      con_saldo_cc = false,
+      strict_sucursal = false,
+    ) => {
       setLoading(true)
       setError(null)
-      setCurrentFilters({ search, searchBy, sucursal_id, sucursales_ids, con_saldo_cc })
+      setCurrentFilters({ search, searchBy, sucursal_id, sucursales_ids, con_saldo_cc, strict_sucursal })
 
       try {
         const response = await clientesService.getClientes({
@@ -41,6 +51,7 @@ export const useClientes = () => {
           sucursal_id,
           sucursales_ids,
           con_saldo_cc,
+          strict_sucursal,
         })
 
         if (!response || !response.data) {
@@ -82,6 +93,7 @@ export const useClientes = () => {
         sucursal_id = "",
         sucursales_ids = "",
         con_saldo_cc = false,
+        strict_sucursal = false,
       } = params
 
       try {
@@ -93,6 +105,7 @@ export const useClientes = () => {
           sucursal_id,
           sucursales_ids,
           con_saldo_cc,
+          strict_sucursal,
         })
         return result
       } catch (err) {
@@ -120,6 +133,7 @@ export const useClientes = () => {
           currentFilters.sucursal_id,
           currentFilters.sucursales_ids,
           currentFilters.con_saldo_cc,
+          currentFilters.strict_sucursal,
         )
 
         return { success: true, data: newCliente }
@@ -189,6 +203,7 @@ export const useClientes = () => {
           currentFilters.sucursal_id,
           currentFilters.sucursales_ids,
           currentFilters.con_saldo_cc,
+          currentFilters.strict_sucursal,
         )
       } else {
         loadClientes(
@@ -199,6 +214,7 @@ export const useClientes = () => {
           currentFilters.sucursal_id,
           currentFilters.sucursales_ids,
           currentFilters.con_saldo_cc,
+          currentFilters.strict_sucursal,
         )
       }
     },

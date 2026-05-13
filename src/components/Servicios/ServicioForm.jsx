@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Button } from "../../components/ui/button"
 import { Card, CardContent } from "../../components/ui/card"
 import { Input } from "../../components/ui/input"
@@ -31,6 +31,7 @@ import { useClientes } from "../../hooks/useClientes"
 import { useVehiculos } from "../../hooks/useVehiculos"
 import { useTiposServicios } from "../../hooks/useTiposServicios"
 import { useServicios } from "../../hooks/useServicios"
+import { useAuth } from "../../contexts/AuthContext"
 import ConfirmacionServicio from "./ConfirmacionServicio"
 import DescuentoModalServicio from "./DescuentoModalServicio"
 import InteresModalServicio from "./InteresModalServicio"
@@ -56,6 +57,12 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
   })
 
   const { clientes, loadClientes } = useClientes()
+  const { user } = useAuth()
+  const sucursalFiltroClienteId = useMemo(() => {
+    if (!user?.sucursales?.length) return null
+    const principal = user.sucursales.find((s) => s.es_principal)
+    return (principal || user.sucursales[0]).id
+  }, [user])
   const { vehiculos, loadVehiculos } = useVehiculos()
   const { tiposServicios, loadTiposServicios } = useTiposServicios()
   const { createServicio, updateServicio, loading } = useServicios()
@@ -114,7 +121,11 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
 
   useEffect(() => {
     if (open) {
-      loadClientes()
+      if (sucursalFiltroClienteId != null) {
+        loadClientes(1, 100, "", "", sucursalFiltroClienteId, "", false, true)
+      } else {
+        loadClientes(1, 50)
+      }
       loadTiposServicios()
       if (servicio) {
         setFormData({
@@ -145,7 +156,7 @@ const ServicioForm = ({ open, onClose, servicio = null }) => {
         setClienteSearch("")
       }
     }
-  }, [open, servicio])
+  }, [open, servicio, sucursalFiltroClienteId, loadClientes])
 
   useEffect(() => {
     if (formData.clienteId) {

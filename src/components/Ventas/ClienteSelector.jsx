@@ -22,7 +22,7 @@ import { clientesService } from "../../services/clientesService"
 const LIMIT = 100
 const DEBOUNCE_MS = 300
 
-export default function ClienteSelector({ open, onClose, onSelect }) {
+export default function ClienteSelector({ open, onClose, onSelect, sucursalId = "", strictSucursal = false }) {
   const [clientes, setClientes] = useState([])
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -49,6 +49,8 @@ export default function ClienteSelector({ open, onClose, onSelect }) {
           page,
           limit: LIMIT,
           search: search.trim(),
+          ...(sucursalId ? { sucursal_id: sucursalId } : {}),
+          ...(strictSucursal && sucursalId ? { strict_sucursal: true } : {}),
         })
         const clientesData = parseClientesFromResponse(response)
         const pagination = response?.data?.pagination || {}
@@ -66,7 +68,7 @@ export default function ClienteSelector({ open, onClose, onSelect }) {
         setLoading(false)
       }
     },
-    [parseClientesFromResponse],
+    [parseClientesFromResponse, sucursalId, strictSucursal],
   )
 
   useEffect(() => {
@@ -80,7 +82,7 @@ export default function ClienteSelector({ open, onClose, onSelect }) {
         }
       }, 100)
     }
-  }, [open, loadClientes])
+  }, [open, loadClientes, sucursalId, strictSucursal])
 
   useEffect(() => {
     if (!open) return
@@ -96,7 +98,7 @@ export default function ClienteSelector({ open, onClose, onSelect }) {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
-  }, [searchTerm, open, loadClientes])
+  }, [searchTerm, open, loadClientes, sucursalId, strictSucursal])
 
   const handleVerMas = () => {
     if (apiPage >= totalPages || loading) return

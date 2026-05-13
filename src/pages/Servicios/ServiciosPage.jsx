@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useMemo } from "react"
 import { useSearchParams } from "react-router-dom"
 import {
   Box,
@@ -116,6 +116,13 @@ const ServiciosPage = () => {
 
   const [searchParams, setSearchParams] = useSearchParams()
   const [userSucursalesCount, setUserSucursalesCount] = useState(0)
+
+  /** Sucursal de referencia para listar clientes: una sola asignada o la marcada como principal entre varias. */
+  const sucursalFiltroClienteId = useMemo(() => {
+    if (!user?.sucursales?.length) return null
+    const principal = user.sucursales.find((s) => s.es_principal)
+    return (principal || user.sucursales[0]).id
+  }, [user])
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity })
@@ -308,14 +315,15 @@ const ServiciosPage = () => {
     loadSucursalesActivas()
   }, [])
 
-  // Búsqueda de clientes en el servidor (paso 0 - Seleccionar Cliente). Solo depende de activeStep y clienteSearch para evitar bucle de recarga.
+  // Búsqueda de clientes en el servidor (paso 0): solo clientes de la sucursal de referencia del usuario (estricto).
   useEffect(() => {
     if (activeStep !== 0) return
+    if (sucursalFiltroClienteId == null) return
     const id = setTimeout(() => {
-      loadClientesRef.current(1, 100, clienteSearch.trim())
+      loadClientesRef.current(1, 100, clienteSearch.trim(), "", sucursalFiltroClienteId, "", false, true)
     }, 300)
     return () => clearTimeout(id)
-  }, [activeStep, clienteSearch])
+  }, [activeStep, clienteSearch, sucursalFiltroClienteId])
 
   useEffect(() => {
     if (formData.clienteId) {

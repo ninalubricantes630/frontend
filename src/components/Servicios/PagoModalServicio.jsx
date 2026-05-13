@@ -1171,6 +1171,8 @@ export default function PagoModalServicio({
           open={showClienteSelector}
           onClose={() => setShowClienteSelector(false)}
           onSelect={handleClienteSelect}
+          sucursalId={sucursalId ?? ""}
+          strictSucursal={Boolean(sucursalId)}
         />
       )}
     </>
