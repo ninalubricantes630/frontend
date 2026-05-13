@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useNavigate, useLocation } from "react-router-dom"
 import { useAuth } from "../../contexts/AuthContext"
 import {
@@ -40,6 +40,7 @@ import {
   AccountBalance as AccountBalanceIcon,
   CreditCard as CreditCardIcon,
   History as HistoryIcon, // Added History icon import
+  AssignmentTurnedIn as AssignmentTurnedInIcon,
 } from "@mui/icons-material"
 
 const drawerWidth = 280
@@ -98,6 +99,12 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
   const [configOpen, setConfigOpen] = useState(false)
   const [reportsOpen, setReportsOpen] = useState(false)
 
+  useEffect(() => {
+    if (location.pathname.startsWith("/reportes")) {
+      setReportsOpen(true)
+    }
+  }, [location.pathname])
+
   const menuItems = [
     { text: "Dashboard", icon: DashboardIcon, path: "/dashboard" },
     { text: "Clientes", icon: PeopleIcon, path: "/clientes" },
@@ -111,6 +118,7 @@ function SidebarContent({ onNavigation, onClose, showCloseButton }) {
   const reportItems = [
     { text: "Reporte de Servicios", path: "/reportes", icon: BuildIcon },
     { text: "Reporte de Ventas", path: "/reportes/ventas", icon: ReceiptIcon },
+    { text: "Generar reporte", path: "/reportes/generar", icon: AssignmentTurnedInIcon },
     { text: "Historial de Caja", path: "/caja/historial", icon: HistoryIcon }, // Added Historial de Caja to reportItems
   ]
 

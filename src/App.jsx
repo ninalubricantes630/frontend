@@ -19,6 +19,7 @@ import TiposServiciosPage from "./pages/Configuracion/TiposServiciosPage"
 import ReportesPage from "./pages/Reportes/ReportesPage"
 import VentasPage from "./pages/ventas/VentasPage"
 import ReportesVentasPage from "./pages/Reportes/ReportesVentasPage"
+import GenerarReportePage from "./pages/Reportes/GenerarReportePage"
 import CajaPage from "./pages/Caja/CajaPage"
 import HistorialCajaPage from "./pages/Caja/HistorialCajaPage"
 import LoadingSpinner from "./components/Common/LoadingSpinner"
@@ -103,6 +104,7 @@ function App() {
           />
           <Route path="reportes" element={<ReportesPage />} />
           <Route path="reportes/ventas" element={<ReportesVentasPage />} />
+          <Route path="reportes/generar" element={<GenerarReportePage />} />
           {/* Configuración */}
           <Route path="configuracion" element={<ConfiguracionPage />} />
           <Route path="configuracion/tipos-servicios" element={<TiposServiciosPage />} />
