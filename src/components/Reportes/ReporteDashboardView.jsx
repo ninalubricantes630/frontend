@@ -97,29 +97,44 @@ function StatCard({ title, value, subtitle, icon: Icon }) {
     <Paper
       elevation={0}
       sx={{
-        p: 2.5,
-        borderRadius: 3,
+        p: 2,
+        borderRadius: 2,
         border: "1px solid",
-        borderColor: alpha(SLATE_DARK, 0.08),
+        borderColor: "divider",
         bgcolor: "#fff",
         height: "100%",
-        transition: "box-shadow 0.2s ease, border-color 0.2s ease",
-        "&:hover": {
-          borderColor: alpha(ROJO, 0.25),
-          boxShadow: `0 8px 24px ${alpha(SLATE_DARK, 0.06)}`,
-        },
       }}
     >
       <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
-        <Box>
-          <Typography variant="caption" sx={{ color: SLATE, fontWeight: 600, letterSpacing: "0.04em" }}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              color: ROJO,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.06em",
+              fontSize: "0.65rem",
+              display: "block",
+            }}
+          >
             {title}
           </Typography>
-          <Typography variant="h5" sx={{ fontWeight: 700, color: SLATE_DARK, mt: 0.5, letterSpacing: "-0.02em" }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 800,
+              color: "#171717",
+              fontSize: { xs: "1rem", sm: "1.05rem" },
+              lineHeight: 1.25,
+              mt: 0.5,
+              wordBreak: "break-word",
+            }}
+          >
             {value}
           </Typography>
           {subtitle ? (
-            <Typography variant="caption" sx={{ color: alpha(SLATE, 0.95), display: "block", mt: 0.5 }}>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, fontSize: "0.7rem" }}>
               {subtitle}
             </Typography>
           ) : null}
@@ -127,17 +142,18 @@ function StatCard({ title, value, subtitle, icon: Icon }) {
         {Icon ? (
           <Box
             sx={{
-              width: 44,
-              height: 44,
-              borderRadius: 2,
+              width: 40,
+              height: 40,
+              borderRadius: 1.5,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              bgcolor: alpha(ROJO, 0.08),
+              bgcolor: alpha(ROJO, 0.1),
               color: ROJO,
+              flexShrink: 0,
             }}
           >
-            <Icon sx={{ fontSize: 22 }} />
+            <Icon sx={{ fontSize: 20 }} />
           </Box>
         ) : null}
       </Stack>
@@ -150,23 +166,21 @@ function ChartFrame({ title, subtitle, children, minHeight = 300 }) {
     <Paper
       elevation={0}
       sx={{
-        p: 2.5,
-        borderRadius: 3,
+        p: 2,
+        borderRadius: 2,
         border: "1px solid",
-        borderColor: alpha(SLATE_DARK, 0.08),
+        borderColor: "divider",
         bgcolor: "#fff",
       }}
     >
-      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: SLATE_DARK, mb: 0.25 }}>
+      <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary", mb: subtitle ? 0.25 : 1 }}>
         {title}
       </Typography>
       {subtitle ? (
-        <Typography variant="caption" sx={{ color: SLATE, display: "block", mb: 2 }}>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
           {subtitle}
         </Typography>
-      ) : (
-        <Box sx={{ mb: 2 }} />
-      )}
+      ) : null}
       <Box sx={{ width: "100%", minHeight, minWidth: 0 }}>{children}</Box>
     </Paper>
   )
@@ -174,7 +188,7 @@ function ChartFrame({ title, subtitle, children, minHeight = 300 }) {
 
 const TabPanel = ({ children, value, index, ...other }) => (
   <div role="tabpanel" hidden={value !== index} id={`reporte-tabpanel-${index}`} {...other}>
-    {value === index ? <Box sx={{ pt: 3 }}>{children}</Box> : null}
+    {value === index ? <Box sx={{ pt: 2 }}>{children}</Box> : null}
   </div>
 )
 
@@ -248,38 +262,29 @@ export default function ReporteDashboardView({ reportData }) {
   if (!meta || !resumen) return null
 
   return (
-    <Stack spacing={3} sx={{ mt: 1 }}>
-      <Paper
-        elevation={0}
-        sx={{
-          p: 2.5,
-          borderRadius: 3,
-          border: "1px solid",
-          borderColor: alpha(SLATE_DARK, 0.08),
-          background: `linear-gradient(135deg, ${alpha("#fff", 1)} 0%, ${alpha(ROJO, 0.03)} 100%)`,
-        }}
-      >
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2} justifyContent="space-between" alignItems="flex-start">
+    <Stack spacing={2} sx={{ mt: 0 }}>
+      <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: "1px solid", borderColor: "divider", bgcolor: "#fff" }}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          justifyContent="space-between"
+          alignItems={{ sm: "center" }}
+        >
           <Box>
-            <Typography variant="overline" sx={{ color: ROJO, fontWeight: 700, letterSpacing: "0.12em" }}>
-              Vista generada
-            </Typography>
-            <Typography variant="h6" sx={{ fontWeight: 700, color: SLATE_DARK, mt: 0.5 }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "text.primary" }}>
               {meta.sucursal?.nombre}
             </Typography>
-            <Typography variant="body2" sx={{ color: SLATE, mt: 0.5 }}>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
               {meta.periodo_label} · {meta.fecha_desde} → {meta.fecha_hasta}
             </Typography>
           </Box>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
             <Chip
               size="small"
-              label={
-                tipo === "ambos" ? "Ventas y servicios" : tipo === "ventas" ? "Solo ventas" : "Solo servicios"
-              }
-              sx={{ bgcolor: alpha(SLATE_DARK, 0.06), fontWeight: 600 }}
+              label={tipo === "ambos" ? "Ventas y servicios" : tipo === "ventas" ? "Solo ventas" : "Solo servicios"}
+              sx={{ bgcolor: alpha("#0f172a", 0.05), fontWeight: 600, fontSize: "0.75rem" }}
             />
-            <Chip size="small" variant="outlined" label={new Date(meta.generado_at).toLocaleString("es-AR")} />
+            <Chip size="small" variant="outlined" label={new Date(meta.generado_at).toLocaleString("es-AR")} sx={{ fontSize: "0.75rem" }} />
           </Stack>
         </Stack>
       </Paper>
@@ -399,7 +404,7 @@ export default function ReporteDashboardView({ reportData }) {
       ) : (
         <Paper
           elevation={0}
-          sx={{ p: 3, borderRadius: 3, border: `1px dashed ${alpha(SLATE, 0.35)}`, textAlign: "center" }}
+          sx={{ p: 3, borderRadius: 2, border: "1px dashed #e5e7eb", textAlign: "center", bgcolor: "#fff" }}
         >
           <Typography color="text.secondary">No hay datos diarios para graficar en este periodo.</Typography>
         </Paper>
@@ -487,7 +492,7 @@ export default function ReporteDashboardView({ reportData }) {
         </ChartFrame>
       ) : null}
 
-      <Box sx={{ borderBottom: 1, borderColor: alpha(SLATE_DARK, 0.08) }}>
+      <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
         <Tabs
           value={tab}
           onChange={handleTabChange}
@@ -510,7 +515,7 @@ export default function ReporteDashboardView({ reportData }) {
         <Grid container spacing={2}>
           {hayVentas ? (
             <Grid item xs={12} md={6}>
-              <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: `1px solid ${alpha(SLATE_DARK, 0.08)}` }}>
+              <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
                   Ventas
                 </Typography>
@@ -525,7 +530,7 @@ export default function ReporteDashboardView({ reportData }) {
           ) : null}
           {hayServicios ? (
             <Grid item xs={12} md={6}>
-              <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: `1px solid ${alpha(SLATE_DARK, 0.08)}` }}>
+              <Paper elevation={0} sx={{ p: 2, borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
                 <Typography variant="subtitle2" fontWeight={700} gutterBottom>
                   Servicios
                 </Typography>
@@ -543,7 +548,7 @@ export default function ReporteDashboardView({ reportData }) {
 
       {hayVentas ? (
         <TabPanel value={tab} index={tabIndex.ventas}>
-          <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 2, border: `1px solid ${alpha(SLATE_DARK, 0.08)}` }}>
+          <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
@@ -564,7 +569,7 @@ export default function ReporteDashboardView({ reportData }) {
                   </TableRow>
                 ) : (
                   listas.ventas.map((row) => (
-                    <TableRow key={row.id} hover sx={{ "&:nth-of-type(even)": { bgcolor: alpha(SLATE_DARK, 0.02) } }}>
+                    <TableRow key={row.id} hover sx={{ "&:nth-of-type(even)": { bgcolor: "rgba(15, 23, 42, 0.02)" } }}>
                       <TableCell sx={{ fontWeight: 600 }}>{row.numero}</TableCell>
                       <TableCell>{formatDateTime(row.created_at)}</TableCell>
                       <TableCell>{(row.cliente_nombre || "").trim() || "—"}</TableCell>
@@ -582,7 +587,7 @@ export default function ReporteDashboardView({ reportData }) {
 
       {hayServicios ? (
         <TabPanel value={tab} index={tabIndex.servicios}>
-          <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 2, border: `1px solid ${alpha(SLATE_DARK, 0.08)}` }}>
+          <TableContainer component={Paper} elevation={0} sx={{ borderRadius: 2, border: "1px solid", borderColor: "divider" }}>
             <Table size="small" stickyHeader>
               <TableHead>
                 <TableRow>
@@ -603,7 +608,7 @@ export default function ReporteDashboardView({ reportData }) {
                   </TableRow>
                 ) : (
                   listas.servicios.map((row, idx) => (
-                    <TableRow key={`${row.numero}-${idx}`} hover sx={{ "&:nth-of-type(even)": { bgcolor: alpha(SLATE_DARK, 0.02) } }}>
+                    <TableRow key={`${row.numero}-${idx}`} hover sx={{ "&:nth-of-type(even)": { bgcolor: "rgba(15, 23, 42, 0.02)" } }}>
                       <TableCell sx={{ fontWeight: 600 }}>{row.numero}</TableCell>
                       <TableCell>{formatDateTime(row.created_at)}</TableCell>
                       <TableCell>{(row.cliente_nombre || "").trim() || "—"}</TableCell>
@@ -624,7 +629,7 @@ export default function ReporteDashboardView({ reportData }) {
           <TableContainer
             component={Paper}
             elevation={0}
-            sx={{ borderRadius: 2, border: `1px solid ${alpha(SLATE_DARK, 0.08)}`, maxHeight: 440 }}
+            sx={{ borderRadius: 2, border: "1px solid", borderColor: "divider", maxHeight: 440, bgcolor: "#fff" }}
           >
             <Table size="small" stickyHeader>
               <TableHead>
@@ -645,7 +650,7 @@ export default function ReporteDashboardView({ reportData }) {
                   </TableRow>
                 ) : (
                   listas.detalle_productos.map((row, idx) => (
-                    <TableRow key={`${row.venta_numero}-${idx}`} hover sx={{ "&:nth-of-type(even)": { bgcolor: alpha(SLATE_DARK, 0.02) } }}>
+                    <TableRow key={`${row.venta_numero}-${idx}`} hover sx={{ "&:nth-of-type(even)": { bgcolor: "rgba(15, 23, 42, 0.02)" } }}>
                       <TableCell sx={{ fontWeight: 600 }}>{row.venta_numero}</TableCell>
                       <TableCell>{row.categoria || "—"}</TableCell>
                       <TableCell>{row.producto_nombre}</TableCell>

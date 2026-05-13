@@ -17,7 +17,6 @@ import {
   Divider,
   CircularProgress,
   Stack,
-  alpha,
 } from "@mui/material"
 import AssessmentIcon from "@mui/icons-material/Assessment"
 import DownloadIcon from "@mui/icons-material/Download"
@@ -29,9 +28,8 @@ import reportesService from "../../services/reportesService"
 import ReporteDashboardView from "../../components/Reportes/ReporteDashboardView"
 
 const ROJO = "#dc2626"
-const SLATE = "#64748b"
-const SLATE_DARK = "#0f172a"
-const PAGE_BG = "#f1f5f9"
+const PAGE_BG = "#f8fafc"
+const CONTENT_MAX = 1760
 
 const hoyISO = () => {
   const d = new Date()
@@ -228,51 +226,109 @@ const GenerarReportePage = () => {
   const muestraServicios = tipoReporte === "servicios" || tipoReporte === "ambos"
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: PAGE_BG, pb: 6 }}>
+    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: PAGE_BG }}>
       <Box
         sx={{
-          background: `linear-gradient(135deg, ${alpha(ROJO, 0.92)} 0%, #b91c1c 55%, ${alpha(SLATE_DARK, 0.92)} 100%)`,
-          color: "#fff",
-          px: { xs: 2, sm: 3, md: 4 },
-          py: { xs: 3, sm: 4 },
-          mb: 3,
+          bgcolor: "white",
+          borderBottom: "1px solid #e5e7eb",
+          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+          px: { xs: 2, sm: 2.5, md: 3 },
+          py: { xs: 2, sm: 2.25 },
         }}
       >
-        <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between" alignItems={{ md: "flex-end" }}>
-          <Box>
-            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1, opacity: 0.95 }}>
-              <AssessmentIcon sx={{ fontSize: 28 }} />
-              <Typography variant="overline" sx={{ letterSpacing: "0.2em", fontWeight: 700 }}>
-                Reportes
-              </Typography>
-            </Stack>
-            <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
-              Generar reporte
-            </Typography>
-            <Typography variant="body1" sx={{ mt: 1.5, maxWidth: 560, opacity: 0.92, fontWeight: 400 }}>
-              Configurá sucursal, periodo y filtros; generá la vista con gráficos y tablas. Exportá a Excel cuando necesites el archivo completo.
-            </Typography>
-          </Box>
-        </Stack>
+        <Box
+          sx={{
+            maxWidth: CONTENT_MAX,
+            mx: "auto",
+            width: "100%",
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            alignItems: { md: "center" },
+            justifyContent: "space-between",
+            gap: 2,
+          }}
+        >
+          <Typography
+            variant="h5"
+            component="h1"
+            sx={{ fontWeight: 700, color: "#0f172a", letterSpacing: "-0.025em" }}
+          >
+            Generar reporte
+          </Typography>
+          <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1} alignItems="center">
+            <Button
+              variant="contained"
+              size="medium"
+              disabled={!sucursalId || loadingVista}
+              onClick={handleGenerarVista}
+              startIcon={loadingVista ? <CircularProgress size={18} color="inherit" /> : <AssessmentIcon sx={{ fontSize: 18 }} />}
+              sx={{
+                bgcolor: ROJO,
+                textTransform: "none",
+                fontWeight: 600,
+                boxShadow: "none",
+                "&:hover": { bgcolor: "#b91c1c", boxShadow: "none" },
+              }}
+            >
+              {loadingVista ? "Generando…" : "Ver en pantalla"}
+            </Button>
+            <Button
+              variant="outlined"
+              size="medium"
+              disabled={!sucursalId || exporting}
+              onClick={handleExportarExcel}
+              startIcon={exporting ? <CircularProgress size={16} /> : <DownloadIcon sx={{ fontSize: 18 }} />}
+              sx={{
+                textTransform: "none",
+                fontWeight: 500,
+                borderColor: "#e5e7eb",
+                color: "#475569",
+                bgcolor: "#f8fafc",
+                "&:hover": { borderColor: "#cbd5e1", bgcolor: "white" },
+              }}
+            >
+              Excel
+            </Button>
+            {reportData ? (
+              <Button
+                variant="outlined"
+                size="medium"
+                startIcon={<RefreshIcon sx={{ fontSize: 18 }} />}
+                onClick={handleGenerarVista}
+                disabled={loadingVista}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 500,
+                  borderColor: "#e5e7eb",
+                  color: "#475569",
+                  bgcolor: "#f8fafc",
+                  "&:hover": { borderColor: "#cbd5e1", bgcolor: "white" },
+                }}
+              >
+                Actualizar
+              </Button>
+            ) : null}
+          </Stack>
+        </Box>
       </Box>
 
-      <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, sm: 3 } }}>
+      <Box sx={{ flex: 1, overflow: "auto", py: 2.5, px: { xs: 2, sm: 2.5, md: 3 } }}>
+        <Box sx={{ maxWidth: CONTENT_MAX, mx: "auto", width: "100%" }}>
         <Paper
           elevation={0}
           sx={{
-            p: { xs: 2.5, sm: 3 },
-            borderRadius: 3,
-            border: `1px solid ${alpha(SLATE_DARK, 0.08)}`,
+            p: { xs: 2, sm: 2.5 },
+            borderRadius: 2,
+            border: "1px solid #e5e7eb",
             bgcolor: "#fff",
-            boxShadow: `0 4px 24px ${alpha(SLATE_DARK, 0.06)}`,
-            mb: 3,
+            mb: 2.5,
           }}
         >
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: SLATE_DARK, letterSpacing: "0.06em", mb: 2 }}>
-            PARÁMETROS
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.primary", mb: 1.5 }}>
+            Parámetros
           </Typography>
 
-          <Grid container spacing={2.5}>
+          <Grid container spacing={2}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth size="small" required>
                 <InputLabel id="sucursal-label">Sucursal</InputLabel>
@@ -281,7 +337,7 @@ const GenerarReportePage = () => {
                   label="Sucursal"
                   value={sucursalId}
                   onChange={(e) => setSucursalId(e.target.value)}
-                  sx={{ borderRadius: 2, "& .MuiOutlinedInput-notchedOutline": { borderColor: alpha(SLATE_DARK, 0.12) } }}
+                  sx={{ "& .MuiOutlinedInput-notchedOutline": { borderColor: "#e5e7eb" } }}
                 >
                   {sucursalesUsuario.map((s) => (
                     <MenuItem key={s.id} value={String(s.id)}>
@@ -376,13 +432,13 @@ const GenerarReportePage = () => {
             </Grid>
           </Grid>
 
-          <Divider sx={{ my: 3, borderColor: alpha(SLATE_DARK, 0.08) }} />
+          <Divider sx={{ my: 2.5, borderColor: "#e5e7eb" }} />
 
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: SLATE_DARK, letterSpacing: "0.06em", mb: 2 }}>
-            FILTROS OPCIONALES
+          <Typography variant="subtitle2" sx={{ fontWeight: 600, color: "text.primary", mb: 1.5 }}>
+            Filtros
           </Typography>
 
-          <Grid container spacing={2.5}>
+          <Grid container spacing={2}>
             {muestraVentas && (
               <>
                 <Grid item xs={12} md={4}>
@@ -453,61 +509,9 @@ const GenerarReportePage = () => {
             )}
           </Grid>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 3 }} alignItems={{ sm: "center" }}>
-            <Button
-              variant="contained"
-              size="large"
-              disabled={!sucursalId || loadingVista}
-              onClick={handleGenerarVista}
-              startIcon={loadingVista ? <CircularProgress size={20} color="inherit" /> : <AssessmentIcon />}
-              sx={{
-                bgcolor: ROJO,
-                textTransform: "none",
-                fontWeight: 700,
-                borderRadius: 2,
-                px: 2.5,
-                py: 1.25,
-                boxShadow: "none",
-                "&:hover": { bgcolor: "#b91c1c", boxShadow: `0 8px 20px ${alpha(ROJO, 0.35)}` },
-              }}
-            >
-              {loadingVista ? "Generando vista…" : "Ver reporte en pantalla"}
-            </Button>
-            <Button
-              variant="outlined"
-              size="large"
-              disabled={!sucursalId || exporting}
-              onClick={handleExportarExcel}
-              startIcon={exporting ? <CircularProgress size={18} /> : <DownloadIcon />}
-              sx={{
-                textTransform: "none",
-                fontWeight: 600,
-                borderRadius: 2,
-                borderColor: alpha(SLATE_DARK, 0.2),
-                color: SLATE_DARK,
-                "&:hover": { borderColor: ROJO, bgcolor: alpha(ROJO, 0.04) },
-              }}
-            >
-              Exportar Excel
-            </Button>
-            {reportData ? (
-              <Button
-                size="large"
-                color="inherit"
-                startIcon={<RefreshIcon />}
-                onClick={handleGenerarVista}
-                disabled={loadingVista}
-                sx={{ textTransform: "none", fontWeight: 600, color: SLATE }}
-              >
-                Actualizar
-              </Button>
-            ) : null}
-          </Stack>
-
-          <Alert severity="info" sx={{ mt: 2.5, borderRadius: 2, bgcolor: alpha("#0ea5e9", 0.06), border: `1px solid ${alpha("#0ea5e9", 0.2)}` }}>
-            La vista en pantalla resume el periodo con gráficos y tablas (listas recientes limitadas por rendimiento). El Excel conserva el
-            detalle completo de todas las filas del periodo.
-          </Alert>
+          <Typography variant="caption" sx={{ display: "block", mt: 2, color: "text.secondary" }}>
+            Listas en pantalla limitadas; el Excel incluye el detalle completo del periodo.
+          </Typography>
         </Paper>
 
         {reportData ? (
@@ -516,18 +520,20 @@ const GenerarReportePage = () => {
           <Paper
             elevation={0}
             sx={{
-              p: 4,
+              py: 3,
+              px: 2,
               textAlign: "center",
-              borderRadius: 3,
-              border: `1px dashed ${alpha(SLATE, 0.4)}`,
-              bgcolor: alpha("#fff", 0.7),
+              borderRadius: 2,
+              border: "1px dashed #e5e7eb",
+              bgcolor: "#fff",
             }}
           >
-            <Typography variant="body1" sx={{ color: SLATE, fontWeight: 500 }}>
-              Elegí parámetros y tocá <strong>Ver reporte en pantalla</strong> para ver tarjetas, gráficos y tablas.
+            <Typography variant="body2" color="text.secondary">
+              Definí sucursal y periodo, luego usá <strong>Ver en pantalla</strong>.
             </Typography>
           </Paper>
         )}
+        </Box>
       </Box>
 
       <Snackbar
