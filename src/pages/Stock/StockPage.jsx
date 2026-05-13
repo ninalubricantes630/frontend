@@ -58,6 +58,8 @@ const StockPage = () => {
     categoria_id: "",
     sucursal_id: "",
     unidad_medida: "",
+    /** activo | inactivo | todos — alineado con query estado_producto del backend */
+    estado_producto: "activo",
   })
   const [priceRange, setPriceRange] = useState([0, 100000])
   const [usuarioTieneMultiplesSucursales, setUsuarioTieneMultiplesSucursales] = useState(false)
@@ -141,6 +143,10 @@ const StockPage = () => {
       params.precio_max = priceRange[1]
     }
 
+    if (filters.estado_producto && filters.estado_producto !== "activo") {
+      params.estado_producto = filters.estado_producto
+    }
+
     loadProductos(1, pagination.limit, params)
   }, [searchTerm, filters, priceRange, pagination.limit, user, modoBusquedaProducto])
 
@@ -161,6 +167,7 @@ const StockPage = () => {
       categoria_id: "",
       sucursal_id: "",
       unidad_medida: "",
+      estado_producto: "activo",
     }
 
     if (user?.sucursales && user.sucursales.length === 1) {
@@ -205,6 +212,7 @@ const StockPage = () => {
     if (usuarioTieneMultiplesSucursales && filters.sucursal_id) count++
     if (filters.unidad_medida) count++
     if (priceRange[0] > 0 || priceRange[1] < 100000) count++
+    if (filters.estado_producto && filters.estado_producto !== "activo") count++
     return count
   }
 
@@ -387,6 +395,10 @@ const StockPage = () => {
         params.sucursal_id = sucursales[0].id
       }
 
+      if (filters.estado_producto && filters.estado_producto !== "activo") {
+        params.estado_producto = filters.estado_producto
+      }
+
       await productosService.exportarExcel(params)
       setSnackbar({
         open: true,
@@ -437,6 +449,10 @@ const StockPage = () => {
 
     if (priceRange[1] < 100000) {
       params.precio_max = priceRange[1]
+    }
+
+    if (filters.estado_producto && filters.estado_producto !== "activo") {
+      params.estado_producto = filters.estado_producto
     }
 
     if (newLimit) {
@@ -779,6 +795,25 @@ const StockPage = () => {
                   </FormControl>
                 </Grid>
 
+                <Grid item xs={12} sm={6} md={usuarioTieneMultiplesSucursales ? 4 : 6}>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>Estado del producto</InputLabel>
+                    <Select
+                      value={filters.estado_producto}
+                      label="Estado del producto"
+                      onChange={(e) => handleFilterChange("estado_producto", e.target.value)}
+                      sx={{
+                        bgcolor: "white",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      <MenuItem value="activo">Solo activos</MenuItem>
+                      <MenuItem value="inactivo">Solo inactivos</MenuItem>
+                      <MenuItem value="todos">Activos e inactivos</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+
                 <Grid item xs={12} sm={12} md={12}>
                   <Typography
                     variant="caption"
@@ -861,7 +896,7 @@ const StockPage = () => {
               pagination={pagination}
               onEdit={handleOpenForm}
               onDelete={handleDelete}
-              onToggle={handleToggle}
+              onToggleEstado={handleToggle}
               onMovimiento={handleOpenMovimiento}
               onVerHistorial={handleOpenHistorial}
               onPageChange={handlePageChange}

@@ -46,6 +46,7 @@ const ProductosList = ({
   pagination,
   onEdit,
   onToggleEstado,
+  onToggle,
   onMovimiento,
   onVerHistorial,
   onPageChange,
@@ -53,15 +54,18 @@ const ProductosList = ({
   const [toggleDialog, setToggleDialog] = useState({ open: false, producto: null })
   const { hasPermissionSlug, isAdmin } = useAuth()
 
+  const ejecutarToggleEstado = onToggleEstado ?? onToggle
+
   const handleToggleClick = (producto) => {
     setToggleDialog({ open: true, producto })
   }
 
-  const handleToggleConfirm = () => {
-    if (toggleDialog.producto) {
-      onToggleEstado(toggleDialog.producto.id)
-    }
+  const handleToggleConfirm = async () => {
+    const producto = toggleDialog.producto
     setToggleDialog({ open: false, producto: null })
+    if (producto && typeof ejecutarToggleEstado === "function") {
+      await Promise.resolve(ejecutarToggleEstado(producto.id))
+    }
   }
 
   const handleToggleCancel = () => {

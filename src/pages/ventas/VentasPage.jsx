@@ -182,6 +182,7 @@ export default function VentasPage() {
     const filters = {
       search: termino,
       search_mode: resolvedModo === "codigo" ? "codigo" : "nombre",
+      estado_producto: "activo",
     }
 
     if (user.sucursales.length === 1) {

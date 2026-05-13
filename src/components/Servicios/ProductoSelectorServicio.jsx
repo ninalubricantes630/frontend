@@ -55,6 +55,7 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
           sucursales_ids: sucursalId.toString(),
           prioridad_sucursal_id: sucursalId,
           search_mode: modoBusquedaProducto === "codigo" ? "codigo" : "nombre",
+          estado_producto: "activo",
         }
 
         const response = await productosService.getAll(params)
@@ -97,8 +98,12 @@ const ProductoSelectorServicio = ({ onSelectProducto, productosAgregados = [], s
     }
   }, [])
 
-  // Permitir usar/vender productos con stock 0 (el stock puede quedar en negativo, igual que en ventas)
+  // Permitir usar/vender productos con stock 0; no permitir productos inactivos (API ya filtra activos).
+  const esProductoCatalogoActivo = (p) =>
+    p && (p.activo === true || p.activo === 1 || p.activo === "1" || String(p.activo).toLowerCase() === "true")
+
   const handleProductoClick = (producto) => {
+    if (!esProductoCatalogoActivo(producto)) return
     onSelectProducto(producto)
   }
 
