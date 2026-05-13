@@ -14,6 +14,13 @@ const parseBlobError = async (blob) => {
 }
 
 const reportesService = {
+  obtenerDatos: async (body) => {
+    const res = await api.post("/reportes/datos", body)
+    if (!res?.success) {
+      throw new Error(res?.error?.message || "No se pudo cargar el reporte")
+    }
+    return res.data
+  },
   exportarExcel: async (body) => {
     try {
       const blob = await api.post("/reportes/exportar-excel", body, { responseType: "blob" })

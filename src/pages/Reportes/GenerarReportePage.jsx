@@ -16,12 +16,22 @@ import {
   Grid,
   Divider,
   CircularProgress,
+  Stack,
+  alpha,
 } from "@mui/material"
-import { Download as DownloadIcon } from "@mui/icons-material"
+import AssessmentIcon from "@mui/icons-material/Assessment"
+import DownloadIcon from "@mui/icons-material/Download"
+import RefreshIcon from "@mui/icons-material/Refresh"
 import { useAuth } from "../../contexts/AuthContext"
 import { useSucursales } from "../../hooks/useSucursales"
 import { useCategorias } from "../../hooks/useCategorias"
 import reportesService from "../../services/reportesService"
+import ReporteDashboardView from "../../components/Reportes/ReporteDashboardView"
+
+const ROJO = "#dc2626"
+const SLATE = "#64748b"
+const SLATE_DARK = "#0f172a"
+const PAGE_BG = "#f1f5f9"
 
 const hoyISO = () => {
   const d = new Date()
@@ -65,7 +75,9 @@ const GenerarReportePage = () => {
   const [tipoPagoServicios, setTipoPagoServicios] = useState("")
   const [estadoServicios, setEstadoServicios] = useState("COMPLETADA")
 
-  const [generating, setGenerating] = useState(false)
+  const [loadingVista, setLoadingVista] = useState(false)
+  const [exporting, setExporting] = useState(false)
+  const [reportData, setReportData] = useState(null)
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" })
 
   useEffect(() => {
@@ -85,6 +97,24 @@ const GenerarReportePage = () => {
     loadSucursales({ limit: 100 })
     loadCategorias(1, "", 200)
   }, [loadSucursales, loadCategorias])
+
+  useEffect(() => {
+    setReportData(null)
+  }, [
+    tipoReporte,
+    periodoTipo,
+    fechaDiaria,
+    mesAnio,
+    anio,
+    fechaDesde,
+    fechaHasta,
+    sucursalId,
+    categoriaId,
+    tipoPagoVentas,
+    estadoVentas,
+    tipoPagoServicios,
+    estadoServicios,
+  ])
 
   const showSnackbar = (message, severity = "success") => {
     setSnackbar({ open: true, message, severity })
@@ -120,19 +150,44 @@ const GenerarReportePage = () => {
     return base
   }
 
-  const handleDescargar = async () => {
+  const handleGenerarVista = async () => {
     if (!sucursalId) {
       showSnackbar("Seleccione la sucursal del reporte.", "warning")
       return
     }
+    const payload = buildPayload()
+    if (Number.isNaN(payload.sucursal_id)) {
+      showSnackbar("Seleccione una sucursal válida.", "warning")
+      return
+    }
 
     try {
-      setGenerating(true)
-      const payload = buildPayload()
-      if (Number.isNaN(payload.sucursal_id)) {
-        showSnackbar("Seleccione una sucursal válida.", "warning")
-        return
-      }
+      setLoadingVista(true)
+      const data = await reportesService.obtenerDatos(payload)
+      setReportData(data)
+      showSnackbar("Vista del reporte lista.", "success")
+    } catch (e) {
+      console.error(e)
+      setReportData(null)
+      showSnackbar(e?.message || "No se pudo cargar el reporte.", "error")
+    } finally {
+      setLoadingVista(false)
+    }
+  }
+
+  const handleExportarExcel = async () => {
+    if (!sucursalId) {
+      showSnackbar("Seleccione la sucursal del reporte.", "warning")
+      return
+    }
+    const payload = buildPayload()
+    if (Number.isNaN(payload.sucursal_id)) {
+      showSnackbar("Seleccione una sucursal válida.", "warning")
+      return
+    }
+
+    try {
+      setExporting(true)
       const blob = await reportesService.exportarExcel(payload)
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
@@ -142,18 +197,18 @@ const GenerarReportePage = () => {
       a.click()
       a.remove()
       URL.revokeObjectURL(url)
-      showSnackbar("Reporte generado correctamente.", "success")
+      showSnackbar("Excel descargado.", "success")
     } catch (e) {
       console.error(e)
-      showSnackbar(e?.message || "No se pudo generar el reporte.", "error")
+      showSnackbar(e?.message || "No se pudo exportar el Excel.", "error")
     } finally {
-      setGenerating(false)
+      setExporting(false)
     }
   }
 
   if (!canAccess) {
     return (
-      <Box sx={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", p: 3 }}>
+      <Box sx={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", p: 3, bgcolor: PAGE_BG }}>
         <Alert severity="warning">
           No tienes permisos para generar reportes. Se requiere acceso a reportes de ventas o de servicios.
         </Alert>
@@ -163,7 +218,7 @@ const GenerarReportePage = () => {
 
   if (!sucursalesUsuario.length) {
     return (
-      <Box sx={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", p: 3 }}>
+      <Box sx={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", p: 3, bgcolor: PAGE_BG }}>
         <Alert severity="warning">No tienes sucursales asignadas. Contacta al administrador.</Alert>
       </Box>
     )
@@ -173,31 +228,51 @@ const GenerarReportePage = () => {
   const muestraServicios = tipoReporte === "servicios" || tipoReporte === "ambos"
 
   return (
-    <Box sx={{ minHeight: "100vh", display: "flex", flexDirection: "column", bgcolor: "#f8fafc" }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: PAGE_BG, pb: 6 }}>
       <Box
         sx={{
-          bgcolor: "white",
-          borderBottom: "1px solid #e5e7eb",
-          px: { xs: 2, sm: 2, md: 2 },
-          py: { xs: 2, sm: 2.5 },
-          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.05)",
+          background: `linear-gradient(135deg, ${alpha(ROJO, 0.92)} 0%, #b91c1c 55%, ${alpha(SLATE_DARK, 0.92)} 100%)`,
+          color: "#fff",
+          px: { xs: 2, sm: 3, md: 4 },
+          py: { xs: 3, sm: 4 },
+          mb: 3,
         }}
       >
-        <Typography variant="h5" component="h1" sx={{ fontWeight: 700, color: "#0f172a", mb: 0.5 }}>
-          Generar reporte
-        </Typography>
-        <Typography variant="body2" sx={{ color: "#64748b", fontSize: "0.875rem" }}>
-          Descarga un Excel con resumen, totales y detalle según sucursal, periodo y filtros elegidos.
-        </Typography>
+        <Stack direction={{ xs: "column", md: "row" }} spacing={2} justifyContent="space-between" alignItems={{ md: "flex-end" }}>
+          <Box>
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1, opacity: 0.95 }}>
+              <AssessmentIcon sx={{ fontSize: 28 }} />
+              <Typography variant="overline" sx={{ letterSpacing: "0.2em", fontWeight: 700 }}>
+                Reportes
+              </Typography>
+            </Stack>
+            <Typography variant="h4" sx={{ fontWeight: 800, letterSpacing: "-0.03em", lineHeight: 1.15 }}>
+              Generar reporte
+            </Typography>
+            <Typography variant="body1" sx={{ mt: 1.5, maxWidth: 560, opacity: 0.92, fontWeight: 400 }}>
+              Configurá sucursal, periodo y filtros; generá la vista con gráficos y tablas. Exportá a Excel cuando necesites el archivo completo.
+            </Typography>
+          </Box>
+        </Stack>
       </Box>
 
-      <Box sx={{ flex: 1, p: { xs: 2, sm: 3 }, maxWidth: 960, width: "100%", mx: "auto" }}>
-        <Paper elevation={0} sx={{ p: { xs: 2, sm: 3 }, borderRadius: 2, border: "1px solid #e5e7eb" }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: "#0f172a" }}>
-            Parámetros principales
+      <Box sx={{ maxWidth: 1200, mx: "auto", px: { xs: 2, sm: 3 } }}>
+        <Paper
+          elevation={0}
+          sx={{
+            p: { xs: 2.5, sm: 3 },
+            borderRadius: 3,
+            border: `1px solid ${alpha(SLATE_DARK, 0.08)}`,
+            bgcolor: "#fff",
+            boxShadow: `0 4px 24px ${alpha(SLATE_DARK, 0.06)}`,
+            mb: 3,
+          }}
+        >
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: SLATE_DARK, letterSpacing: "0.06em", mb: 2 }}>
+            PARÁMETROS
           </Typography>
 
-          <Grid container spacing={2}>
+          <Grid container spacing={2.5}>
             <Grid item xs={12} md={6}>
               <FormControl fullWidth size="small" required>
                 <InputLabel id="sucursal-label">Sucursal</InputLabel>
@@ -206,7 +281,7 @@ const GenerarReportePage = () => {
                   label="Sucursal"
                   value={sucursalId}
                   onChange={(e) => setSucursalId(e.target.value)}
-                  required
+                  sx={{ borderRadius: 2, "& .MuiOutlinedInput-notchedOutline": { borderColor: alpha(SLATE_DARK, 0.12) } }}
                 >
                   {sucursalesUsuario.map((s) => (
                     <MenuItem key={s.id} value={String(s.id)}>
@@ -219,13 +294,8 @@ const GenerarReportePage = () => {
 
             <Grid item xs={12} md={6}>
               <FormControl fullWidth size="small">
-                <InputLabel id="tipo-reporte-label">Contenido del reporte</InputLabel>
-                <Select
-                  labelId="tipo-reporte-label"
-                  label="Contenido del reporte"
-                  value={tipoReporte}
-                  onChange={(e) => setTipoReporte(e.target.value)}
-                >
+                <InputLabel id="tipo-reporte-label">Contenido</InputLabel>
+                <Select labelId="tipo-reporte-label" label="Contenido" value={tipoReporte} onChange={(e) => setTipoReporte(e.target.value)}>
                   {opcionesTipoReporte.map((o) => (
                     <MenuItem key={o.value} value={o.value}>
                       {o.label}
@@ -238,12 +308,7 @@ const GenerarReportePage = () => {
             <Grid item xs={12} md={6}>
               <FormControl fullWidth size="small">
                 <InputLabel id="periodo-label">Periodo</InputLabel>
-                <Select
-                  labelId="periodo-label"
-                  label="Periodo"
-                  value={periodoTipo}
-                  onChange={(e) => setPeriodoTipo(e.target.value)}
-                >
+                <Select labelId="periodo-label" label="Periodo" value={periodoTipo} onChange={(e) => setPeriodoTipo(e.target.value)}>
                   <MenuItem value="diario">Diario</MenuItem>
                   <MenuItem value="mensual">Mensual</MenuItem>
                   <MenuItem value="anual">Anual</MenuItem>
@@ -287,7 +352,7 @@ const GenerarReportePage = () => {
                 />
               )}
               {periodoTipo === "personalizado" && (
-                <Box sx={{ display: "flex", gap: 1, flexDirection: { xs: "column", sm: "row" } }}>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
                   <TextField
                     fullWidth
                     size="small"
@@ -306,28 +371,24 @@ const GenerarReportePage = () => {
                     value={fechaHasta}
                     onChange={(e) => setFechaHasta(e.target.value)}
                   />
-                </Box>
+                </Stack>
               )}
             </Grid>
           </Grid>
 
-          <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 3, borderColor: alpha(SLATE_DARK, 0.08) }} />
 
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: "#0f172a" }}>
-            Filtros opcionales
+          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: SLATE_DARK, letterSpacing: "0.06em", mb: 2 }}>
+            FILTROS OPCIONALES
           </Typography>
 
-          <Grid container spacing={2}>
+          <Grid container spacing={2.5}>
             {muestraVentas && (
               <>
                 <Grid item xs={12} md={4}>
                   <FormControl fullWidth size="small">
-                    <InputLabel>Categoría de producto (ventas)</InputLabel>
-                    <Select
-                      label="Categoría de producto (ventas)"
-                      value={categoriaId}
-                      onChange={(e) => setCategoriaId(e.target.value)}
-                    >
+                    <InputLabel>Categoría (ventas)</InputLabel>
+                    <Select label="Categoría (ventas)" value={categoriaId} onChange={(e) => setCategoriaId(e.target.value)}>
                       <MenuItem value="">Todas</MenuItem>
                       {categorias.map((c) => (
                         <MenuItem key={c.id} value={String(c.id)}>
@@ -340,11 +401,7 @@ const GenerarReportePage = () => {
                 <Grid item xs={12} md={4}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Tipo de pago (ventas)</InputLabel>
-                    <Select
-                      label="Tipo de pago (ventas)"
-                      value={tipoPagoVentas}
-                      onChange={(e) => setTipoPagoVentas(e.target.value)}
-                    >
+                    <Select label="Tipo de pago (ventas)" value={tipoPagoVentas} onChange={(e) => setTipoPagoVentas(e.target.value)}>
                       <MenuItem value="">Todos</MenuItem>
                       <MenuItem value="EFECTIVO">Efectivo</MenuItem>
                       <MenuItem value="TARJETA_CREDITO">Tarjeta de crédito</MenuItem>
@@ -372,11 +429,7 @@ const GenerarReportePage = () => {
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Tipo de pago (servicios)</InputLabel>
-                    <Select
-                      label="Tipo de pago (servicios)"
-                      value={tipoPagoServicios}
-                      onChange={(e) => setTipoPagoServicios(e.target.value)}
-                    >
+                    <Select label="Tipo de pago (servicios)" value={tipoPagoServicios} onChange={(e) => setTipoPagoServicios(e.target.value)}>
                       <MenuItem value="">Todos</MenuItem>
                       <MenuItem value="EFECTIVO">Efectivo</MenuItem>
                       <MenuItem value="TARJETA_CREDITO">Tarjeta de crédito</MenuItem>
@@ -389,11 +442,7 @@ const GenerarReportePage = () => {
                 <Grid item xs={12} md={6}>
                   <FormControl fullWidth size="small">
                     <InputLabel>Estado servicio</InputLabel>
-                    <Select
-                      label="Estado servicio"
-                      value={estadoServicios}
-                      onChange={(e) => setEstadoServicios(e.target.value)}
-                    >
+                    <Select label="Estado servicio" value={estadoServicios} onChange={(e) => setEstadoServicios(e.target.value)}>
                       <MenuItem value="">Todos</MenuItem>
                       <MenuItem value="COMPLETADA">Completada</MenuItem>
                       <MenuItem value="CANCELADA">Cancelada</MenuItem>
@@ -404,30 +453,81 @@ const GenerarReportePage = () => {
             )}
           </Grid>
 
-          <Alert severity="info" sx={{ mt: 3, mb: 2 }}>
-            El archivo incluye la hoja <strong>Resumen</strong> con totales y, según el contenido elegido, hojas de{" "}
-            <strong>Ventas</strong>, <strong>Ventas detalle productos</strong> y/o <strong>Servicios</strong>. Solo se
-            incluyen datos de la sucursal seleccionada y dentro del periodo indicado.
-          </Alert>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ mt: 3 }} alignItems={{ sm: "center" }}>
+            <Button
+              variant="contained"
+              size="large"
+              disabled={!sucursalId || loadingVista}
+              onClick={handleGenerarVista}
+              startIcon={loadingVista ? <CircularProgress size={20} color="inherit" /> : <AssessmentIcon />}
+              sx={{
+                bgcolor: ROJO,
+                textTransform: "none",
+                fontWeight: 700,
+                borderRadius: 2,
+                px: 2.5,
+                py: 1.25,
+                boxShadow: "none",
+                "&:hover": { bgcolor: "#b91c1c", boxShadow: `0 8px 20px ${alpha(ROJO, 0.35)}` },
+              }}
+            >
+              {loadingVista ? "Generando vista…" : "Ver reporte en pantalla"}
+            </Button>
+            <Button
+              variant="outlined"
+              size="large"
+              disabled={!sucursalId || exporting}
+              onClick={handleExportarExcel}
+              startIcon={exporting ? <CircularProgress size={18} /> : <DownloadIcon />}
+              sx={{
+                textTransform: "none",
+                fontWeight: 600,
+                borderRadius: 2,
+                borderColor: alpha(SLATE_DARK, 0.2),
+                color: SLATE_DARK,
+                "&:hover": { borderColor: ROJO, bgcolor: alpha(ROJO, 0.04) },
+              }}
+            >
+              Exportar Excel
+            </Button>
+            {reportData ? (
+              <Button
+                size="large"
+                color="inherit"
+                startIcon={<RefreshIcon />}
+                onClick={handleGenerarVista}
+                disabled={loadingVista}
+                sx={{ textTransform: "none", fontWeight: 600, color: SLATE }}
+              >
+                Actualizar
+              </Button>
+            ) : null}
+          </Stack>
 
-          <Button
-            variant="contained"
-            size="large"
-            disabled={!sucursalId || generating}
-            onClick={handleDescargar}
-            startIcon={generating ? null : <DownloadIcon />}
-            endIcon={generating ? <CircularProgress size={22} color="inherit" /> : null}
+          <Alert severity="info" sx={{ mt: 2.5, borderRadius: 2, bgcolor: alpha("#0ea5e9", 0.06), border: `1px solid ${alpha("#0ea5e9", 0.2)}` }}>
+            La vista en pantalla resume el periodo con gráficos y tablas (listas recientes limitadas por rendimiento). El Excel conserva el
+            detalle completo de todas las filas del periodo.
+          </Alert>
+        </Paper>
+
+        {reportData ? (
+          <ReporteDashboardView key={reportData.meta?.generado_at} reportData={reportData} />
+        ) : (
+          <Paper
+            elevation={0}
             sx={{
-              mt: 1,
-              bgcolor: "#dc2626",
-              "&:hover": { bgcolor: "#b91c1c" },
-              textTransform: "none",
-              fontWeight: 600,
+              p: 4,
+              textAlign: "center",
+              borderRadius: 3,
+              border: `1px dashed ${alpha(SLATE, 0.4)}`,
+              bgcolor: alpha("#fff", 0.7),
             }}
           >
-            {generating ? "Generando…" : "Descargar Excel"}
-          </Button>
-        </Paper>
+            <Typography variant="body1" sx={{ color: SLATE, fontWeight: 500 }}>
+              Elegí parámetros y tocá <strong>Ver reporte en pantalla</strong> para ver tarjetas, gráficos y tablas.
+            </Typography>
+          </Paper>
+        )}
       </Box>
 
       <Snackbar
@@ -436,11 +536,7 @@ const GenerarReportePage = () => {
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert
-          severity={snackbar.severity}
-          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-          sx={{ width: "100%" }}
-        >
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} sx={{ width: "100%" }}>
           {snackbar.message}
         </Alert>
       </Snackbar>
