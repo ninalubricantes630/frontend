@@ -249,14 +249,30 @@ const StockPage = () => {
   const handleSubmitForm = async (data) => {
     try {
       if (selectedProducto) {
-        await updateProducto(selectedProducto.id, data)
+        const result = await updateProducto(selectedProducto.id, data)
+        if (!result?.success) {
+          setSnackbar({
+            open: true,
+            message: result?.error || "Error al actualizar producto",
+            severity: "error",
+          })
+          return
+        }
         setSnackbar({
           open: true,
           message: "Producto actualizado correctamente",
           severity: "success",
         })
       } else {
-        await createProducto(data)
+        const result = await createProducto(data)
+        if (!result?.success) {
+          setSnackbar({
+            open: true,
+            message: result?.error || "Error al crear producto",
+            severity: "error",
+          })
+          return
+        }
         setSnackbar({
           open: true,
           message: "Producto creado correctamente",
@@ -909,6 +925,7 @@ const StockPage = () => {
           onClose={handleCloseForm}
           producto={selectedProducto}
           onSubmit={handleSubmitForm}
+          loading={loading}
         />
 
         <MovimientoStockModal

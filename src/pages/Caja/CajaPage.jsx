@@ -91,14 +91,12 @@ export default function CajaPage() {
   }, [sesionActiva])
 
   const handleAbrirCaja = async (data) => {
-    const success = await abrirCaja({
+    await abrirCaja({
       ...data,
       sucursalId: sucursalPrincipal.id,
     })
-    if (success) {
-      setAbrirModal(false)
-      loadSesionActiva(sucursalPrincipal.id)
-    }
+    setAbrirModal(false)
+    loadSesionActiva(sucursalPrincipal.id)
   }
 
   const handleCerrarCaja = async (data) => {

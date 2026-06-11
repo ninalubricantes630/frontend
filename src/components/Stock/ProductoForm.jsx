@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import {
   Dialog,
   DialogTitle,
@@ -52,6 +52,7 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
 
   const [errors, setErrors] = useState({})
   const [unidadMedidaCambiada, setUnidadMedidaCambiada] = useState(false)
+  const submittingRef = useRef(false)
 
   useEffect(() => {
     if (open) {
@@ -87,6 +88,7 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
         setUnidadMedidaCambiada(false)
       }
       setErrors({})
+      submittingRef.current = false
     }
   }, [open, producto])
 
@@ -203,7 +205,9 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
   }
 
   const handleSubmit = () => {
+    if (submittingRef.current || loading) return
     if (validate()) {
+      submittingRef.current = true
       const dataToSubmit = {
         ...formData,
         precio: Number.parseFloat(formData.precio),
@@ -214,7 +218,9 @@ const ProductoForm = ({ open, onClose, producto, onSubmit, loading }) => {
       if (isEditing) {
         delete dataToSubmit.stock
       }
-      onSubmit(dataToSubmit)
+      Promise.resolve(onSubmit(dataToSubmit)).finally(() => {
+        submittingRef.current = false
+      })
     }
   }
 

@@ -22,18 +22,24 @@ export default function AbrirCajaModal({ open, onClose, onAbrirCaja }) {
   const [loading, setLoading] = useState(false)
 
   const montoInputRef = useRef(null)
+  const submittingRef = useRef(false)
 
   useEffect(() => {
-    if (open && montoInputRef.current) {
-      setTimeout(() => {
-        montoInputRef.current?.focus()
-        montoInputRef.current?.select()
-      }, 100)
+    if (open) {
+      submittingRef.current = false
+      if (montoInputRef.current) {
+        setTimeout(() => {
+          montoInputRef.current?.focus()
+          montoInputRef.current?.select()
+        }, 100)
+      }
     }
   }, [open])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (submittingRef.current || loading) return
+
     setError("")
 
     if (!montoInicial || Number.parseFloat(montoInicial) < 0) {
@@ -41,6 +47,7 @@ export default function AbrirCajaModal({ open, onClose, onAbrirCaja }) {
       return
     }
 
+    submittingRef.current = true
     setLoading(true)
     try {
       await onAbrirCaja({
@@ -51,8 +58,9 @@ export default function AbrirCajaModal({ open, onClose, onAbrirCaja }) {
       setObservaciones("")
       onClose()
     } catch (err) {
-      setError(err.message || "Error al abrir caja")
+      setError(err.response?.data?.error?.message || err.message || "Error al abrir caja")
     } finally {
+      submittingRef.current = false
       setLoading(false)
     }
   }
@@ -63,13 +71,6 @@ export default function AbrirCajaModal({ open, onClose, onAbrirCaja }) {
       setObservaciones("")
       setError("")
       onClose()
-    }
-  }
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !loading && montoInicial) {
-      e.preventDefault()
-      handleSubmit(e)
     }
   }
 
@@ -136,7 +137,7 @@ export default function AbrirCajaModal({ open, onClose, onAbrirCaja }) {
       </DialogTitle>
 
       <DialogContent sx={{ pt: 4, pb: 4, px: 4 }}>
-        <form onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
+        <form onSubmit={handleSubmit}>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 3, mt:4}}>
             {error && (
               <Alert severity="error" sx={{ borderRadius: 1.5, fontSize: "0.875rem" }}>

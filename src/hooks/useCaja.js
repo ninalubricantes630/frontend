@@ -37,17 +37,18 @@ export const useCaja = () => {
 
   // Abrir caja
   const abrirCaja = useCallback(async (data) => {
+    setLoading(true)
+    setError(null)
     try {
-      setLoading(true)
-      setError(null)
       const result = await cajaService.abrirCaja(data)
       setSesionActiva(result)
       return true
     } catch (err) {
-      const errorMsg = err.response?.data?.message || err.message || "Error al abrir caja"
+      const errorMsg =
+        err.response?.data?.error?.message || err.response?.data?.message || err.message || "Error al abrir caja"
       setError(errorMsg)
       logger.error("Error al abrir caja", err)
-      return false
+      throw new Error(errorMsg)
     } finally {
       setLoading(false)
     }
