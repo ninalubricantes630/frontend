@@ -224,17 +224,10 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
   const montoEsperadoSistema =
     sesion.monto_esperado_sistema || Number.parseFloat(sesion.monto_inicial) + totalIngresos - totalEgresos
 
-  const totalIngresosEfectivo = movimientos
-    .filter((m) => {
-      const est = (m.estado || "ACTIVO").toString().toUpperCase()
-      if (est === "CANCELADO") return false
-      return m.tipo === "INGRESO" && m.metodo_pago === "EFECTIVO" && m.concepto !== "Apertura de caja"
-    })
-    .reduce((sum, m) => sum + Number.parseFloat(m.monto || 0), 0)
+  const efectivoNeto = desgloseNeto.find((d) => d.metodo_pago === "EFECTIVO")?.neto || 0
 
   const montoEsperadoCaja =
-    sesion.monto_esperado_caja ||
-    Number.parseFloat(sesion.monto_inicial) + totalIngresosEfectivo - totalEgresos
+    sesion.monto_esperado_caja || Number.parseFloat(sesion.monto_inicial) + efectivoNeto
 
   const diferencia = sesion.diferencia || 0
 

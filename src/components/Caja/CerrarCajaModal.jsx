@@ -38,14 +38,13 @@ export default function CerrarCajaModal({ open, onClose, onCerrarCaja, sesionAct
   const [loading, setLoading] = useState(false)
   const [detalleIngresos, setDetalleIngresos] = useState(null)
   const [loadingDetalle, setLoadingDetalle] = useState(false)
-  const [movimientos, setMovimientos] = useState([])
+  const [resumenCierre, setResumenCierre] = useState(null)
   const [detalleCC, setDetalleCC] = useState(null)
 
-  // Cargar detalle de ingresos y detalle CC cuando se abre el modal
+  // Cargar datos cuando se abre el modal
   useEffect(() => {
     if (open && sesionActual) {
-      cargarDetalleIngresos()
-      cargarMovimientos()
+      cargarDatosCierre()
       if (
         Number(sesionActual.cantidad_ventas_cuenta_corriente) > 0 ||
         Number(sesionActual.cantidad_servicios_cuenta_corriente) > 0
@@ -57,28 +56,26 @@ export default function CerrarCajaModal({ open, onClose, onCerrarCaja, sesionAct
       } else {
         setDetalleCC(null)
       }
+    } else {
+      setResumenCierre(null)
+      setDetalleIngresos(null)
     }
   }, [open, sesionActual])
 
-  const cargarDetalleIngresos = async () => {
+  const cargarDatosCierre = async () => {
     setLoadingDetalle(true)
     try {
-      const response = await cajaService.getDetalleIngresos(sesionActual.id)
-      setDetalleIngresos(response)
+      const [ingresos, resumen] = await Promise.all([
+        cajaService.getDetalleIngresos(sesionActual.id),
+        cajaService.getResumenCierre(sesionActual.id),
+      ])
+      setDetalleIngresos(ingresos)
+      setResumenCierre(resumen)
     } catch (error) {
-      console.error("Error al cargar detalle:", error)
+      console.error("Error al cargar datos de cierre:", error)
+      setResumenCierre(null)
     } finally {
       setLoadingDetalle(false)
-    }
-  }
-
-  const cargarMovimientos = async () => {
-    try {
-      const response = await cajaService.getMovimientos(sesionActual.id)
-      setMovimientos(response.movimientos || [])
-    } catch (error) {
-      console.error("Error al cargar movimientos:", error)
-      setMovimientos([])
     }
   }
 
@@ -123,22 +120,11 @@ export default function CerrarCajaModal({ open, onClose, onCerrarCaja, sesionAct
     }).format(Number.parseFloat(value || 0))
   }
 
-  const montoInicial = sesionActual ? Number.parseFloat(sesionActual.monto_inicial || 0) : 0
-  const totalIngresos = detalleIngresos?.total_general || 0
-  const totalEgresos = movimientos
-    .filter((m) => m.tipo === "EGRESO")
-    .reduce((sum, m) => sum + Number.parseFloat(m.monto || 0), 0)
-  
-  // Calcular ingresos solo de efectivo
-  const totalIngresosEfectivo = movimientos
-    .filter((m) => m.tipo === "INGRESO" && m.metodo_pago === "EFECTIVO" && m.concepto !== "Apertura de caja")
-    .reduce((sum, m) => sum + Number.parseFloat(m.monto || 0), 0)
-  
-  // Saldo esperado del sistema (todos los métodos)
-  const saldoEsperadoSistema = montoInicial + totalIngresos - totalEgresos
-  
-  // Saldo esperado en caja (solo efectivo)
-  const saldoEsperadoCaja = montoInicial + totalIngresosEfectivo - totalEgresos
+  const montoInicial = resumenCierre?.montoInicial ?? Number.parseFloat(sesionActual?.monto_inicial || 0)
+  const totalIngresos = resumenCierre?.totalIngresos ?? detalleIngresos?.total_general ?? 0
+  const totalEgresos = resumenCierre?.totalEgresos ?? 0
+  const saldoEsperadoSistema = resumenCierre?.saldoEsperadoSistema ?? montoInicial + totalIngresos - totalEgresos
+  const saldoEsperadoCaja = resumenCierre?.saldoEsperadoCaja ?? montoInicial
 
   const montoFinalNum = montoFinal ? Number.parseFloat(montoFinal) : 0
   const diferencia = montoFinalNum - saldoEsperadoCaja

@@ -100,6 +100,17 @@ const cajaService = {
     }
   },
 
+  // Resumen de totales para cierre de caja (calculado en backend)
+  async getResumenCierre(sesionId) {
+    try {
+      const response = await api.get(`/caja/sesiones/${sesionId}/resumen-cierre`)
+      return response.data
+    } catch (error) {
+      logger.error("Error al obtener resumen de cierre", error)
+      throw error
+    }
+  },
+
   // Detalle de ventas y servicios en cuenta corriente (por qué y a qué cliente)
   async getCuentaCorrienteDetalle(sesionId) {
     try {
