@@ -47,6 +47,8 @@ import { es } from "date-fns/locale"
 import { useEffect, useMemo, useState } from "react"
 import cajaService from "../../services/cajaService"
 
+import { esMovimientoActivo, esEgresoAnulacionVenta, esEgresoContable } from "../../utils/cajaMovimientos"
+
 const MOVIMIENTOS_PAGE_SIZE = 10000
 
 /** Normaliza método de pago para agrupar (alineado con backend). */
@@ -56,14 +58,13 @@ function normMetodo(m) {
 }
 
 /**
- * Ingresos y egresos por método desde movimientos (ACTIVO / sin estado).
- * Neto = ingresos (sin apertura) − egresos del mismo método.
+ * Ingresos y egresos por método desde movimientos activos.
+ * Los egresos de VENTA_CANCELADA / SERVICIO_CANCELADO no restan: su ingreso ya está CANCELADO.
  */
 function buildDesgloseNetoPorMovimientos(movimientos) {
   const map = new Map()
   for (const mov of movimientos || []) {
-    const est = (mov.estado || "ACTIVO").toString().toUpperCase()
-    if (est === "CANCELADO") continue
+    if (!esMovimientoActivo(mov)) continue
     const method = normMetodo(mov.metodo_pago)
     if (!map.has(method)) {
       map.set(method, { ing: 0, egr: 0, cIng: 0, cEgr: 0 })
@@ -73,7 +74,7 @@ function buildDesgloseNetoPorMovimientos(movimientos) {
     if (mov.tipo === "INGRESO" && mov.concepto !== "Apertura de caja") {
       o.ing += amt
       o.cIng += 1
-    } else if (mov.tipo === "EGRESO") {
+    } else if (mov.tipo === "EGRESO" && !esEgresoAnulacionVenta(mov)) {
       o.egr += amt
       o.cEgr += 1
     }
@@ -210,16 +211,13 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
 
   if (!sesion) return null
 
-  const totalIngresos = sesion.total_ingresos || detalleIngresos?.total_general || 0
+  const totalIngresos = detalleIngresos?.total_general ?? Number.parseFloat(sesion.total_ingresos || 0)
   const totalEgresos =
-    sesion.total_egresos ||
-    movimientos
-      .filter((m) => {
-        if (m.tipo !== "EGRESO") return false
-        const est = (m.estado || "ACTIVO").toString().toUpperCase()
-        return est !== "CANCELADO"
-      })
-      .reduce((sum, m) => sum + Number.parseFloat(m.monto || 0), 0)
+    movimientos.length > 0
+      ? movimientos
+          .filter((m) => esEgresoContable(m))
+          .reduce((sum, m) => sum + Number.parseFloat(m.monto || 0), 0)
+      : Number.parseFloat(sesion.total_egresos || 0)
 
   const montoEsperadoSistema =
     sesion.monto_esperado_sistema || Number.parseFloat(sesion.monto_inicial) + totalIngresos - totalEgresos

@@ -43,6 +43,7 @@ export default function CajaPage() {
   const [ingresosModal, setIngresosModal] = useState(false)
   const [detalleIngresos, setDetalleIngresos] = useState(null)
   const [loadingIngresos, setLoadingIngresos] = useState(false)
+  const [resumenCaja, setResumenCaja] = useState(null)
   const [detalleCC, setDetalleCC] = useState(null)
   const [loadingDetalleCC, setLoadingDetalleCC] = useState(false)
   const [cuentaCorrienteModal, setCuentaCorrienteModal] = useState(false)
@@ -65,6 +66,12 @@ export default function CajaPage() {
   useEffect(() => {
     if (sesionActiva) {
       loadMovimientos(sesionActiva.id)
+      cajaService
+        .getResumenCierre(sesionActiva.id)
+        .then(setResumenCaja)
+        .catch(() => setResumenCaja(null))
+    } else {
+      setResumenCaja(null)
     }
   }, [sesionActiva])
 
@@ -115,6 +122,10 @@ export default function CajaPage() {
     if (success) {
       setMovimientoModal(false)
       loadMovimientos(sesionActiva.id)
+      cajaService
+        .getResumenCierre(sesionActiva.id)
+        .then(setResumenCaja)
+        .catch(() => setResumenCaja(null))
     }
   }
 
@@ -136,17 +147,9 @@ export default function CajaPage() {
     }
   }
 
-  const totalIngresos =
-    detalleIngresos?.total_general ||
-    movimientos
-      .filter((m) => m.tipo === "INGRESO" && m.concepto !== "Apertura de caja")
-      .reduce((sum, m) => sum + Number.parseFloat(m.monto), 0)
-
-  const totalEgresos = movimientos
-    .filter((m) => m.tipo === "EGRESO")
-    .reduce((sum, m) => sum + Number.parseFloat(m.monto), 0)
-
-  const montoActual = sesionActiva ? Number.parseFloat(sesionActiva.monto_inicial) + totalIngresos - totalEgresos : 0
+  const totalIngresos = resumenCaja?.totalIngresos ?? detalleIngresos?.total_general ?? 0
+  const totalEgresos = resumenCaja?.totalEgresos ?? 0
+  const montoActual = resumenCaja?.saldoEsperadoSistema ?? (sesionActiva ? Number.parseFloat(sesionActiva.monto_inicial) : 0)
 
   return (
     <PermissionGuard requiredPermission="view_caja">
