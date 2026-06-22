@@ -47,7 +47,13 @@ import { es } from "date-fns/locale"
 import { useEffect, useMemo, useState } from "react"
 import cajaService from "../../services/cajaService"
 
-import { esMovimientoActivo, esEgresoAnulacionVenta, esEgresoContable } from "../../utils/cajaMovimientos"
+import {
+  buildDesgloseArqueoPorMovimientos,
+  buildDesgloseBrutoPorMovimientos,
+  sumEgresosArqueo,
+  sumIngresosActivos,
+  sumIngresosBrutos,
+} from "../../utils/cajaMovimientos"
 
 const MOVIMIENTOS_PAGE_SIZE = 10000
 
@@ -55,41 +61,6 @@ const MOVIMIENTOS_PAGE_SIZE = 10000
 function normMetodo(m) {
   const u = (m || "EFECTIVO").toString().trim().toUpperCase()
   return u || "EFECTIVO"
-}
-
-/**
- * Ingresos y egresos por método desde movimientos activos.
- * Los egresos de VENTA_CANCELADA / SERVICIO_CANCELADO no restan: su ingreso ya está CANCELADO.
- */
-function buildDesgloseNetoPorMovimientos(movimientos) {
-  const map = new Map()
-  for (const mov of movimientos || []) {
-    if (!esMovimientoActivo(mov)) continue
-    const method = normMetodo(mov.metodo_pago)
-    if (!map.has(method)) {
-      map.set(method, { ing: 0, egr: 0, cIng: 0, cEgr: 0 })
-    }
-    const o = map.get(method)
-    const amt = Number.parseFloat(mov.monto) || 0
-    if (mov.tipo === "INGRESO" && mov.concepto !== "Apertura de caja") {
-      o.ing += amt
-      o.cIng += 1
-    } else if (mov.tipo === "EGRESO" && !esEgresoAnulacionVenta(mov)) {
-      o.egr += amt
-      o.cEgr += 1
-    }
-  }
-  return [...map.entries()]
-    .map(([metodo_pago, v]) => ({
-      metodo_pago,
-      totalIngresos: v.ing,
-      totalEgresos: v.egr,
-      neto: v.ing - v.egr,
-      cantidadIngresos: v.cIng,
-      cantidadEgresos: v.cEgr,
-    }))
-    .filter((r) => r.totalIngresos > 0 || r.totalEgresos > 0)
-    .sort((a, b) => Math.abs(b.neto) - Math.abs(a.neto))
 }
 
 export default function DetalleSesionModal({ open, onClose, sesion }) {
@@ -190,9 +161,12 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
     return tipo === "INGRESO" ? "success" : "error"
   }
 
-  const desgloseNeto = useMemo(() => buildDesgloseNetoPorMovimientos(movimientos), [movimientos])
+  const desgloseArqueo = useMemo(() => buildDesgloseArqueoPorMovimientos(movimientos), [movimientos])
 
   const desgloseBruto = useMemo(() => {
+    if (movimientos.length > 0) {
+      return buildDesgloseBrutoPorMovimientos(movimientos)
+    }
     if (!sesion) return []
     if (sesion.desglose_ingresos) {
       try {
@@ -203,26 +177,27 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
           cantidad: parsed[metodo].cantidad,
         }))
       } catch (e) {
-        return detalleIngresos?.desglose || []
+        return detalleIngresos?.desglose_bruto || detalleIngresos?.desglose || []
       }
     }
-    return detalleIngresos?.desglose || []
-  }, [sesion, detalleIngresos])
+    return detalleIngresos?.desglose_bruto || detalleIngresos?.desglose || []
+  }, [movimientos, sesion, detalleIngresos])
 
   if (!sesion) return null
 
-  const totalIngresos = detalleIngresos?.total_general ?? Number.parseFloat(sesion.total_ingresos || 0)
-  const totalEgresos =
-    movimientos.length > 0
-      ? movimientos
-          .filter((m) => esEgresoContable(m))
-          .reduce((sum, m) => sum + Number.parseFloat(m.monto || 0), 0)
-      : Number.parseFloat(sesion.total_egresos || 0)
+  const totalIngresosBruto =
+    movimientos.length > 0 ? sumIngresosBrutos(movimientos) : Number.parseFloat(detalleIngresos?.total_bruto || detalleIngresos?.total_general || sesion.total_ingresos || 0)
+  const totalIngresosActivos =
+    detalleIngresos?.total_general ??
+    (movimientos.length > 0 ? sumIngresosActivos(movimientos) : Number.parseFloat(sesion.total_ingresos || 0))
+  const totalEgresosArqueo =
+    movimientos.length > 0 ? sumEgresosArqueo(movimientos) : Number.parseFloat(sesion.total_egresos || 0)
 
   const montoEsperadoSistema =
-    sesion.monto_esperado_sistema || Number.parseFloat(sesion.monto_inicial) + totalIngresos - totalEgresos
+    sesion.monto_esperado_sistema ||
+    Number.parseFloat(sesion.monto_inicial) + totalIngresosActivos
 
-  const efectivoNeto = desgloseNeto.find((d) => d.metodo_pago === "EFECTIVO")?.neto || 0
+  const efectivoNeto = desgloseArqueo.find((d) => d.metodo_pago === "EFECTIVO")?.neto || 0
 
   const montoEsperadoCaja =
     sesion.monto_esperado_caja || Number.parseFloat(sesion.monto_inicial) + efectivoNeto
@@ -232,10 +207,10 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
   const tieneCCReferencia =
     Number(sesion.cantidad_ventas_cuenta_corriente) > 0 || Number(sesion.cantidad_servicios_cuenta_corriente) > 0
 
-  const resumenMetodos = vistaMetodoPago === "neto" ? desgloseNeto : desgloseBruto
+  const resumenMetodos = vistaMetodoPago === "neto" ? desgloseArqueo : desgloseBruto
 
   const totalReferenciaBrutoIngresos = desgloseBruto.reduce((s, i) => s + Number.parseFloat(i.total || 0), 0)
-  const totalReferenciaNeto = desgloseNeto.reduce((s, i) => s + i.neto, 0)
+  const totalReferenciaNeto = desgloseArqueo.reduce((s, i) => s + i.neto, 0)
 
   const metricCards = [
     {
@@ -250,8 +225,8 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
     {
       key: "ingresos",
       title: "Total ingresos",
-      value: formatCurrency(totalIngresos),
-      subtitle: "Suma de ingresos",
+      value: formatCurrency(totalIngresosBruto),
+      subtitle: "Bruto (incluye ventas canceladas)",
       icon: TrendingUpIcon,
       accent: "#059669",
       bg: alpha("#059669", 0.08),
@@ -259,8 +234,8 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
     {
       key: "egresos",
       title: "Total egresos",
-      value: formatCurrency(totalEgresos),
-      subtitle: "Salidas de caja",
+      value: formatCurrency(totalEgresosArqueo),
+      subtitle: "Cancelaciones y salidas de caja",
       icon: TrendingDownIcon,
       accent: "#dc2626",
       bg: alpha("#dc2626", 0.1),
@@ -269,7 +244,7 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
       key: "sistema",
       title: "Saldo esperado (sistema)",
       value: formatCurrency(montoEsperadoSistema),
-      subtitle: "Inicial + ingresos − egresos",
+      subtitle: `Neto operativo · ingresos vigentes ${formatCurrency(totalIngresosActivos)}`,
       icon: BalanceIcon,
       accent: "#991b1b",
       bg: alpha("#991b1b", 0.08),
@@ -725,8 +700,8 @@ export default function DetalleSesionModal({ open, onClose, sesion }) {
               Por método de pago
             </Typography>
             <Typography variant="caption" color="text.secondary" sx={{ display: "block", maxWidth: 560 }}>
-              <strong>Neto (recomendado):</strong> ingresos menos egresos del mismo método — coincide con lo que deberías contar (ej.: efectivo
-              físico). <strong>Solo ingresos:</strong> suma bruta de ingresos, sin restar devoluciones ni egresos.
+              <strong>Neto (arqueo):</strong> todos los ingresos del método menos sus egresos (cancelaciones, devoluciones,
+              etc.). <strong>Solo ingresos:</strong> suma bruta de cada ingreso registrado, incluidas ventas luego canceladas.
             </Typography>
           </Box>
           <ToggleButtonGroup
