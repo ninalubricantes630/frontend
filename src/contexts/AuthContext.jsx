@@ -65,17 +65,33 @@ function authReducer(state, action) {
   }
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialState)
+
+  const loadCurrentUser = async (retries = 3) => {
+    let lastError
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        return await authService.getCurrentUser()
+      } catch (error) {
+        lastError = error
+        const isTimeout =
+          error.message?.includes("tardó demasiado") || error.code === "ECONNABORTED"
+        if (!isTimeout || attempt === retries) break
+        await sleep(1500 * attempt)
+      }
+    }
+    throw lastError
+  }
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const token = secureStorage.getToken()
         if (token) {
-          const user = await authService.getCurrentUser()
-          console.log("[v0] User loaded from getCurrentUser:", user)
-          console.log("[v0] Permisos en user:", user.permisos)
+          const user = await loadCurrentUser()
           dispatch({ type: "LOGIN_SUCCESS", payload: user })
         } else {
           dispatch({ type: "SET_LOADING", payload: false })
@@ -101,14 +117,11 @@ export function AuthProvider({ children }) {
 
       if (!userData.sucursales || userData.sucursales.length === 0) {
         try {
-          userData = await authService.getCurrentUser()
+          userData = await loadCurrentUser()
         } catch (error) {
           // Silent fail - user data will load on next request
         }
       }
-
-      console.log("[v0] userData después de login:", userData)
-      console.log("[v0] userData.permisos:", userData.permisos)
 
       dispatch({ type: "LOGIN_SUCCESS", payload: userData })
       return response
@@ -138,13 +151,8 @@ export function AuthProvider({ children }) {
     if (!state.user) return false
     if (state.user.role === "admin") return true
 
-    console.log("[v0] Verificando permiso:", permissionCode)
-    console.log("[v0] Permisos del usuario:", state.user.permisos)
-
     if (state.user.permisos && Array.isArray(state.user.permisos)) {
-      const hasIt = state.user.permisos.some((p) => p.codigo === permissionCode)
-      console.log("[v0] Resultado de validación:", hasIt)
-      return hasIt
+      return state.user.permisos.some((p) => p.codigo === permissionCode)
     }
     return false
   }

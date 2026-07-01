@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env.VITE_API_URL
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 25000, // 25s: suficiente para cold start / primera conexión en Railway
+  timeout: 45000, // 45s: tolera cold start y latencia de Railway
   headers: {
     "Content-Type": "application/json",
   },
