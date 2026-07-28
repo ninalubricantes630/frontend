@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useRef } from "react"
 import { productosService } from "../services/productosService"
 import { useStandardizedErrorHandler } from "../utils/StandardizedErrorHandler"
 import { useToast } from "./useToast"
@@ -18,10 +18,13 @@ export const useProductos = () => {
 
   const { showToast } = useToast()
   const errorHandler = useStandardizedErrorHandler(showToast)
+  /** Evita race: solo aplica la respuesta de la request más reciente. */
+  const requestSeqRef = useRef(0)
 
   const loadProductos = useCallback(
     async (page = 1, limit = 10, filters = {}, options = {}) => {
       const { append = false } = options
+      const requestId = ++requestSeqRef.current
       setLoading(true)
       setError(null)
       try {
@@ -32,6 +35,11 @@ export const useProductos = () => {
         }
 
         const response = await productosService.getAll(params)
+
+        // Respuesta obsoleta (llegó tarde otra búsqueda más nueva)
+        if (requestId !== requestSeqRef.current) {
+          return
+        }
 
         if (!response || !response.data) {
           if (!append) setProductos([])
@@ -64,15 +72,31 @@ export const useProductos = () => {
           limit: Number(paginationData.limit || limit),
         })
       } catch (err) {
+        if (requestId !== requestSeqRef.current) return
         const { userMessage } = errorHandler.handleApiError(err, "cargar productos")
         setError(userMessage)
         if (!append) setProductos([])
       } finally {
-        setLoading(false)
+        if (requestId === requestSeqRef.current) {
+          setLoading(false)
+        }
       }
     },
     [errorHandler],
   )
+
+  const clearProductos = useCallback(() => {
+    requestSeqRef.current += 1
+    setProductos([])
+    setPagination({
+      total: 0,
+      totalPages: 0,
+      currentPage: 1,
+      limit: 10,
+    })
+    setLoading(false)
+    setError(null)
+  }, [])
 
   const createProducto = useCallback(
     async (productoData) => {
@@ -167,6 +191,7 @@ export const useProductos = () => {
     error,
     pagination,
     loadProductos,
+    clearProductos,
     createProducto,
     updateProducto,
     deleteProducto,

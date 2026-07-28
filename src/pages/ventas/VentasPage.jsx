@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useSearchParams } from "react-router-dom"
 import { Box, Paper, Typography, Alert, Snackbar, Chip, CircularProgress } from "@mui/material"
 import { ShoppingCart as ShoppingCartIcon, Store as StoreIcon } from "@mui/icons-material"
@@ -39,8 +39,9 @@ export default function VentasPage() {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const { createVenta, loading } = useVentas()
-  const { productos, loading: loadingProductos, loadProductos, pagination } = useProductos()
+  const { productos, loading: loadingProductos, loadProductos, clearProductos, pagination } = useProductos()
   const { user, loading: authLoading } = useAuth()
+  const searchDebounceRef = useRef(null)
 
   useEffect(() => {
     const recrear = searchParams.get("recrear")
@@ -158,42 +159,70 @@ export default function VentasPage() {
     }
   }, [carrito, showCantidadModal, showPagoModal, showInteresModal, showDescuentoModal])
 
+  const buscarProductos = useCallback(
+    (termino, pageNum = 1, modo) => {
+      if (!sucursalVenta || !user?.sucursales) return
+
+      const resolvedModo = modo !== undefined && modo !== null ? modo : modoBusquedaProducto
+      const terminoLimpio = String(termino || "").trim().replace(/\s+/g, " ")
+      if (!terminoLimpio) {
+        clearProductos()
+        return
+      }
+
+      const filters = {
+        search: terminoLimpio,
+        search_mode: resolvedModo === "codigo" ? "codigo" : "nombre",
+        estado_producto: "activo",
+        // Solo la sucursal de la venta: evita contaminar el top 10 con otras sucursales
+        sucursales_ids: sucursalVenta.id.toString(),
+      }
+
+      loadProductos(pageNum, 15, filters, { append: pageNum > 1 })
+    },
+    [sucursalVenta, user?.sucursales, modoBusquedaProducto, loadProductos, clearProductos],
+  )
+
   const handleSearchChange = (value) => {
     setSearchTerm(value)
     setPage(1)
 
-    if (value.trim() && sucursalVenta) {
-      buscarProductos(value, 1)
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+      searchDebounceRef.current = null
     }
+
+    const trimmed = String(value || "").trim()
+    if (!trimmed) {
+      clearProductos()
+      return
+    }
+
+    if (!sucursalVenta) return
+
+    searchDebounceRef.current = setTimeout(() => {
+      buscarProductos(value, 1)
+      searchDebounceRef.current = null
+    }, 300)
   }
 
   const handleModoBusquedaProductoChange = (modo) => {
     setModoBusquedaProducto(modo)
     setPage(1)
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current)
+      searchDebounceRef.current = null
+    }
     if (searchTerm.trim() && sucursalVenta && user?.sucursales) {
       buscarProductos(searchTerm, 1, modo)
     }
   }
 
-  const buscarProductos = (termino, pageNum = 1, modo) => {
-    if (!sucursalVenta || !user?.sucursales) return
-
-    const resolvedModo = modo !== undefined && modo !== null ? modo : modoBusquedaProducto
-    const filters = {
-      search: termino,
-      search_mode: resolvedModo === "codigo" ? "codigo" : "nombre",
-      estado_producto: "activo",
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current)
     }
-
-    if (user.sucursales.length === 1) {
-      filters.sucursales_ids = sucursalVenta.id.toString()
-    } else {
-      filters.sucursales_ids = user.sucursales.map((s) => s.id).join(",")
-      filters.prioridad_sucursal_id = sucursalVenta.id
-    }
-
-    loadProductos(pageNum, 10, filters, { append: pageNum > 1 })
-  }
+  }, [])
 
   const handleLoadMore = () => {
     const nextPage = page + 1
@@ -477,6 +506,7 @@ export default function VentasPage() {
     setSearchTerm("")
     setPage(1)
     setModoBusquedaProducto("nombre")
+    clearProductos()
 
     showNotification(`Sucursal cambiada a "${nuevaSucursal.nombre}"`, "success")
   }

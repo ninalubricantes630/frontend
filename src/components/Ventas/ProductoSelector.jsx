@@ -96,7 +96,7 @@ const ProductoSelector = ({
           inputRef={ref}
           placeholder={
             modoBusquedaProducto === "nombre"
-              ? "Buscar por nombre o descripción..."
+              ? "Buscar por nombre, código o descripción..."
               : "Buscar solo por código de producto..."
           }
           value={searchTerm}
